@@ -294,6 +294,55 @@ export async function GET() {
             }
           }
         }
+      },
+      '/api/actions/read': {
+        post: {
+          summary: 'ChatGPT Custom Action: Read file from local vault (read-only)',
+          description: 'Read the full content of a file from the local vault. Read-only action - no write operations supported.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['path'],
+                  properties: {
+                    path: { type: 'string', description: 'Relative file path in vault (from search result)' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'File content',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      path: { type: 'string', description: 'File path in vault' },
+                      content: { type: 'string', description: 'Full file content' }
+                    }
+                  }
+                }
+              }
+            },
+            '400': {
+              description: 'Error reading file',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: { type: 'string', description: 'Error message' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
