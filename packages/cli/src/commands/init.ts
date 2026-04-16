@@ -13,7 +13,7 @@ export async function initCommand(): Promise<void> {
     return
   }
 
-  const config = {
+  const config: any = {
     userId: '',
     deviceId: '',
     deviceToken: '',
@@ -25,6 +25,7 @@ export async function initCommand(): Promise<void> {
   }
 
   fs.mkdirSync(configDir, { recursive: true })
+  saveConfig(config)
 
   log('Brain Bridge initialized.')
   log(`Config directory: ${configDir}`)
