@@ -1,0 +1,33 @@
+{
+  "name": "brainbridge",
+  "version": "0.1.0",
+  "description": "Local CLI agent for Brain Bridge",
+  "type": "module",
+  "bin": {
+    "brainbridge": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@brainbridge/shared": "workspace:*",
+    "commander": "^11.0.0",
+    "fastify": "^4.24.0",
+    "ws": "^8.14.0",
+    "chokidar": "^3.5.3",
+    "gray-matter": "^4.0.3",
+    "fuse.js": "^7.0.0",
+    "fast-glob": "^3.3.1",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/commander": "^2.12.2",
+    "@types/ws": "^8.5.5",
+    "@types/gray-matter": "^4.0.2",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}

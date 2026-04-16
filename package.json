@@ -1,0 +1,20 @@
+{
+  "name": "brain-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Connect your local brain folder to ChatGPT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "type-check": "pnpm -r type-check",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
