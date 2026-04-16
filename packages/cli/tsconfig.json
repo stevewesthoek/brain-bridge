@@ -1,11 +1,26 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "skipLibCheck": true
+    "useDefineForClassFields": true,
+    "lib": ["ES2020"],
+    "module": "CommonJS",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noImplicitAny": false,
+    "strict": false,
+    "outDir": "dist",
+    "declaration": false,
+    "sourceMap": false,
+    "baseUrl": ".",
+    "paths": {
+      "@brainbridge/shared": ["../../packages/shared/src"],
+      "@brainbridge/shared/*": ["../../packages/shared/src/*"]
+    }
   },
   "include": ["src"]
 }
