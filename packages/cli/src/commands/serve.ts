@@ -22,8 +22,22 @@ export async function serveCommand(): Promise<void> {
     const port = getLocalPort()
     startLocalServer(port)
 
-    // Connect to SaaS bridge if configured
-    if (config.deviceToken) {
+    // Connect to bridge relay if configured
+    const bridgeUrl = process.env.BRIDGE_URL
+    const deviceToken = process.env.DEVICE_TOKEN || config.deviceToken
+
+    if (bridgeUrl && deviceToken) {
+      log('Connecting to bridge relay...')
+      const bridgeClient = new BridgeClient(bridgeUrl, deviceToken)
+
+      try {
+        await bridgeClient.connect()
+        log('Connected to bridge relay')
+      } catch (err) {
+        log(`Note: Could not connect to bridge relay (${String(err)})`)
+        log('Local agent will still work for local testing.')
+      }
+    } else if (config.deviceToken) {
       log('Connecting to SaaS bridge...')
       const bridgeClient = new BridgeClient(config.apiBaseUrl, config.deviceToken)
 
@@ -34,8 +48,7 @@ export async function serveCommand(): Promise<void> {
         log('Local agent will still work for local testing.')
       }
     } else {
-      log('No device token configured. Local agent running in standalone mode.')
-      log('To connect to ChatGPT, run: brainbridge login <api-key>')
+      log('No bridge configured. Local agent running in standalone mode.')
     }
 
     log('')

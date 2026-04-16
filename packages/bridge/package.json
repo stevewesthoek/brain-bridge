@@ -1,0 +1,17 @@
+{
+  "name": "@brainbridge/bridge",
+  "version": "0.1.0",
+  "description": "Brain Bridge relay server",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
