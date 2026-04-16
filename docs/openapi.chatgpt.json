@@ -1,43 +1,29 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "Brain Bridge API",
     "version": "1.0.0",
-    "description": "Connect your local brain folder to ChatGPT"
+    "description": "Connect your local brain folder to ChatGPT. Read-only access to search and read files from your personal knowledge vault."
   },
   "servers": [
     {
-      "url": "http://localhost:3054",
-      "description": "Local development (for ngrok/tunnel, replace with https://your-tunnel-domain)"
-    }
-  ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
-  },
-  "security": [
-    {
-      "bearerAuth": []
+      "url": "https://brainbridge.prochat.tools",
+      "description": "Brain Bridge public endpoint"
     }
   ],
   "paths": {
     "/api/actions/search": {
       "post": {
-        "summary": "ChatGPT Custom Action: Search local vault (read-only)",
-        "description": "Search the connected local vault for files matching the query. This is a read-only action that does not modify any files. Returns relative file paths safe for use with the read action. Absolute paths and ../ traversal are blocked.",
+        "operationId": "searchBrain",
+        "summary": "Search local vault",
+        "description": "Search your personal knowledge vault for files matching the query. This is a read-only action that does not modify any files. Returns relative file paths safe for use with the read action. Absolute paths and ../ traversal are blocked.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "query"
-                ],
+                "required": ["query"],
                 "properties": {
                   "query": {
                     "type": "string",
@@ -46,7 +32,7 @@
                   "limit": {
                     "type": "integer",
                     "default": 10,
-                    "description": "Maximum results to return"
+                    "description": "Maximum results to return (default: 10)"
                   }
                 }
               }
@@ -99,17 +85,16 @@
     },
     "/api/actions/read": {
       "post": {
-        "summary": "ChatGPT Custom Action: Read file from local vault (read-only)",
-        "description": "Read the full content of a file from the local vault. This is a read-only action that does not modify any files. Only accepts relative paths returned by the search action. Absolute paths and ../ traversal are blocked for safety.",
+        "operationId": "readBrainFile",
+        "summary": "Read file from local vault",
+        "description": "Read the full content of a file from your local vault. This is a read-only action that does not modify any files. Only accepts relative paths returned by the search action. Absolute paths and ../ traversal are blocked for safety.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "path"
-                ],
+                "required": ["path"],
                 "properties": {
                   "path": {
                     "type": "string",
@@ -122,7 +107,7 @@
         },
         "responses": {
           "200": {
-            "description": "File content",
+            "description": "File content from local vault",
             "content": {
               "application/json": {
                 "schema": {
@@ -130,27 +115,11 @@
                   "properties": {
                     "path": {
                       "type": "string",
-                      "description": "File path in vault"
+                      "description": "File path"
                     },
                     "content": {
                       "type": "string",
                       "description": "Full file content"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Error reading file",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "description": "Error message"
                     }
                   }
                 }
@@ -162,7 +131,8 @@
     },
     "/api/actions/search-and-read": {
       "post": {
-        "summary": "ChatGPT Custom Action: Search and read files (read-only, combined)",
+        "operationId": "searchAndReadBrain",
+        "summary": "Search and read files",
         "description": "Search and read the top N results in a single call. This is a read-only action that combines search and read operations for fewer confirmations. Limited to 3 results maximum. Does not modify any files. Absolute paths and ../ traversal are blocked.",
         "requestBody": {
           "required": true,
@@ -170,9 +140,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "query"
-                ],
+                "required": ["query"],
                 "properties": {
                   "query": {
                     "type": "string",
@@ -181,7 +149,7 @@
                   "limit": {
                     "type": "integer",
                     "default": 2,
-                    "description": "Maximum results to return (capped at 3)"
+                    "description": "Maximum results to return (capped at 3, default: 2)"
                   }
                 }
               }
@@ -190,7 +158,7 @@
         },
         "responses": {
           "200": {
-            "description": "Search results with file contents",
+            "description": "Search results with full file contents",
             "content": {
               "application/json": {
                 "schema": {
@@ -232,5 +200,8 @@
         }
       }
     }
+  },
+  "components": {
+    "schemas": {}
   }
 }

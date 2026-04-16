@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const openapi = {
-    openapi: '3.0.0',
+    openapi: '3.1.0',
     info: {
       title: 'Brain Bridge API',
       version: '1.0.0',
@@ -14,6 +14,7 @@ export async function GET() {
       }
     ],
     components: {
+      schemas: {},
       securitySchemes: {
         bearerAuth: {
           type: 'http',
@@ -249,6 +250,7 @@ export async function GET() {
       },
       '/api/actions/search': {
         post: {
+          operationId: 'searchBrain',
           summary: 'ChatGPT Custom Action: Search local vault (read-only)',
           description: 'Search the connected local vault for files matching the query. This is a read-only action that does not modify any files. Returns relative file paths safe for use with the read action. Absolute paths and ../ traversal are blocked.',
           requestBody: {
@@ -297,6 +299,7 @@ export async function GET() {
       },
       '/api/actions/read': {
         post: {
+          operationId: 'readBrainFile',
           summary: 'ChatGPT Custom Action: Read file from local vault (read-only)',
           description: 'Read the full content of a file from the local vault. This is a read-only action that does not modify any files. Only accepts relative paths returned by the search action. Absolute paths and ../ traversal are blocked for safety.',
           requestBody: {
@@ -346,6 +349,7 @@ export async function GET() {
       },
       '/api/actions/search-and-read': {
         post: {
+          operationId: 'searchAndReadBrain',
           summary: 'ChatGPT Custom Action: Search and read files (read-only, combined)',
           description: 'Search and read the top N results in a single call. This is a read-only action that combines search and read operations for fewer confirmations. Limited to 3 results maximum. Does not modify any files. Absolute paths and ../ traversal are blocked.',
           requestBody: {
