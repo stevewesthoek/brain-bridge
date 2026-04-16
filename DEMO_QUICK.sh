@@ -64,9 +64,10 @@ node dist/index.js connect "$DEMO_VAULT" > /dev/null 2>&1
 echo "📊 Status:"
 node dist/index.js status
 
-# Start server in background
+# Start server in background on port 3052
 echo ""
-echo "🚀 Starting local server on http://127.0.0.1:3001"
+echo "🚀 Starting local server on http://127.0.0.1:3052"
+echo "   (Registered in ProBot local-apps.json)"
 node dist/index.js serve > /tmp/bb-server.log 2>&1 &
 SERVER_PID=$!
 sleep 2
@@ -78,7 +79,7 @@ echo ""
 
 # Test 1: Search
 echo "1️⃣  Search for 'architecture'"
-SEARCH=$(curl -s -X POST http://127.0.0.1:3001/api/search \
+SEARCH=$(curl -s -X POST http://127.0.0.1:3052/api/search \
   -H 'Content-Type: application/json' \
   -d '{"query": "architecture", "limit": 5}')
 echo "$SEARCH" | grep -q "architecture.md" && echo "   ✓ Found architecture.md" || echo "   ✗ Search failed"
@@ -86,7 +87,7 @@ echo "$SEARCH" | grep -q "architecture.md" && echo "   ✓ Found architecture.md
 # Test 2: Read
 echo ""
 echo "2️⃣  Read file 'business.md'"
-READ=$(curl -s -X POST http://127.0.0.1:3001/api/read \
+READ=$(curl -s -X POST http://127.0.0.1:3052/api/read \
   -H 'Content-Type: application/json' \
   -d '{"path": "business.md"}')
 echo "$READ" | grep -q "Brain Bridge" && echo "   ✓ Read file content" || echo "   ✗ Read failed"
@@ -94,7 +95,7 @@ echo "$READ" | grep -q "Brain Bridge" && echo "   ✓ Read file content" || echo
 # Test 3: Create
 echo ""
 echo "3️⃣  Create new note"
-CREATE=$(curl -s -X POST http://127.0.0.1:3001/api/create \
+CREATE=$(curl -s -X POST http://127.0.0.1:3052/api/create \
   -H 'Content-Type: application/json' \
   -d '{"path": "BrainBridge/Inbox/demo-plan.md", "content": "# Demo Plan\n\nCreated via local API!"}')
 echo "$CREATE" | grep -q "created" && echo "   ✓ Note created" || echo "   ✗ Create failed"
@@ -102,7 +103,7 @@ echo "$CREATE" | grep -q "created" && echo "   ✓ Note created" || echo "   ✗
 # Test 4: Append
 echo ""
 echo "4️⃣  Append to note"
-APPEND=$(curl -s -X POST http://127.0.0.1:3001/api/append \
+APPEND=$(curl -s -X POST http://127.0.0.1:3052/api/append \
   -H 'Content-Type: application/json' \
   -d '{"path": "BrainBridge/Inbox/demo-plan.md", "content": "\n\n## Update\n\nAppended content works!"}')
 echo "$APPEND" | grep -q "appended" && echo "   ✓ Content appended" || echo "   ✗ Append failed"
@@ -110,7 +111,7 @@ echo "$APPEND" | grep -q "appended" && echo "   ✓ Content appended" || echo " 
 # Test 5: Export Plan
 echo ""
 echo "5️⃣  Export Claude Code plan"
-EXPORT=$(curl -s -X POST http://127.0.0.1:3001/api/export-plan \
+EXPORT=$(curl -s -X POST http://127.0.0.1:3052/api/export-plan \
   -H 'Content-Type: application/json' \
   -d '{
     "title": "Brain Bridge Demo",
@@ -123,9 +124,16 @@ EXPORT=$(curl -s -X POST http://127.0.0.1:3001/api/export-plan \
   }')
 echo "$EXPORT" | grep -q "created" && echo "   ✓ Plan exported" || echo "   ✗ Export failed"
 
-# Kill server
-kill $SERVER_PID 2>/dev/null || true
-wait $SERVER_PID 2>/dev/null || true
+# Keep server running
+echo ""
+echo "🔄 Server is still running (PID: $SERVER_PID)"
+echo "   http://127.0.0.1:3052/api/search (and other endpoints)"
+echo ""
+echo "To test more, open another terminal and run:"
+echo "   curl -X POST http://127.0.0.1:3052/api/search -H 'Content-Type: application/json' -d '{\"query\": \"test\", \"limit\": 5}'"
+echo ""
+echo "To stop the server:"
+echo "   kill $SERVER_PID"
 
 # Show files created
 echo ""
