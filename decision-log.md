@@ -26,3 +26,13 @@ Durable decisions for brain-bridge. Append-only archive.
 - Reason: User feedback: Custom GPT asks for confirmation on every action call; combined action fewer calls
 - Impact: New /api/actions/search-and-read (max 3 results capped for safety); all actions remain read-only, no authentication
 
+## 2026-04-17 -- Dual-repo architecture: Brain and Mind (Final)
+
+- Decision: Use symlink `brain/mind/` to write personal captures to Mind vault inbox
+- Reason: Architectural separation — brain holds knowledge base; mind holds personal Obsidian vault. Brain-Bridge bridges both via symlink.
+- Structure: Brain repo is parent; `brain/mind/` is symlink to `../mind` (separate repo). Brain-Bridge reads from brain root, writes personal notes to `mind/01-inbox/` via symlink.
+- Path: Personal note creation writes to `mind/01-inbox/` (via symlink from brain vault perspective) = `/Users/Office/Repos/stevewesthoek/mind/01-inbox/` (real path)
+- Safety: Symlink is valid relative path; local agent sees `mind/` as directory within connected vault; writes permitted
+- Removed: `.unprocessed/` subfolder (not needed; captures land directly in `01-inbox/` same as n8n workflow); old `brain/notes/inbox/` removed
+- Impact: Append-inbox-note writes to correct inbox; captures co-exist with n8n webhook captures; user reviews all in one place in Obsidian
+

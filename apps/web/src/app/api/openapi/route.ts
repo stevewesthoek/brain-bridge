@@ -397,6 +397,58 @@ export async function GET() {
             }
           }
         }
+      },
+      '/api/actions/append-inbox-note': {
+        post: {
+          operationId: 'appendInboxNote',
+          summary: 'ChatGPT Custom Action: Create a new personal inbox note',
+          description: 'Create a new markdown note in the personal Mind vault inbox (01-inbox folder). This action only allows writing to mind/01-inbox/ folder and never overwrites existing files. Filenames are auto-generated with timestamp to prevent collisions. The title is slugified for safe filename creation.',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['title', 'content'],
+                  properties: {
+                    title: { type: 'string', description: 'Note title (used to generate filename)' },
+                    content: { type: 'string', description: 'Markdown content for the note' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Note created successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      path: { type: 'string', description: 'Path to created note in vault' },
+                      status: { type: 'string', description: 'Status (created)' }
+                    }
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Authentication failed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: { type: 'string', description: 'Error message' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

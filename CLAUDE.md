@@ -13,6 +13,11 @@ Repo-specific instructions and durable context for Claude Code.
 
 ## Architecture
 
+**Dual-repo structure:**
+- **Brain** (this repo) — Machine brain, knowledge base, data vault; bridges both systems
+- **Mind** (symlinked as `mind/` in repo root) — Personal brain, Obsidian vault; separate repo
+- Brain-Bridge enables simultaneous access to both repos through a single entry point
+
 **Tech stack:**
 - Next.js 14 (web app, port 3054)
 - Relay server (port 3053, bridges web → local agent)
@@ -26,11 +31,14 @@ Repo-specific instructions and durable context for Claude Code.
 - `docs/openapi.chatgpt.json` — Static OpenAPI for ChatGPT import
 - `packages/shared/` — Shared types
 - `packages/cli/` — CLI agent
+- `mind/` — **Symlink** to Mind repo (Obsidian vault); write personal notes here
+- Access brain files directly; access mind files via `mind/` symlink
 
 **Key endpoints:**
 - `POST /api/actions/search` — Search local vault (read-only)
 - `POST /api/actions/read` — Read file (read-only)
 - `POST /api/actions/search-and-read` — Combined search + read (read-only)
+- `POST /api/actions/append-inbox-note` — Create personal note in Mind inbox (write to `mind/01-inbox/`)
 - `GET /api/openapi` — Dynamic OpenAPI schema
 
 ## Commands
@@ -52,8 +60,9 @@ curl -s -X POST https://brainbridge.prochat.tools/api/actions/search \
 
 ## Do not break
 
-- **Read-only constraint** — Never add create/append/export actions. Enforce path safety (no `../` traversal, no absolute paths).
-- **MVP scope** — No authentication, no database persistence, no write operations.
+- **Dual-repo paths** — Brain reads from repo root; Mind writes to `mind/01-inbox/` via symlink. Never write to `notes/inbox/` (old location).
+- **Path safety** — Enforce no `../` traversal, no absolute paths. Mind paths must go through symlink only.
+- **MVP scope** — Only Personal Notes writes allowed; all other operations read-only.
 - **OpenAPI format** — Must be 3.1.0 with operationId for ChatGPT compatibility.
 - **Port 3054** — Web app fixed port; required for stable Cloudflare tunnel.
 - **Cloudflare tunnel** — Public endpoint via prochat.tools domain; disable after Phase 3.5 testing.
