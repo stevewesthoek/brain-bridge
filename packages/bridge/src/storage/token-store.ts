@@ -52,6 +52,13 @@ export function initDefaultTokens(): void {
     return
   }
 
+  const enableDefaults = process.env.RELAY_ENABLE_DEFAULT_TOKENS !== 'false'
+
+  if (!enableDefaults) {
+    console.log('[TokenStore] Default tokens disabled via RELAY_ENABLE_DEFAULT_TOKENS=false')
+    return
+  }
+
   const defaults: TokenRecord[] = [
     {
       tokenId: 'tok_dev_1',
@@ -84,6 +91,7 @@ export function initDefaultTokens(): void {
 
   tokenRegistry = defaults
   saveToDisk()
+  console.log('[TokenStore] Initialized 3 default tokens for development')
 }
 
 export function loadTokens(): TokenRecord[] {

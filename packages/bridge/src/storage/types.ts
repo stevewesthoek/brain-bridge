@@ -30,3 +30,19 @@ export interface RequestRecord {
   error?: string
   version: number
 }
+
+export interface SessionRecord {
+  sessionId: string
+  deviceId: string
+  status: 'open' | 'active' | 'closed'
+  createdAt: string
+  closedAt?: string
+  lastActivityAt: string
+  commandCount: number
+  requestIds: string[]
+  metadata: {
+    purpose?: string
+    createdBy?: string
+  }
+  version: number
+}

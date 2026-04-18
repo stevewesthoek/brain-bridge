@@ -4,11 +4,49 @@ import { logToFile } from './logger'
 import * as deviceRegistry from './storage/device-registry'
 import * as tokenStore from './storage/token-store'
 import * as requestAudit from './storage/request-audit'
+import * as sessionStore from './storage/session-store'
 import { handleAdminDevices, handleAdminRequests, setDeviceMap } from './admin/endpoints'
+import { handleCreateSession, handleGetSession, handleListSessions, handleCloseSession } from './admin/session-endpoints'
 import type { PersistedDevice } from './storage/types'
 
 const PORT = parseInt(process.env.BRIDGE_PORT || '3053', 10)
 const HEARTBEAT_INTERVAL = 30000
+const RELAY_ADMIN_TOKEN = process.env.RELAY_ADMIN_TOKEN
+
+function requireAdminAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  if (!RELAY_ADMIN_TOKEN) {
+    // No admin token set, allow access (dev mode)
+    return true
+  }
+
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.writeHead(403)
+    res.end(JSON.stringify({ error: 'Admin authentication required' }))
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'relay_admin',
+      status: 'error',
+      reason: 'missing_auth'
+    })
+    return false
+  }
+
+  const token = authHeader.slice(7)
+  if (token !== RELAY_ADMIN_TOKEN) {
+    res.writeHead(403)
+    res.end(JSON.stringify({ error: 'Invalid admin token' }))
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'relay_admin',
+      status: 'error',
+      reason: 'invalid_token'
+    })
+    return false
+  }
+
+  return true
+}
 
 interface DeviceConnection {
   ws: WebSocket
@@ -49,13 +87,50 @@ const server = http.createServer(async (req, res) => {
 
   // Admin: list devices (persisted + connected status)
   if (req.method === 'GET' && req.url === '/api/admin/devices') {
+    if (!requireAdminAuth(req, res)) return
     handleAdminDevices(req, res)
     return
   }
 
   // Admin: list request audit records
   if (req.method === 'GET' && req.url?.startsWith('/api/admin/requests')) {
+    if (!requireAdminAuth(req, res)) return
     handleAdminRequests(req, res)
+    return
+  }
+
+  // Session management endpoints
+  if (req.url?.startsWith('/api/sessions')) {
+    if (!requireAdminAuth(req, res)) return
+
+    // POST /api/sessions - create session
+    if (req.method === 'POST' && req.url === '/api/sessions') {
+      handleCreateSession(req, res)
+      return
+    }
+
+    // GET /api/sessions - list sessions
+    if (req.method === 'GET' && req.url === '/api/sessions') {
+      handleListSessions(req, res)
+      return
+    }
+
+    // GET /api/sessions/{sessionId} - get session details
+    const sessionMatch = req.url?.match(/^\/api\/sessions\/([a-zA-Z0-9_-]+)$/)
+    if (req.method === 'GET' && sessionMatch) {
+      handleGetSession(req, res, sessionMatch[1])
+      return
+    }
+
+    // POST /api/sessions/{sessionId}/close - close session
+    const closeMatch = req.url?.match(/^\/api\/sessions\/([a-zA-Z0-9_-]+)\/close$/)
+    if (req.method === 'POST' && closeMatch) {
+      handleCloseSession(req, res, closeMatch[1])
+      return
+    }
+
+    res.writeHead(404)
+    res.end(JSON.stringify({ error: 'Not found' }))
     return
   }
 
@@ -170,7 +245,150 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
-  // Command endpoint: external requester sends command targeting a device
+  // Command endpoint via session: external requester sends command through a session
+  if (req.method === 'POST' && req.url === '/api/commands/session') {
+    let body = ''
+    req.on('data', chunk => { body += chunk.toString() })
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body)
+        const { sessionId, command, params } = payload
+
+        if (!sessionId || !command) {
+          res.writeHead(400)
+          res.end(JSON.stringify({ error: 'Missing sessionId or command' }))
+          return
+        }
+
+        // Get session and validate
+        const session = sessionStore.getSession(sessionId)
+        if (!session) {
+          res.writeHead(404)
+          res.end(JSON.stringify({ error: 'Session not found' }))
+          return
+        }
+
+        if (session.status === 'closed') {
+          res.writeHead(410)
+          res.end(JSON.stringify({ error: 'Session is closed' }))
+          return
+        }
+
+        const deviceId = session.deviceId
+        const device = devices.get(deviceId)
+        if (!device) {
+          res.writeHead(404)
+          res.end(JSON.stringify({ error: 'Device not found' }))
+          return
+        }
+
+        if (device.ws.readyState !== WebSocket.OPEN) {
+          res.writeHead(503)
+          res.end(JSON.stringify({ error: 'Device not connected' }))
+          return
+        }
+
+        // Generate request ID and route command
+        const requestId = generateRequestId()
+        const startTime = Date.now()
+        let timedOut = false
+
+        // Update session activity
+        sessionStore.updateSessionActivity(sessionId, requestId, command)
+
+        // Log request start
+        requestAudit.logRequest({
+          requestId,
+          deviceId,
+          command,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          version: 1
+        })
+
+        // Create pending request with timeout
+        const timeout = setTimeout(() => {
+          timedOut = true
+          pendingRequests.delete(requestId)
+          const duration = Date.now() - startTime
+          res.writeHead(504)
+          res.end(JSON.stringify({ error: 'Command timeout' }))
+
+          // Log timeout
+          requestAudit.logRequest({
+            requestId,
+            deviceId,
+            command,
+            status: 'timeout',
+            createdAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            duration,
+            version: 1
+          })
+        }, 30000)
+
+        // Register pending request
+        pendingRequests.set(requestId, {
+          resolve: (result: any) => {
+            if (timedOut) return
+            clearTimeout(timeout)
+            pendingRequests.delete(requestId)
+            const duration = Date.now() - startTime
+            res.writeHead(200)
+            res.end(JSON.stringify({ status: 'ok', requestId, result }))
+
+            // Log success
+            requestAudit.logRequest({
+              requestId,
+              deviceId,
+              command,
+              status: 'success',
+              createdAt: new Date().toISOString(),
+              completedAt: new Date().toISOString(),
+              duration,
+              version: 1
+            })
+          },
+          reject: (error: any) => {
+            if (timedOut) return
+            clearTimeout(timeout)
+            pendingRequests.delete(requestId)
+            const duration = Date.now() - startTime
+            res.writeHead(500)
+            res.end(JSON.stringify({ error: String(error) }))
+
+            // Log error
+            requestAudit.logRequest({
+              requestId,
+              deviceId,
+              command,
+              status: 'error',
+              createdAt: new Date().toISOString(),
+              completedAt: new Date().toISOString(),
+              duration,
+              error: String(error),
+              version: 1
+            })
+          },
+          timeout
+        })
+
+        // Send command to device over WebSocket
+        device.ws.send(JSON.stringify({
+          type: 'command_request',
+          requestId,
+          command,
+          params: params || {}
+        }))
+      } catch (err) {
+        res.writeHead(400)
+        res.end(JSON.stringify({ error: 'Invalid request' }))
+      }
+    })
+    return
+  }
+
+  // Command endpoint: external requester sends command targeting a device (LEGACY)
   if (req.method === 'POST' && req.url === '/api/commands') {
     let body = ''
     req.on('data', chunk => { body += chunk.toString() })
@@ -510,8 +728,48 @@ setInterval(() => {
   })
 }, HEARTBEAT_INTERVAL)
 
+// Session cleanup interval: remove expired sessions
+setInterval(() => {
+  const cleaned = sessionStore.cleanupExpiredSessions()
+  if (cleaned > 0) {
+    console.log(`[Bridge] Cleaned up ${cleaned} expired sessions`)
+  }
+}, 60000) // Every 60 seconds
+
+// Startup validation
+function validateStartup(): void {
+  console.log('[Bridge] Startup validation...')
+
+  // Check PORT validity
+  if (PORT < 1024 || PORT > 65535) {
+    console.error(`[Bridge] ERROR: Invalid BRIDGE_PORT ${PORT} (must be 1024-65535)`)
+    process.exit(1)
+  }
+  console.log(`[Bridge] ✓ Port ${PORT} is valid`)
+
+  // Check if default tokens are enabled
+  const defaultsEnabled = process.env.RELAY_ENABLE_DEFAULT_TOKENS !== 'false'
+  if (defaultsEnabled) {
+    console.warn('[Bridge] ⚠ Default development tokens are ENABLED')
+    console.warn('[Bridge]   For production, set: RELAY_ENABLE_DEFAULT_TOKENS=false')
+  } else {
+    console.log('[Bridge] ✓ Default tokens disabled')
+  }
+
+  // Check if admin auth is configured
+  if (RELAY_ADMIN_TOKEN) {
+    console.log('[Bridge] ✓ Admin endpoint authentication enabled')
+  } else {
+    console.warn('[Bridge] ⚠ Admin endpoints have NO authentication')
+    console.warn('[Bridge]   For production, set: RELAY_ADMIN_TOKEN=<secret>')
+  }
+
+  console.log('[Bridge] Startup validation complete')
+}
+
 // Load persisted state on startup
 console.log('[Bridge] Loading persisted state...')
+validateStartup()
 deviceRegistry.loadDevices()
 tokenStore.loadTokens()
 requestAudit.loadRequests()
