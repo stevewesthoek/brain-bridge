@@ -7,12 +7,12 @@ export async function serveCommand(): Promise<void> {
   const config = loadConfig()
 
   if (!config) {
-    error('Please run: brainbridge init')
+    error('Brain Bridge not initialized. Run: brainbridge init')
     return
   }
 
   if (!config.vaultPath) {
-    error('No vault connected. Run: brainbridge connect <path>')
+    error('No vault connected. Run: brainbridge connect <path-to-vault>')
     return
   }
 

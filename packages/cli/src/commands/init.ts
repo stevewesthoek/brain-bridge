@@ -7,8 +7,9 @@ import os from 'os'
 
 export async function initCommand(): Promise<void> {
   const configDir = getConfigDir()
+  const configPath = path.join(configDir, 'config.json')
 
-  if (fs.existsSync(configDir)) {
+  if (fs.existsSync(configPath)) {
     log('Brain Bridge is already initialized.')
     return
   }
