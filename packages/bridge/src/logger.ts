@@ -1,0 +1,31 @@
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
+
+interface LogEntry {
+  timestamp: string
+  tool: string
+  status: 'success' | 'error'
+  [key: string]: unknown
+}
+
+function getAuditLogPath(): string {
+  const bridgeDir = path.join(os.homedir(), '.brainbridge')
+  return path.join(bridgeDir, 'relay.audit.log')
+}
+
+export function logToFile(entry: LogEntry): void {
+  try {
+    const auditPath = getAuditLogPath()
+    const dir = path.dirname(auditPath)
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+
+    const line = JSON.stringify(entry) + '\n'
+    fs.appendFileSync(auditPath, line)
+  } catch (err) {
+    console.error('Failed to write relay audit log:', err)
+  }
+}
