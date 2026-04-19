@@ -16,14 +16,15 @@ export function getBackendUrl(): string {
     return process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
   }
 
-  throw new Error(
-    'BRAIN_BRIDGE_BACKEND_MODE=relay-agent is reserved for future implementation. ' +
-    'Currently unsupported. Set BRAIN_BRIDGE_BACKEND_MODE=direct-agent or leave unset.'
-  )
+  if (mode === 'relay-agent') {
+    return 'http://127.0.0.1:3053/api/actions/proxy'
+  }
+
+  throw new Error('Unknown backend mode')
 }
 
 export function getBackendDebugInfo(): { mode: BackendMode; url: string } {
   const mode = getBackendMode()
-  const url = mode === 'relay-agent' ? '(relay-agent: unsupported)' : getBackendUrl()
+  const url = getBackendUrl()
   return { mode, url }
 }

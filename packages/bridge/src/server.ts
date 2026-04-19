@@ -270,6 +270,209 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  // Action proxy endpoint: relay-backed execution for ChatGPT actions
+  // For Phase 5B, local-only scope allows authentication to be enforced at web app layer
+  // (Bearer token from web app to relay is not yet implemented; this endpoint is on 127.0.0.1)
+  if (req.method === 'POST' && req.url?.startsWith('/api/actions/proxy/')) {
+    let body = ''
+    req.on('data', chunk => { body += chunk.toString() })
+    req.on('end', () => {
+      try {
+        // Extract agent endpoint from URL (e.g., /api/actions/proxy/api/search -> /api/search)
+        const proxyMatch = req.url?.match(/^\/api\/actions\/proxy(.*)$/)
+        if (!proxyMatch) {
+          res.writeHead(400)
+          res.end(JSON.stringify({ error: 'Invalid proxy path' }))
+          return
+        }
+
+        const agentEndpoint = proxyMatch[1]
+        if (!agentEndpoint) {
+          res.writeHead(400)
+          res.end(JSON.stringify({ error: 'Action endpoint required' }))
+          return
+        }
+
+        // Convert endpoint to relay command (e.g., /api/search -> action_proxy:search)
+        const commandMatch = agentEndpoint.match(/^\/api\/([a-z-]+)/)
+        if (!commandMatch) {
+          res.writeHead(400)
+          res.end(JSON.stringify({ error: 'Invalid action endpoint' }))
+          return
+        }
+        const relayCommand = `action_proxy:${commandMatch[1]}`
+
+        // Find single connected device
+        const connectedDevices = Array.from(devices.values()).filter(d => d.ws.readyState === WebSocket.OPEN)
+
+        if (connectedDevices.length === 0) {
+          res.writeHead(503)
+          res.end(JSON.stringify({
+            error: 'No connected device available. Relay-backed execution requires at least one device connected to relay on port 3053.'
+          }))
+          logToFile({
+            timestamp: new Date().toISOString(),
+            tool: 'relay_action_proxy',
+            status: 'error',
+            reason: 'no_connected_device',
+            endpoint: agentEndpoint
+          })
+          return
+        }
+
+        if (connectedDevices.length > 1) {
+          res.writeHead(503)
+          res.end(JSON.stringify({
+            error: 'Multiple connected devices not supported in Phase 5B. Use direct-agent mode for local-only execution.'
+          }))
+          logToFile({
+            timestamp: new Date().toISOString(),
+            tool: 'relay_action_proxy',
+            status: 'error',
+            reason: 'multiple_devices',
+            endpoint: agentEndpoint
+          })
+          return
+        }
+
+        const device = connectedDevices[0]
+
+        // Validate request body
+        let params: any
+        try {
+          params = body ? JSON.parse(body) : {}
+        } catch {
+          res.writeHead(400)
+          res.end(JSON.stringify({ error: 'Invalid request body' }))
+          return
+        }
+
+        const requestId = generateRequestId()
+        const startTime = Date.now()
+        let timedOut = false
+
+        // Log request start
+        requestAudit.logRequest({
+          requestId,
+          deviceId: device.deviceId,
+          command: relayCommand,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          version: 1
+        })
+
+        // Create pending request with timeout
+        const timeout = setTimeout(() => {
+          timedOut = true
+          pendingRequests.delete(requestId)
+          const duration = Date.now() - startTime
+          res.writeHead(504)
+          res.end(JSON.stringify({ error: 'Device command timeout after 30 seconds' }))
+
+          // Log timeout
+          requestAudit.logRequest({
+            requestId,
+            deviceId: device.deviceId,
+            command: relayCommand,
+            status: 'timeout',
+            createdAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            duration,
+            version: 1
+          })
+
+          logToFile({
+            timestamp: new Date().toISOString(),
+            tool: 'relay_action_proxy',
+            status: 'error',
+            reason: 'timeout',
+            endpoint: agentEndpoint,
+            deviceId: device.deviceId
+          })
+        }, 30000)
+
+        // Register pending request
+        pendingRequests.set(requestId, {
+          resolve: (result: any) => {
+            if (timedOut) return
+            clearTimeout(timeout)
+            pendingRequests.delete(requestId)
+            const duration = Date.now() - startTime
+            res.writeHead(200)
+            res.end(JSON.stringify(result))
+
+            // Log success
+            requestAudit.logRequest({
+              requestId,
+              deviceId: device.deviceId,
+              command: relayCommand,
+              status: 'success',
+              createdAt: new Date().toISOString(),
+              completedAt: new Date().toISOString(),
+              duration,
+              version: 1
+            })
+
+            logToFile({
+              timestamp: new Date().toISOString(),
+              tool: 'relay_action_proxy',
+              status: 'success',
+              endpoint: agentEndpoint,
+              deviceId: device.deviceId,
+              requestId,
+              duration
+            })
+          },
+          reject: (error: any) => {
+            if (timedOut) return
+            clearTimeout(timeout)
+            pendingRequests.delete(requestId)
+            const duration = Date.now() - startTime
+            res.writeHead(500)
+            res.end(JSON.stringify({ error: String(error) }))
+
+            // Log error
+            requestAudit.logRequest({
+              requestId,
+              deviceId: device.deviceId,
+              command: relayCommand,
+              status: 'error',
+              createdAt: new Date().toISOString(),
+              completedAt: new Date().toISOString(),
+              duration,
+              error: String(error),
+              version: 1
+            })
+
+            logToFile({
+              timestamp: new Date().toISOString(),
+              tool: 'relay_action_proxy',
+              status: 'error',
+              endpoint: agentEndpoint,
+              deviceId: device.deviceId,
+              reason: String(error)
+            })
+          },
+          timeout
+        })
+
+        // Send action request to device
+        device.ws.send(JSON.stringify({
+          type: 'command_request',
+          requestId,
+          command: relayCommand,
+          params
+        }))
+
+        console.log(`[Bridge] Forwarded action proxy ${agentEndpoint} to device ${device.deviceId} (request ${requestId})`)
+      } catch (err) {
+        res.writeHead(500)
+        res.end(JSON.stringify({ error: String(err) }))
+      }
+    })
+    return
+  }
+
   // Command endpoint via session: external requester sends command through a session
   if (req.method === 'POST' && req.url === '/api/commands/session') {
     let body = ''

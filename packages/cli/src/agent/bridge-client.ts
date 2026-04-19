@@ -309,6 +309,101 @@ export class BridgeClient {
           break
         }
 
+        case 'action_proxy:search': {
+          const query = params.query
+          const limit = params.limit || 10
+          if (!query) {
+            error = 'Query required for search'
+            break
+          }
+          try {
+            const searchResults = this.searcher.search(query, limit)
+            result = { results: searchResults }
+          } catch (err) {
+            error = String(err)
+          }
+          break
+        }
+
+        case 'action_proxy:read': {
+          const path = params.path
+          if (!path) {
+            error = 'Path required for read'
+            break
+          }
+          const workspace = params.workspace || 'vault'
+          try {
+            const ws = getWorkspaceInfo(workspace)
+            const validation = validateWorkspacePath(ws, path)
+            if (!validation.valid) {
+              error = validation.error || 'Invalid path'
+              break
+            }
+            const fullPath = resolveWorkspacePath(ws, path)
+            if (!fs.existsSync(fullPath)) {
+              error = 'File not found'
+              break
+            }
+            const stat = fs.statSync(fullPath)
+            if (!stat.isFile()) {
+              error = 'Not a file'
+              break
+            }
+            const maxSize = 1024 * 1024
+            if (stat.size > maxSize) {
+              error = `File too large (${stat.size} bytes, max ${maxSize})`
+              break
+            }
+            const safeExtensions = ['.md', '.txt', '.json', '.yaml', '.yml', '.ts', '.tsx', '.js', '.jsx', '.sh', '.env.example', '.csv']
+            const fileExt = path.toLowerCase().slice(path.lastIndexOf('.'))
+            if (!safeExtensions.includes(fileExt)) {
+              error = `Unsupported file type: ${fileExt}`
+              break
+            }
+            const content = fs.readFileSync(fullPath, 'utf-8')
+            result = { path, content }
+          } catch (err) {
+            error = String(err)
+          }
+          break
+        }
+
+        case 'action_proxy:create': {
+          const content = params.content
+          if (!content) {
+            error = 'Content required for create'
+            break
+          }
+          try {
+            const path = params.path || `BrainBridge/Inbox/${new Date().toISOString().split('T')[0]}-note.md`
+            const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: brainbridge\ntype: note\n---\n\n`
+            const fullContent = frontmatter + content
+            result = await createFile(path, fullContent)
+            await this.indexer.buildIndex()
+            this.searcher = new VaultSearcher(this.indexer.getDocs())
+          } catch (err) {
+            error = String(err)
+          }
+          break
+        }
+
+        case 'action_proxy:append': {
+          const path = params.path
+          const content = params.content
+          if (!path || !content) {
+            error = 'Path and content required for append'
+            break
+          }
+          try {
+            result = await appendFile(path, content)
+            await this.indexer.buildIndex()
+            this.searcher = new VaultSearcher(this.indexer.getDocs())
+          } catch (err) {
+            error = String(err)
+          }
+          break
+        }
+
         default:
           error = `Unknown command: ${command}`
       }

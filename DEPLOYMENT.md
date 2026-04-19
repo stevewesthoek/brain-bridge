@@ -467,7 +467,7 @@ Expected response (if agent is running):
 | `"Search error: TypeError: fetch failed"` | Agent not running on 3052 | Ensure agent is running with `BRIDGE_URL=ws://localhost:3053` |
 | `"Search failed: 500"` | Agent error | Check agent logs for vault path or permission errors |
 
-### Backend Modes (Phase 5+)
+### Backend Modes (Phase 5B+)
 
 The web app supports configurable backend modes for action execution:
 
@@ -475,14 +475,20 @@ The web app supports configurable backend modes for action execution:
 - Web app (3054) forwards requests directly to local agent (3052)
 - Set: `BRAIN_BRIDGE_BACKEND_MODE=direct-agent` or leave unset
 - Status: Fully supported and tested
+- Use case: Local-only deployments, development
 
-**relay-agent (reserved):**
-- Web app would route through relay (3053) to agent
+**relay-agent (Phase 5B):**
+- Web app routes requests through relay (3053) to connected device (3052)
 - Set: `BRAIN_BRIDGE_BACKEND_MODE=relay-agent`
-- Status: Reserved for Phase 5 implementation; currently throws error if attempted
-- When needed: Enables multi-device deployments and horizontal scaling
+- Status: Implemented for single-device deployments
+- Limitations: Phase 5B supports exactly one connected device; multiple devices return 503
+- Use case: Deployment architectures where relay coordination is preferred
+- When needed: Ensure relay is running on 3053 and at least one device is connected
 
-To use relay-backed execution when available in Phase 5, set the env var and ensure relay is running on 3053.
+To enable relay-backed execution, set the env var and ensure:
+1. Relay is running on port 3053 (`docker compose up -d`)
+2. Agent is connected to relay with valid device token
+3. Relay is reachable at `http://127.0.0.1:3053` from web app
 
 ## Next Phase
 
