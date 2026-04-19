@@ -1,4 +1,4 @@
-import { getBackendUrl } from './config'
+import { getBackendUrl, getBackendMode, getRelayProxyToken } from './config'
 
 export class ActionTransportError extends Error {
   constructor(message: string, public statusCode: number) {
@@ -12,12 +12,23 @@ export async function executeAction(
   body: Record<string, unknown>
 ): Promise<unknown> {
   const backendUrl = getBackendUrl()
+  const mode = getBackendMode()
   const url = `${backendUrl}${endpoint}`
 
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+
+    // Add proxy token for relay-agent mode
+    if (mode === 'relay-agent') {
+      const proxyToken = getRelayProxyToken()
+      if (proxyToken) {
+        headers['Authorization'] = `Bearer ${proxyToken}`
+      }
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body)
     })
 

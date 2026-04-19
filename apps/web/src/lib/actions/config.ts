@@ -9,6 +9,10 @@ export function getBackendMode(): BackendMode {
   return mode || 'direct-agent'
 }
 
+export function getRelayProxyToken(): string | null {
+  return process.env.RELAY_PROXY_TOKEN || null
+}
+
 export function getBackendUrl(): string {
   const mode = getBackendMode()
 

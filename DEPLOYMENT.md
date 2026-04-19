@@ -20,6 +20,7 @@ Brain Bridge Relay is a WebSocket bridge that:
 | `BRIDGE_PORT` | int | 3053 | no | Relay server listen port |
 | `RELAY_DATA_DIR` | string | `~/.brainbridge` | no | Data directory for state persistence |
 | `RELAY_ADMIN_TOKEN` | string | — | no | Bearer token for admin endpoints; enables auth if set |
+| `RELAY_PROXY_TOKEN` | string | `dev-proxy-token` | no | Bearer token for web app proxy requests (Phase 5C); enables auth if set in production |
 | `RELAY_ENABLE_DEFAULT_TOKENS` | string | `"true"` | no | Enable default development tokens for testing |
 | `NODE_ENV` | string | `development` | no | Runtime environment (`development` or `production`) |
 
@@ -476,19 +477,28 @@ The web app supports configurable backend modes for action execution:
 - Set: `BRAIN_BRIDGE_BACKEND_MODE=direct-agent` or leave unset
 - Status: Fully supported and tested
 - Use case: Local-only deployments, development
+- Authentication: None required (direct local connection)
 
-**relay-agent (Phase 5B):**
+**relay-agent (Phase 5C):**
 - Web app routes requests through relay (3053) to connected device (3052)
 - Set: `BRAIN_BRIDGE_BACKEND_MODE=relay-agent`
-- Status: Implemented for single-device deployments
-- Limitations: Phase 5B supports exactly one connected device; multiple devices return 503
-- Use case: Deployment architectures where relay coordination is preferred
+- Status: Fully supported with optional Bearer token authentication (Phase 5C)
+- Limitations: Supports exactly one connected device; multiple devices return 503
+- Use case: Multi-device deployments, enterprise architectures, relay coordination
 - When needed: Ensure relay is running on 3053 and at least one device is connected
 
-To enable relay-backed execution, set the env var and ensure:
-1. Relay is running on port 3053 (`docker compose up -d`)
-2. Agent is connected to relay with valid device token
-3. Relay is reachable at `http://127.0.0.1:3053` from web app
+**Authentication (Phase 5C):**
+- If `RELAY_PROXY_TOKEN` is set on relay, web app MUST send matching Bearer token
+- Web app reads `RELAY_PROXY_TOKEN` env var and includes it in `Authorization: Bearer` header
+- Unauthenticated requests return 403
+- Development default: `dev-proxy-token` (same on both relay and web app)
+- Production: Generate strong token with `openssl rand -hex 32` and set on both sides
+
+To enable relay-backed execution:
+1. Set `BRAIN_BRIDGE_BACKEND_MODE=relay-agent` on web app
+2. Relay is running on port 3053 (`docker compose up -d`)
+3. Agent is connected to relay with valid device token
+4. (Phase 5C) Relay and web app have matching `RELAY_PROXY_TOKEN` values
 
 ## Next Phase
 

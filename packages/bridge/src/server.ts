@@ -51,6 +51,41 @@ function requireAdminAuth(req: http.IncomingMessage, res: http.ServerResponse): 
   return true
 }
 
+function requireProxyAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  if (!runtimeConfig?.config.relayProxyToken) {
+    // No proxy token set, allow access (dev mode)
+    return true
+  }
+
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.writeHead(403)
+    res.end(JSON.stringify({ error: 'Relay proxy authentication required' }))
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'relay_action_proxy',
+      status: 'error',
+      reason: 'missing_auth'
+    })
+    return false
+  }
+
+  const token = authHeader.slice(7)
+  if (token !== runtimeConfig?.config.relayProxyToken) {
+    res.writeHead(403)
+    res.end(JSON.stringify({ error: 'Invalid proxy token' }))
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'relay_action_proxy',
+      status: 'error',
+      reason: 'invalid_token'
+    })
+    return false
+  }
+
+  return true
+}
+
 interface DeviceConnection {
   ws: WebSocket
   deviceId: string
@@ -271,9 +306,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Action proxy endpoint: relay-backed execution for ChatGPT actions
-  // For Phase 5B, local-only scope allows authentication to be enforced at web app layer
-  // (Bearer token from web app to relay is not yet implemented; this endpoint is on 127.0.0.1)
+  // Phase 5C: Added explicit authentication with RELAY_PROXY_TOKEN
+  // (Separate from RELAY_ADMIN_TOKEN for security separation)
   if (req.method === 'POST' && req.url?.startsWith('/api/actions/proxy/')) {
+    if (!requireProxyAuth(req, res)) return
+
     let body = ''
     req.on('data', chunk => { body += chunk.toString() })
     req.on('end', () => {

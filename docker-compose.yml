@@ -14,6 +14,10 @@ services:
       BRIDGE_PORT: 3053
       RELAY_DATA_DIR: /var/lib/brainbridge
       NODE_ENV: production
+      # Phase 5C: Relay proxy token for authenticated relay-agent requests
+      # Generate with: openssl rand -hex 32
+      # For dev/testing, set a test value; for production, use a strong secret
+      RELAY_PROXY_TOKEN: ${RELAY_PROXY_TOKEN:-dev-proxy-token}
     volumes:
       # Persist state across container restarts
       - brainbridge-data:/var/lib/brainbridge

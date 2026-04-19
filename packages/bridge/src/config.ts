@@ -5,6 +5,7 @@ export interface RuntimeConfig {
   bridgePort: number
   dataDir: string
   relayAdminToken: string | null
+  relayProxyToken: string | null
   enableDefaultTokens: boolean
   nodeEnv: string
 }
@@ -14,6 +15,7 @@ export function loadConfig(): RuntimeConfig {
   const relayDataDir = process.env.RELAY_DATA_DIR
   const dataDir = relayDataDir ? path.resolve(relayDataDir) : path.join(os.homedir(), '.brainbridge')
   const relayAdminToken = process.env.RELAY_ADMIN_TOKEN || null
+  const relayProxyToken = process.env.RELAY_PROXY_TOKEN || null
   const enableDefaultTokens = process.env.RELAY_ENABLE_DEFAULT_TOKENS !== 'false'
   const nodeEnv = process.env.NODE_ENV || 'development'
 
@@ -21,6 +23,7 @@ export function loadConfig(): RuntimeConfig {
     bridgePort,
     dataDir,
     relayAdminToken,
+    relayProxyToken,
     enableDefaultTokens,
     nodeEnv
   }
@@ -49,6 +52,7 @@ export function redactedConfig(config: RuntimeConfig): Record<string, unknown> {
     bridgePort: config.bridgePort,
     dataDir: config.dataDir,
     relayAdminToken: config.relayAdminToken ? '[REDACTED]' : 'not set',
+    relayProxyToken: config.relayProxyToken ? '[REDACTED]' : 'not set',
     enableDefaultTokens: config.enableDefaultTokens,
     nodeEnv: config.nodeEnv
   }
