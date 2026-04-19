@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
+import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 export async function POST(request: NextRequest) {
   const authError = checkActionAuth(request)
@@ -19,66 +20,43 @@ export async function POST(request: NextRequest) {
     // Cap limit at 3 for safety
     const cappedLimit = Math.min(Math.max(limit, 1), 3)
 
-    const localAgentUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
-
     // Search first
-    const searchResponse = await fetch(`${localAgentUrl}/api/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, limit: cappedLimit })
-    })
-
-    if (!searchResponse.ok) {
-      return NextResponse.json(
-        { error: `Search failed: ${searchResponse.status}` },
-        { status: searchResponse.status }
-      )
-    }
-
-    const searchData = await searchResponse.json()
-    const searchResults = searchData.results || []
+    const searchData = await executeAction('/api/search', { query, limit: cappedLimit })
+    const searchResults = (searchData as Record<string, unknown>).results as unknown[] || []
 
     // Read each result (up to capped limit)
     const results = []
     for (const result of searchResults.slice(0, cappedLimit)) {
+      const resultObj = result as Record<string, unknown>
       try {
-        const readResponse = await fetch(`${localAgentUrl}/api/read`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: result.path })
+        const readData = await executeAction('/api/read', { path: resultObj.path })
+        const readDataObj = readData as Record<string, unknown>
+        results.push({
+          path: resultObj.path,
+          title: resultObj.title || '',
+          snippet: resultObj.snippet || '',
+          content: readDataObj.content || '',
+          modifiedAt: resultObj.modifiedAt || ''
         })
-
-        if (readResponse.ok) {
-          const readData = await readResponse.json()
-          results.push({
-            path: result.path,
-            title: result.title || '',
-            snippet: result.snippet || '',
-            content: readData.content || '',
-            modifiedAt: result.modifiedAt || ''
-          })
-        } else {
-          results.push({
-            path: result.path,
-            title: result.title || '',
-            snippet: result.snippet || '',
-            content: `[Error reading file: ${readResponse.status}]`,
-            modifiedAt: result.modifiedAt || ''
-          })
-        }
       } catch (err) {
         results.push({
-          path: result.path,
-          title: result.title || '',
-          snippet: result.snippet || '',
+          path: resultObj.path,
+          title: resultObj.title || '',
+          snippet: resultObj.snippet || '',
           content: `[Error reading file: ${String(err)}]`,
-          modifiedAt: result.modifiedAt || ''
+          modifiedAt: resultObj.modifiedAt || ''
         })
       }
     }
 
     return NextResponse.json({ results })
   } catch (err) {
+    if (err instanceof ActionTransportError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: err.statusCode }
+      )
+    }
     return NextResponse.json(
       { error: `Search-and-read error: ${String(err)}` },
       { status: 500 }

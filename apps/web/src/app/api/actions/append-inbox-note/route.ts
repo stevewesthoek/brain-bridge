@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
+import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 function slugify(text: string): string {
   return text
@@ -31,30 +32,20 @@ export async function POST(request: NextRequest) {
     const filename = `${timestamp}-${slug}.md`
     const path = `mind/01-inbox/${filename}`
 
-    const localAgentUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
-
-    // Forward to local agent create endpoint with fixed inbox path
-    const response = await fetch(`${localAgentUrl}/api/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, content })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      return NextResponse.json(
-        { error: errorData.error || `Create failed: ${response.status}` },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
+    const data = await executeAction('/api/create', { path, content })
+    const dataObj = data as Record<string, unknown>
     return NextResponse.json({
       path,
       status: 'created',
-      ...data
+      ...dataObj
     })
   } catch (err) {
+    if (err instanceof ActionTransportError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: err.statusCode }
+      )
+    }
     return NextResponse.json(
       { error: `Create error: ${String(err)}` },
       { status: 500 }

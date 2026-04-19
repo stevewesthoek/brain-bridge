@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
+import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 export async function POST(request: NextRequest) {
   const authError = checkActionAuth(request)
@@ -16,26 +17,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const localAgentUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
-
-    // Forward to local agent read endpoint
-    const response = await fetch(`${localAgentUrl}/api/read`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      return NextResponse.json(
-        { error: errorData.error || `Read failed: ${response.status}` },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
+    const data = await executeAction('/api/read', { path })
     return NextResponse.json(data)
   } catch (err) {
+    if (err instanceof ActionTransportError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: err.statusCode }
+      )
+    }
     return NextResponse.json(
       { error: `Read error: ${String(err)}` },
       { status: 500 }
