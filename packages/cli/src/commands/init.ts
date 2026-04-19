@@ -19,6 +19,7 @@ export async function initCommand(): Promise<void> {
     deviceId: '',
     deviceToken: '',
     apiBaseUrl: process.env.BRAIN_BRIDGE_API || 'http://localhost:3000',
+    sources: [],
     vaultPath: '',
     localPort: 3052,
     mode: 'read_create_append',
@@ -33,7 +34,7 @@ export async function initCommand(): Promise<void> {
   log(`Config directory: ${configDir}`)
   log('')
   log('Next steps:')
-  log('1. Run: brainbridge login')
-  log('2. Run: brainbridge connect <path-to-vault>')
+  log('1. Run: brainbridge connect <path-to-knowledge-source>')
+  log('2. (Optional) Run: brainbridge connect <another-path> for additional sources')
   log('3. Run: brainbridge serve')
 }

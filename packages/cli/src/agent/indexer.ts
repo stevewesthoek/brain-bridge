@@ -2,63 +2,67 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { globSync } from 'fast-glob'
-import { getVaultPath } from './config'
+import { getEnabledSources } from './config'
 import { getIndexPath } from '../utils/paths'
 import { IndexedDoc } from '@brainbridge/shared'
 
 export class Indexer {
-  private vaultPath: string
   private docs: IndexedDoc[] = []
 
   constructor() {
-    this.vaultPath = getVaultPath()
     this.loadFromDisk()
   }
 
   async buildIndex(): Promise<void> {
     this.docs = []
-    const vaultPath = this.vaultPath
 
+    const sources = getEnabledSources()
     const patterns = ['**/*.md', '**/*.txt']
     const ignorePatterns = ['.git/**', '.obsidian/**', 'node_modules/**', '.*/**']
 
-    const files = globSync(patterns, {
-      cwd: vaultPath,
-      ignore: ignorePatterns,
-      absolute: false
-    })
-
-    for (const filePath of files) {
+    for (const source of sources) {
       try {
-        const fullPath = path.join(vaultPath, filePath)
-        const stat = fs.statSync(fullPath)
-        const content = fs.readFileSync(fullPath, 'utf-8')
+        const sourceFiles = globSync(patterns, {
+          cwd: source.path,
+          ignore: ignorePatterns,
+          absolute: false
+        })
 
-        let title = path.basename(filePath, path.extname(filePath))
-        let tags: string[] = []
+        for (const filePath of sourceFiles) {
+          try {
+            const fullPath = path.join(source.path, filePath)
+            const stat = fs.statSync(fullPath)
+            const content = fs.readFileSync(fullPath, 'utf-8')
 
-        // Extract frontmatter if present
-        if (filePath.endsWith('.md')) {
-          const { data } = matter(content)
-          title = data.title || title
-          tags = data.tags || []
+            let title = path.basename(filePath, path.extname(filePath))
+            let tags: string[] = []
+
+            if (filePath.endsWith('.md')) {
+              const { data } = matter(content)
+              title = data.title || title
+              tags = data.tags || []
+            }
+
+            const doc: IndexedDoc = {
+              sourceId: source.id,
+              id: `${source.id}:${filePath}`,
+              path: filePath,
+              title,
+              extension: path.extname(filePath),
+              modifiedAt: stat.mtime.toISOString(),
+              size: stat.size,
+              tags,
+              contentPreview: content.slice(0, 200),
+              content
+            }
+
+            this.docs.push(doc)
+          } catch (err) {
+            console.warn(`Failed to index ${filePath} from ${source.id}:`, err)
+          }
         }
-
-        const doc: IndexedDoc = {
-          id: filePath,
-          path: filePath,
-          title,
-          extension: path.extname(filePath),
-          modifiedAt: stat.mtime.toISOString(),
-          size: stat.size,
-          tags,
-          contentPreview: content.slice(0, 200),
-          content
-        }
-
-        this.docs.push(doc)
       } catch (err) {
-        console.warn(`Failed to index ${filePath}:`, err)
+        console.warn(`Failed to index source ${source.id}:`, err)
       }
     }
 

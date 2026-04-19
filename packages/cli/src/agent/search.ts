@@ -16,6 +16,7 @@ export class VaultSearcher {
     const results = this.fuse.search(query, { limit })
 
     return results.map(result => ({
+      sourceId: result.item.sourceId,
       path: result.item.path,
       title: result.item.title,
       score: result.score || 0,

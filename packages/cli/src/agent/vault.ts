@@ -1,37 +1,75 @@
 import fs from 'fs'
 import path from 'path'
-import { getVaultPath } from './config'
+import { getVaultPath, getEnabledSources } from './config'
 import { validatePath } from './permissions'
 import { logToFile } from '../utils/logger'
 
-export async function resolveSafePath(relativePath: string): Promise<string> {
-  const vaultPath = getVaultPath()
+export async function resolveSafePath(relativePath: string, sourceId?: string): Promise<string> {
   const normalized = path.normalize(relativePath)
-  const fullPath = path.join(vaultPath, normalized)
-  const resolved = path.resolve(fullPath)
 
-  // Ensure resolved path is within vault
-  if (!resolved.startsWith(path.resolve(vaultPath))) {
-    throw new Error('Access denied. Path outside vault.')
+  // If sourceId provided, resolve against that source specifically
+  if (sourceId) {
+    const sources = getEnabledSources()
+    const source = sources.find(s => s.id === sourceId)
+    if (!source) {
+      throw new Error(`Source not found: ${sourceId}`)
+    }
+
+    const fullPath = path.join(source.path, normalized)
+    const resolved = path.resolve(fullPath)
+
+    if (!resolved.startsWith(path.resolve(source.path))) {
+      throw new Error('Access denied. Path outside source.')
+    }
+
+    return resolved
   }
 
-  return resolved
+  // Fallback: try each enabled source until file is found
+  const sources = getEnabledSources()
+  for (const source of sources) {
+    const fullPath = path.join(source.path, normalized)
+    const resolved = path.resolve(fullPath)
+
+    if (!resolved.startsWith(path.resolve(source.path))) {
+      continue
+    }
+
+    if (fs.existsSync(resolved)) {
+      return resolved
+    }
+  }
+
+  // No file found in any source; return first source for backward compatibility
+  if (sources.length === 0) {
+    const vaultPath = getVaultPath()
+    const fullPath = path.join(vaultPath, normalized)
+    const resolved = path.resolve(fullPath)
+    if (!resolved.startsWith(path.resolve(vaultPath))) {
+      throw new Error('Access denied. Path outside vault.')
+    }
+    return resolved
+  }
+
+  // If still not found, throw
+  throw new Error(`File not found in any enabled knowledge source: ${relativePath}`)
 }
 
-export async function readFile(relativePath: string): Promise<{ path: string; content: string }> {
+export async function readFile(relativePath: string, sourceId?: string): Promise<{ path: string; content: string }> {
   const validation = validatePath(relativePath)
   if (!validation.valid) {
     throw new Error(validation.error)
   }
 
   try {
-    const fullPath = await resolveSafePath(relativePath)
+    const fullPath = await resolveSafePath(relativePath, sourceId)
     const content = fs.readFileSync(fullPath, 'utf-8')
 
     logToFile({
       timestamp: new Date().toISOString(),
       tool: 'read_file',
       path: relativePath,
+      sourceId,
       status: 'success'
     })
 
@@ -41,6 +79,7 @@ export async function readFile(relativePath: string): Promise<{ path: string; co
       timestamp: new Date().toISOString(),
       tool: 'read_file',
       path: relativePath,
+      sourceId,
       status: 'error',
       error: String(err)
     })

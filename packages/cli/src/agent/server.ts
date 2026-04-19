@@ -5,7 +5,7 @@ import { VaultSearcher } from './search'
 import { readFile, createFile, appendFile, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces } from './config'
+import { loadConfig, getWorkspaces, getEnabledSources } from './config'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import type { Workspace } from '@brainbridge/shared'
 
@@ -50,10 +50,10 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
     return { results }
   })
 
-  // Read endpoint (workspace-aware with guardrails)
-  fastify.post<{ Body: { path: string; workspace?: string } }>('/api/read', async (request, reply) => {
+  // Read endpoint (multi-source aware with guardrails)
+  fastify.post<{ Body: { path: string; workspace?: string; sourceId?: string } }>('/api/read', async (request, reply) => {
     try {
-      const { path, workspace } = request.body
+      const { path, workspace, sourceId } = request.body
 
       if (workspace) {
         // Workspace-aware read with guardrails
@@ -101,8 +101,8 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
 
         return { path, content }
       } else {
-        // Default: read from vault
-        const result = await readFile(path)
+        // Multi-source read: use sourceId hint if provided
+        const result = await readFile(path, sourceId)
         return result
       }
     } catch (err) {
@@ -169,6 +169,16 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       const { path } = request.query
       const result = await listFolder(path)
       return { items: result }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  // Knowledge sources listing endpoint (multi-source aware)
+  fastify.get<{ Params: Record<string, unknown> }>('/api/sources', async (request, reply) => {
+    try {
+      const sources = getEnabledSources()
+      return { sources }
     } catch (err) {
       return reply.code(400).send({ error: String(err) })
     }

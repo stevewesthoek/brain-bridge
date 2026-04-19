@@ -1,4 +1,5 @@
 export type SearchResult = {
+    sourceId: string;
     path: string;
     title: string;
     score: number;
@@ -18,6 +19,7 @@ export type FileAppended = {
     appended: boolean;
 };
 export type IndexedDoc = {
+    sourceId: string;
     id: string;
     path: string;
     title: string;
@@ -27,6 +29,12 @@ export type IndexedDoc = {
     tags: string[];
     contentPreview: string;
     content: string;
+};
+export type KnowledgeSource = {
+    id: string;
+    label: string;
+    path: string;
+    enabled: boolean;
 };
 export type ToolCallMessage = {
     id: string;
