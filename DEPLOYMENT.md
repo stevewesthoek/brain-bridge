@@ -467,6 +467,23 @@ Expected response (if agent is running):
 | `"Search error: TypeError: fetch failed"` | Agent not running on 3052 | Ensure agent is running with `BRIDGE_URL=ws://localhost:3053` |
 | `"Search failed: 500"` | Agent error | Check agent logs for vault path or permission errors |
 
+### Backend Modes (Phase 5+)
+
+The web app supports configurable backend modes for action execution:
+
+**direct-agent (default):**
+- Web app (3054) forwards requests directly to local agent (3052)
+- Set: `BRAIN_BRIDGE_BACKEND_MODE=direct-agent` or leave unset
+- Status: Fully supported and tested
+
+**relay-agent (reserved):**
+- Web app would route through relay (3053) to agent
+- Set: `BRAIN_BRIDGE_BACKEND_MODE=relay-agent`
+- Status: Reserved for Phase 5 implementation; currently throws error if attempted
+- When needed: Enables multi-device deployments and horizontal scaling
+
+To use relay-backed execution when available in Phase 5, set the env var and ensure relay is running on 3053.
+
 ## Next Phase
 
 Deployment 2E will add:

@@ -1,3 +1,5 @@
+import { getBackendUrl } from './config'
+
 export class ActionTransportError extends Error {
   constructor(message: string, public statusCode: number) {
     super(message)
@@ -9,8 +11,8 @@ export async function executeAction(
   endpoint: string,
   body: Record<string, unknown>
 ): Promise<unknown> {
-  const localAgentUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
-  const url = `${localAgentUrl}${endpoint}`
+  const backendUrl = getBackendUrl()
+  const url = `${backendUrl}${endpoint}`
 
   try {
     const response = await fetch(url, {
