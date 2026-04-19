@@ -357,6 +357,116 @@ rm $RELAY_DATA_DIR/relay-requests.json
 5. **No database persistence** — State lost on relay restart (in-memory only); persistence TBD
 6. **Development tokens optional** — Can be disabled via `RELAY_ENABLE_DEFAULT_TOKENS=false`
 
+## Web App (Next.js on port 3054)
+
+The web app provides ChatGPT Custom Actions endpoints and a dashboard.
+
+### Environment Setup
+
+Create a `.env.local` file in the `apps/web/` directory with:
+
+```bash
+# ChatGPT Custom Actions authentication
+BRAIN_BRIDGE_ACTION_TOKEN="<generate-with-openssl-rand-hex-32>"
+
+# Local agent endpoint (defaults to localhost:3052 if not set)
+LOCAL_AGENT_URL="http://127.0.0.1:3052"
+
+# Web app port (fixed for stable tunnel)
+# NEXT_PUBLIC_API_URL="http://localhost:3054"
+```
+
+Generate the action token:
+```bash
+openssl rand -hex 32
+```
+
+### ChatGPT Actions Contract
+
+**Public endpoints** (require `Authorization: Bearer <BRAIN_BRIDGE_ACTION_TOKEN>`):
+
+- `POST /api/actions/search` — Search local vault
+- `POST /api/actions/read` — Read file from vault
+- `POST /api/actions/search-and-read` — Combined search + read
+- `POST /api/actions/append-inbox-note` — Create personal inbox note
+
+**Public schema:**
+- `GET /api/openapi` — Returns OpenAPI 3.1.0 schema for ChatGPT import
+
+### Runtime Architecture
+
+ChatGPT Actions flow:
+```
+ChatGPT Custom GPT
+    ↓ (HTTPS with Bearer token)
+    ↓
+Web App (3054)
+    ↓ (HTTP POST to local agent)
+    ↓
+Local Agent (3052)
+    ↓ (responds with search results / file content)
+    ↓
+Web App (3054)
+    ↓ (returns to ChatGPT)
+    ↓
+ChatGPT Custom GPT
+```
+
+**Note:** Web app forwards directly to local agent (3052) via HTTP. Relay (3053) is NOT in the ChatGPT request path. Relay is only for agent coordination and WebSocket connections.
+
+### Local Testing
+
+Start all three surfaces:
+
+```bash
+# Terminal 1: Start relay (requires docker/docker-compose)
+docker compose up -d
+
+# Terminal 2: Start agent
+cd packages/cli
+BRIDGE_URL=ws://localhost:3053 \
+DEVICE_TOKEN=local-test-token \
+npx tsx src/index.ts serve
+
+# Terminal 3: Start web app with token
+cd apps/web
+export BRAIN_BRIDGE_ACTION_TOKEN="test-action-token-from-openssl"
+export LOCAL_AGENT_URL="http://127.0.0.1:3052"
+npm run start
+```
+
+Test endpoint:
+```bash
+curl -X POST http://localhost:3054/api/actions/search \
+  -H "Authorization: Bearer test-action-token-from-openssl" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"brain","limit":5}'
+```
+
+Expected response (if agent is running):
+```json
+{
+  "results": [
+    {
+      "path": "path/to/file.md",
+      "title": "File Title",
+      "snippet": "...",
+      "score": 0.95,
+      "modifiedAt": "2026-04-19T..."
+    }
+  ]
+}
+```
+
+### Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `"Server configuration error: BRAIN_BRIDGE_ACTION_TOKEN not set"` | Token not in env | Set `BRAIN_BRIDGE_ACTION_TOKEN` before starting web app |
+| `"Unauthorized"` | Wrong or missing Bearer token | Verify `Authorization: Bearer <token>` header matches env var |
+| `"Search error: TypeError: fetch failed"` | Agent not running on 3052 | Ensure agent is running with `BRIDGE_URL=ws://localhost:3053` |
+| `"Search failed: 500"` | Agent error | Check agent logs for vault path or permission errors |
+
 ## Next Phase
 
 Deployment 2E will add:
