@@ -42,34 +42,132 @@ export function saveConfig(config: AgentConfig): void {
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
 }
 
-export function getSources(): KnowledgeSource[] {
-  const config = loadConfig()
-
-  // New multi-source model
-  if (config?.sources && config.sources.length > 0) {
-    return config.sources.map(s => ({
-      ...s,
-      path: expandTilde(s.path)
-    }))
+function ensureSources(config: AgentConfig): KnowledgeSource[] {
+  if (config.sources !== undefined) {
+    return config.sources
   }
 
-  // Backward compatibility: convert old single vaultPath to multi-source
-  if (config?.vaultPath) {
+  if (config.vaultPath) {
     return [
       {
         id: 'vault',
         label: 'Vault',
-        path: expandTilde(config.vaultPath),
+        path: config.vaultPath,
         enabled: true
       }
     ]
   }
 
-  throw new Error('No knowledge sources configured. Run: brainbridge connect <folder>')
+  return []
+}
+
+function persistSources(config: AgentConfig, sources: KnowledgeSource[]): void {
+  config.sources = sources
+  saveConfig(config)
+}
+
+export function generateSourceIdFromPath(sourcePath: string): string {
+  return path.basename(sourcePath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
+}
+
+export function getSources(): KnowledgeSource[] {
+  const config = loadConfig()
+  const sources = ensureSources(config ?? ({} as AgentConfig))
+  if (sources.length === 0 && !(config && config.sources !== undefined)) {
+    throw new Error('No knowledge sources configured. Run: brainbridge connect <folder>')
+  }
+
+  return sources.map(s => ({
+    ...s,
+    path: expandTilde(s.path)
+  }))
 }
 
 export function getEnabledSources(): KnowledgeSource[] {
   return getSources().filter(s => s.enabled)
+}
+
+export function addSource(pathInput: string, label?: string, id?: string): KnowledgeSource[] {
+  const config = loadConfig()
+  if (!config) {
+    throw new Error('Please run: brainbridge init')
+  }
+
+  if (!pathInput) {
+    throw new Error('Knowledge source path required')
+  }
+
+  const expanded = expandTilde(pathInput)
+  if (!fs.existsSync(expanded)) {
+    throw new Error(`Knowledge source folder not found: ${expanded}`)
+  }
+  if (!fs.statSync(expanded).isDirectory()) {
+    throw new Error(`Not a directory: ${expanded}`)
+  }
+  fs.accessSync(expanded, fs.constants.R_OK)
+
+  const sources = ensureSources(config)
+  const sourceId = id || generateSourceIdFromPath(expanded)
+  if (sources.some(source => source.id === sourceId)) {
+    throw new Error(`Knowledge source with ID "${sourceId}" already exists`)
+  }
+
+  sources.push({
+    id: sourceId,
+    label: label || path.basename(expanded),
+    path: expanded,
+    enabled: true
+  })
+
+  persistSources(config, sources)
+  if (!config.vaultPath) {
+    config.vaultPath = expanded
+  }
+  saveConfig(config)
+
+  return getSources()
+}
+
+export function removeSource(sourceId: string): KnowledgeSource[] {
+  const config = loadConfig()
+  if (!config) {
+    throw new Error('Please run: brainbridge init')
+  }
+
+  const sources = ensureSources(config)
+  const nextSources = sources.filter(source => source.id !== sourceId)
+  if (nextSources.length === sources.length) {
+    throw new Error(`Knowledge source not found: ${sourceId}`)
+  }
+
+  persistSources(config, nextSources)
+  return getSources()
+}
+
+export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeSource[] {
+  const config = loadConfig()
+  if (!config) {
+    throw new Error('Please run: brainbridge init')
+  }
+
+  const sources = ensureSources(config)
+  let changed = false
+  const nextSources = sources.map(source => {
+    if (source.id !== sourceId) {
+      return source
+    }
+
+    changed = source.enabled !== enabled
+    return { ...source, enabled }
+  })
+
+  if (!nextSources.some(source => source.id === sourceId)) {
+    throw new Error(`Knowledge source not found: ${sourceId}`)
+  }
+
+  persistSources(config, nextSources)
+
+  return getSources()
 }
 
 export function getVaultPath(): string {

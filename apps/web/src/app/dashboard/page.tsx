@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { FormEvent } from 'react'
 import type { KnowledgeSource } from '@brainbridge/shared'
 
 export default function Dashboard() {
@@ -8,28 +9,82 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [agentConnected, setAgentConnected] = useState(false)
+  const [sourcePath, setSourcePath] = useState('')
+  const [sourceLabel, setSourceLabel] = useState('')
+  const [sourceId, setSourceId] = useState('')
+  const [mutationLoading, setMutationLoading] = useState(false)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+
+  const fetchSources = async () => {
+    try {
+      setError(null)
+      const response = await fetch('/api/agent/sources')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch sources: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setSources(data.sources || [])
+      setAgentConnected(true)
+    } catch (err) {
+      setError(String(err))
+      setAgentConnected(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchSources = async () => {
-      try {
-        const response = await fetch('/api/agent/sources')
-        if (!response.ok) {
-          throw new Error(`Failed to fetch sources: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setSources(data.sources || [])
-        setAgentConnected(true)
-      } catch (err) {
-        setError(String(err))
-        setAgentConnected(false)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchSources()
   }, [])
+
+  const mutateSources = async (url: string, payload: Record<string, unknown>) => {
+    setMutationLoading(true)
+    setMutationError(null)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        const details = data?.details ? ` ${data.details}` : ''
+        throw new Error(`${data?.error || `Request failed: ${response.status}`}${details}`.trim())
+      }
+
+      await fetchSources()
+      return true
+    } catch (err) {
+      setMutationError(String(err))
+      return false
+    } finally {
+      setMutationLoading(false)
+    }
+  }
+
+  const handleAddSource = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!sourcePath.trim()) {
+      setMutationError('Knowledge source path is required')
+      return
+    }
+
+    const success = await mutateSources('/api/agent/sources/add', {
+      path: sourcePath.trim(),
+      label: sourceLabel.trim() || undefined,
+      id: sourceId.trim() || undefined
+    })
+
+    if (success) {
+      setSourcePath('')
+      setSourceLabel('')
+      setSourceId('')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,7 +97,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${agentConnected ? 'bg-green-500' : 'bg-red-500'}`} />
             <span className="text-gray-700">
-              {agentConnected ? 'Agent connected on port 3052' : 'Agent not connected'}
+              {agentConnected ? 'Agent connected' : 'Agent not connected'}
             </span>
           </div>
         </div>
@@ -53,6 +108,52 @@ export default function Dashboard() {
           <p className="text-gray-600 text-sm mb-6">
             Configured knowledge sources that are searched and read together through ChatGPT.
           </p>
+
+          <form onSubmit={handleAddSource} className="border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">Add Knowledge Source</h3>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">Path *</span>
+                  <input
+                    value={sourcePath}
+                    onChange={e => setSourcePath(e.target.value)}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="~/notes"
+                    disabled={mutationLoading}
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">Label</span>
+                  <input
+                    value={sourceLabel}
+                    onChange={e => setSourceLabel(e.target.value)}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="My Notes"
+                    disabled={mutationLoading}
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">ID</span>
+                  <input
+                    value={sourceId}
+                    onChange={e => setSourceId(e.target.value)}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="my-notes"
+                    disabled={mutationLoading}
+                  />
+                </label>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={mutationLoading}
+              className="rounded bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {mutationLoading ? 'Working...' : 'Add source'}
+            </button>
+            {mutationError ? <p className="text-sm text-red-700">{mutationError}</p> : null}
+          </form>
 
           {loading ? (
             <div className="text-gray-500">Loading sources...</div>
@@ -68,14 +169,38 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {sources.map(source => (
-                <div key={source.id} className="border border-gray-200 rounded p-4 flex items-start justify-between">
+                <div key={source.id} className="border border-gray-200 rounded p-4 flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900">{source.label}</div>
                     <div className="text-sm text-gray-600 font-mono">{source.path}</div>
                     <div className="text-xs text-gray-500 mt-1">ID: {source.id}</div>
                   </div>
-                  <div className={`px-3 py-1 rounded text-xs font-semibold ${source.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {source.enabled ? 'Enabled' : 'Disabled'}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className={`px-3 py-1 rounded text-xs font-semibold ${source.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      {source.enabled ? 'Enabled' : 'Disabled'}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={mutationLoading}
+                        onClick={() => mutateSources('/api/agent/sources/toggle', { sourceId: source.id, enabled: !source.enabled })}
+                        className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:opacity-50"
+                      >
+                        {source.enabled ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={mutationLoading}
+                        onClick={() => {
+                          if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
+                            mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+                          }
+                        }}
+                        className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

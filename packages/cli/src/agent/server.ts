@@ -5,7 +5,7 @@ import { VaultSearcher } from './search'
 import { readFile, createFile, appendFile, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces, getEnabledSources } from './config'
+import { loadConfig, getWorkspaces, getSources, addSource, removeSource, setSourceEnabled } from './config'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import type { Workspace } from '@brainbridge/shared'
 
@@ -23,6 +23,11 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
 
   let searcher = new VaultSearcher(indexer.getDocs())
   const config = loadConfig()
+
+  const rebuildIndexAndSearcher = async (): Promise<void> => {
+    await indexer.buildIndex()
+    searcher = new VaultSearcher(indexer.getDocs())
+  }
 
   // Health endpoint
   fastify.get('/health', async (request, reply) => {
@@ -185,7 +190,61 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
   // Knowledge sources listing endpoint (multi-source aware)
   fastify.get<{ Params: Record<string, unknown> }>('/api/sources', async (request, reply) => {
     try {
-      const sources = getEnabledSources()
+      const sources = getSources()
+      return { sources }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.post<{ Body: { path?: string; label?: string; id?: string } }>('/api/sources/add', async (request, reply) => {
+    try {
+      const { path, label, id } = request.body || {}
+      if (typeof path !== 'string' || !path.trim()) {
+        return reply.code(400).send({ error: 'Missing or invalid path' })
+      }
+      if (label !== undefined && typeof label !== 'string') {
+        return reply.code(400).send({ error: 'Invalid label' })
+      }
+      if (id !== undefined && typeof id !== 'string') {
+        return reply.code(400).send({ error: 'Invalid id' })
+      }
+
+      const sources = addSource(path, label, id)
+      await rebuildIndexAndSearcher()
+      return { sources }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.post<{ Body: { sourceId?: string } }>('/api/sources/remove', async (request, reply) => {
+    try {
+      const { sourceId } = request.body || {}
+      if (typeof sourceId !== 'string' || !sourceId.trim()) {
+        return reply.code(400).send({ error: 'Missing or invalid sourceId' })
+      }
+
+      const sources = removeSource(sourceId)
+      await rebuildIndexAndSearcher()
+      return { sources }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.post<{ Body: { sourceId?: string; enabled?: boolean } }>('/api/sources/toggle', async (request, reply) => {
+    try {
+      const { sourceId, enabled } = request.body || {}
+      if (typeof sourceId !== 'string' || !sourceId.trim()) {
+        return reply.code(400).send({ error: 'Missing or invalid sourceId' })
+      }
+      if (typeof enabled !== 'boolean') {
+        return reply.code(400).send({ error: 'Missing or invalid enabled value' })
+      }
+
+      const sources = setSourceEnabled(sourceId, enabled)
+      await rebuildIndexAndSearcher()
       return { sources }
     } catch (err) {
       return reply.code(400).send({ error: String(err) })
