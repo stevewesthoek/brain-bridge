@@ -23,7 +23,7 @@ This is a fully-implemented MVP ready for testing and refinement. The architectu
 | `agent/config.ts` | Manage ~/.brainbridge/config.json |
 | `agent/indexer.ts` | Scan and index Markdown files, persist to `~/.brainbridge/index.json` |
 | `agent/search.ts` | Fuse.js-based full-text search with relevance scoring |
-| `agent/server.ts` | Fastify HTTP server for local testing (port 3001) |
+| `agent/server.ts` | Fastify HTTP server for local testing (port 3052) |
 | `agent/bridge-client.ts` | WebSocket client connecting to SaaS bridge |
 | `agent/export.ts` | Generate Claude Code-ready implementation briefs |
 | `commands/*` | CLI command implementations |
@@ -43,21 +43,26 @@ This is a fully-implemented MVP ready for testing and refinement. The architectu
 - SQLite (dev) / PostgreSQL-compatible (future prod)
 - Tailwind CSS
 
-**API Routes:**
+**API Routes (Web App - port 3054):**
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/auth/register` | Create user account + API key |
-| `POST /api/devices/register` | Register local device, get device token |
-| `POST /api/devices/heartbeat` | Device heartbeat (marks online) |
-| `GET /api/bridge/ws` | WebSocket bridge for local agent ↔ SaaS |
-| `POST /api/tools/status` | Check if device online |
-| `POST /api/tools/search-brain` | Search vault (relays to local agent) |
-| `POST /api/tools/read-file` | Read file (relays to local agent) |
-| `POST /api/tools/create-note` | Create note (relays to local agent) |
-| `POST /api/tools/append-note` | Append to note (relays to local agent) |
-| `POST /api/tools/export-claude-plan` | Export implementation brief |
-| `GET /api/openapi` | OpenAPI schema for Custom GPT Action |
+| `POST /api/actions/search` | ChatGPT Custom Action: Search vault (Bearer token required) |
+| `POST /api/actions/read` | ChatGPT Custom Action: Read file (Bearer token required) |
+| `POST /api/actions/search-and-read` | ChatGPT Custom Action: Combined search + read |
+| `POST /api/actions/append-inbox-note` | ChatGPT Custom Action: Create personal note (writes to mind/01-inbox/) |
+| `GET /api/openapi` | OpenAPI 3.1.0 schema for ChatGPT import |
+| `GET /api/health` | Health check (200 if running) |
+| `GET /api/relay/health` | Relay server health check (port 3053) |
+
+**Agent Routes (Local - port 3052):**
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/search` | Full-text search (called by web app actions) |
+| `POST /api/read` | Read file content (called by web app actions) |
+| `POST /api/create` | Create note (called by web app actions) |
+| `GET /health` | Agent health check |
 
 **Pages:**
 - `/` — Landing page with features overview
@@ -86,21 +91,23 @@ ToolCallLog (id, userId, deviceId, toolName, status, inputJson, error)
    brainbridge connect ~/Obsidian/MyVault
    brainbridge serve
    ```
-   This starts HTTP server on http://127.0.0.1:3001
+   This starts HTTP server on http://127.0.0.1:3052
 
 2. **Terminal 2** — Test local endpoints:
    ```bash
-   curl -X POST http://127.0.0.1:3001/api/search \
+   curl -X POST http://127.0.0.1:3052/api/search \
      -H "Content-Type: application/json" \
      -d '{"query": "business goals", "limit": 5}'
    ```
 
-### Full ChatGPT Bridge
+### ChatGPT Actions (Phase 3+)
 
-1. **Deploy SaaS** to production (Vercel, Railway, etc.)
-2. **Create Custom GPT** with action schema from `/api/openapi`
-3. **Local agent connects** to SaaS via WebSocket with device token
-4. **ChatGPT calls** SaaS endpoints → SaaS relays to local agent → local agent responds
+1. **Start local agent** on port 3052: `brainbridge serve`
+2. **Start relay** on port 3053: `docker compose up -d` (optional for device coordination)
+3. **Start web app** on port 3054: `cd apps/web && npm start` (requires BRAIN_BRIDGE_ACTION_TOKEN env var)
+4. **Configure ChatGPT** Custom GPT with action schema from web app's `/api/openapi` endpoint
+5. **ChatGPT calls** web app (/api/actions/*) → web app forwards to local agent (/api/search, /api/read, /api/create) → agent responds
+6. **Relay is NOT in the ChatGPT request path** (relay is WebSocket-only for device coordination)
 
 ## File Paths
 
@@ -134,17 +141,28 @@ brainbridge/
 └── README.md
 ```
 
-## Next Steps to Ship
+## Phase Status
+
+**✅ Phase 2 Complete:** Relay server containerized and deployed (port 3053)  
+**✅ Phase 3 Complete:** ChatGPT Actions working (web app on 3054 → agent on 3052)  
+**✅ Phase 4 Complete:** Action transport abstraction layer (centralized backend routing)  
+
+**Next (Phase 5):** Relay-backed execution (optional; currently web app routes directly to local agent)
+
+## Running the Full Stack
 
 1. **Install dependencies:** `pnpm install`
 2. **Build packages:** `pnpm build`
-3. **Set up database:** `cd apps/web && npx prisma migrate dev`
-4. **Run locally:** `pnpm dev`
-5. **Test full flow:**
-   - Create user on dashboard
-   - Copy API key
-   - Run CLI with vault connection
-   - Call API endpoints from cURL or ChatGPT
+3. **Terminal 1 — Start relay (optional):** `docker compose up -d`
+4. **Terminal 2 — Start agent:** `cd packages/cli && BRIDGE_URL=ws://localhost:3053 DEVICE_TOKEN=test npx tsx src/index.ts serve`
+5. **Terminal 3 — Start web app:** `cd apps/web && BRAIN_BRIDGE_ACTION_TOKEN=test npm start`
+6. **Test ChatGPT Actions:**
+   ```bash
+   curl -X POST http://localhost:3054/api/actions/search \
+     -H "Authorization: Bearer test" \
+     -H "Content-Type: application/json" \
+     -d '{"query":"brain","limit":2}'
+   ```
 
 ## Key Implementation Details
 

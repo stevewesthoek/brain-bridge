@@ -18,25 +18,19 @@ pnpm add -g brainbridge
 brainbridge init
 ```
 
-### 3. Login (with API key from https://brain-bridge.com/dashboard)
-
-```bash
-brainbridge login YOUR_API_KEY
-```
-
-### 4. Connect Your Vault
+### 3. Connect Your Vault
 
 ```bash
 brainbridge connect ~/Obsidian/MyVault
 ```
 
-### 5. Start the Local Agent
+### 4. Start the Local Agent
 
 ```bash
 brainbridge serve
 ```
 
-Your local agent is now running on `http://127.0.0.1:3001`
+Your local agent is now running on `http://127.0.0.1:3052`
 
 ## Demo Flow
 
@@ -57,24 +51,31 @@ Your local agent is now running on `http://127.0.0.1:3001`
 
 ## Architecture
 
+**Current Setup (Local + ChatGPT):**
+
 ```
-ChatGPT (Custom GPT Action)
-    ↓
-SaaS Bridge (Next.js)
-    ↓
-Local Agent (Node.js CLI + WebSocket)
+ChatGPT Custom GPT (with Bearer token)
+    ↓ (HTTPS)
+Web App (Next.js on port 3054)
+    ↓ (HTTP)
+Local Agent (Node.js CLI on port 3052)
     ↓
 Your Vault (Markdown files)
+
+Relay Server (WebSocket, port 3053)
+    ↓
+Local Agent coordination & device registry
 ```
+
+All files stay local. The web app and relay are optional for ChatGPT integration; the local agent works standalone.
 
 ## Commands
 
 ```bash
 brainbridge init           # Initialize Brain Bridge
-brainbridge login <key>    # Login with API key
 brainbridge connect <path> # Connect a vault folder
 brainbridge index          # Rebuild search index
-brainbridge serve          # Start local agent
+brainbridge serve          # Start local agent on port 3052
 brainbridge status         # Show connection status
 ```
 

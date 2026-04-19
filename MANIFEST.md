@@ -1,23 +1,26 @@
 # Brain Bridge MVP — Project Manifest
 
-**Version:** 0.1.0  
-**Status:** ✅ **MVP COMPLETE & TESTED**  
-**Last Updated:** 2026-04-16
+**Version:** 0.4.0  
+**Status:** ✅ **Phase 4 Complete: Transport Abstraction Ready**  
+**Last Updated:** 2026-04-19
 
 ---
 
 ## Overview
 
-Brain Bridge is a **local-first MVP** that connects your Markdown vault to ChatGPT.
+Brain Bridge is a **local-first system** that connects your Markdown vault to ChatGPT via a web app and relay infrastructure.
 
-- **Search** local notes
-- **Read** files with context
-- **Create** plans and save them back
-- **Export** Claude Code-ready briefs
-- **Keep everything local** (no cloud storage)
+- **Search** local notes from ChatGPT
+- **Read** files with context from ChatGPT
+- **Create** personal inbox notes from ChatGPT
+- **Keep everything local** (all files stay on your machine)
+- **Transport abstraction** (enables relay-backed or SaaS-hosted backends in future)
 
-**Current Scope:** Local HTTP server only (no SaaS bridge yet)  
-**Next Phase:** WebSocket relay to SaaS + ChatGPT integration
+**Current Status:**
+- ✅ Phase 2: Relay server (WebSocket, port 3053) containerized and deployed
+- ✅ Phase 3: ChatGPT Actions working (web app 3054 → agent 3052)
+- ✅ Phase 4: Action transport abstraction layer for future backend swaps
+- ⏳ Phase 5: Relay-backed execution (optional; not required for current local setup)
 
 ---
 
@@ -97,8 +100,18 @@ node dist/index.js serve
 ```
 
 ### Test Endpoints (Terminal 2)
+
+**Local agent (port 3052):**
 ```bash
-curl -X POST http://127.0.0.1:3001/api/search \
+curl -X POST http://127.0.0.1:3052/api/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "your search", "limit": 5}'
+```
+
+**ChatGPT Actions via web app (port 3054, requires Bearer token):**
+```bash
+curl -X POST http://127.0.0.1:3054/api/actions/search \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"query": "your search", "limit": 5}'
 ```
@@ -131,14 +144,31 @@ brainbridge serve                    # Start HTTP server
 brainbridge status                   # Show state
 ```
 
-### ✅ HTTP Endpoints (localhost:3001)
+### ✅ HTTP Endpoints
+
+**Local agent (port 3052):**
 ```
 POST /api/search          # Search vault
 POST /api/read            # Read file content
 POST /api/create          # Create note
 POST /api/append          # Append to note
-POST /api/export-plan     # Export Claude plan
-GET /api/list             # List folder
+GET /health               # Health check
+```
+
+**Web app / ChatGPT Actions (port 3054, Bearer token required):**
+```
+POST /api/actions/search          # Search vault (ChatGPT)
+POST /api/actions/read            # Read file (ChatGPT)
+POST /api/actions/search-and-read # Combined search + read (ChatGPT)
+POST /api/actions/append-inbox-note # Create personal note (ChatGPT)
+GET /api/openapi                  # OpenAPI schema for ChatGPT
+GET /health                       # Web app health check
+```
+
+**Relay (port 3053):**
+```
+GET /health               # Relay health check
+GET /ready                # Readiness check
 ```
 
 ---
@@ -156,16 +186,21 @@ GET /api/list             # List folder
 
 ---
 
-## What's Not Included (Phase 2+)
+## What's Completed
 
-- ❌ WebSocket bridge server
-- ❌ SaaS authentication flow
-- ❌ ChatGPT integration
+- ✅ Phase 2: Relay server (WebSocket, containerized)
+- ✅ Phase 3: ChatGPT Custom Actions (search, read, append)
+- ✅ Phase 4: Action transport abstraction layer
+
+## What's Not Included (Phase 5+)
+
+- ❌ Relay-backed execution (optional; currently web → agent direct)
 - ❌ Multi-vault support
 - ❌ Team collaboration
 - ❌ PDF/DOCX support
 - ❌ Semantic search (embeddings)
 - ❌ GitHub export
+- ❌ SaaS hosted version
 
 ---
 
@@ -397,25 +432,31 @@ None currently. All identified issues in MVP have been fixed.
 
 ---
 
-## Deployment Path (Future)
+## Deployment Path (Completed & Future)
 
-### Phase 2: SaaS Bridge
-1. Create `packages/bridge/` WebSocket relay
-2. Deploy Next.js to Vercel
-3. Deploy bridge to Railway/Heroku
-4. Set up device registration
+### ✅ Phase 2: Relay Server
+1. Created `packages/bridge/` WebSocket relay with session management
+2. Containerized with Dockerfile (non-root, multi-stage build)
+3. Deployed via docker-compose with persistence
+4. Device registration and token management
 
-### Phase 3: ChatGPT Integration
-1. Create Custom GPT
-2. Add OpenAPI action
-3. Point to `/api/openapi` endpoint
-4. Test with ChatGPT
+### ✅ Phase 3: ChatGPT Integration
+1. Created ChatGPT Custom Actions (`/api/actions/*`)
+2. Web app on port 3054 with Bearer token authentication
+3. OpenAPI 3.1.0 schema at `/api/openapi` endpoint
+4. Direct web → agent routing (relay not in HTTP path)
 
-### Production
-1. Add user authentication
-2. Implement rate limiting
-3. Set up monitoring
-4. Deploy to production infrastructure
+### ✅ Phase 4: Transport Abstraction
+1. Created action transport layer (`apps/web/src/lib/actions/transport.ts`)
+2. Centralized backend routing for future swaps
+3. All action routes use unified `executeAction()` interface
+
+### ⏳ Phase 5+: Future Enhancements
+1. Optional relay-backed execution (if needed)
+2. Multi-vault support
+3. Team accounts and permissions
+4. Semantic search with embeddings
+5. SaaS hosting layer (when desired)
 
 ---
 
@@ -446,5 +487,5 @@ MIT
 
 ---
 
-**Generated:** 2026-04-16  
-**Status:** ✅ PRODUCTION-READY FOR LOCAL USE
+**Last Updated:** 2026-04-19  
+**Status:** ✅ Phase 4 Complete — Transport Abstraction Ready for Phase 5
