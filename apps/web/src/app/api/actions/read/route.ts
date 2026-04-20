@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { path } = body
+    const { path, sourceId } = body
 
     if (!path) {
       return NextResponse.json(
@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const data = await executeAction('/api/read', { path })
+    const payload: Record<string, unknown> = { path }
+    if (sourceId) {
+      payload.sourceId = sourceId
+    }
+
+    const data = await executeAction('/api/read', payload)
     return NextResponse.json(data)
   } catch (err) {
     if (err instanceof ActionTransportError) {

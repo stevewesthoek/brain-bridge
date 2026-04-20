@@ -30,14 +30,17 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const slug = slugify(title)
     const filename = `${timestamp}-${slug}.md`
-    const path = `mind/01-inbox/${filename}`
-
-    const data = await executeAction('/api/create', { path, content })
-    const dataObj = data as Record<string, unknown>
+    const inboxSourceId = 'mind'
+    const notePath = `${inboxSourceId}/01-inbox/${filename}`
+    const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: brainbridge\ntype: note\n---\n\n`
+    await executeAction('/api/create-inbox-note', {
+      path: `01-inbox/${filename}`,
+      sourceId: inboxSourceId,
+      content: frontmatter + content
+    })
     return NextResponse.json({
-      path,
-      status: 'created',
-      ...dataObj
+      path: notePath,
+      status: 'created'
     })
   } catch (err) {
     if (err instanceof ActionTransportError) {

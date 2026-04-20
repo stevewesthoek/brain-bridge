@@ -29,9 +29,15 @@ export async function POST(request: NextRequest) {
     for (const result of searchResults.slice(0, cappedLimit)) {
       const resultObj = result as Record<string, unknown>
       try {
-        const readData = await executeAction('/api/read', { path: resultObj.path })
+        const readPayload: Record<string, unknown> = { path: resultObj.path }
+        if (resultObj.sourceId) {
+          readPayload.sourceId = resultObj.sourceId
+        }
+
+        const readData = await executeAction('/api/read', readPayload)
         const readDataObj = readData as Record<string, unknown>
         results.push({
+          sourceId: resultObj.sourceId,
           path: resultObj.path,
           title: resultObj.title || '',
           snippet: resultObj.snippet || '',
@@ -39,11 +45,14 @@ export async function POST(request: NextRequest) {
           modifiedAt: resultObj.modifiedAt || ''
         })
       } catch (err) {
+        // Preserve the published response shape for mixed-result reads:
+        // failed items stay in-band so the overall action still returns usable results.
         results.push({
+          sourceId: resultObj.sourceId,
           path: resultObj.path,
           title: resultObj.title || '',
           snippet: resultObj.snippet || '',
-          content: `[Error reading file: ${String(err)}]`,
+          content: '',
           modifiedAt: resultObj.modifiedAt || ''
         })
       }

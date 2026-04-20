@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { getVaultPath, getEnabledSources } from './config'
+import { getVaultPath, getEnabledSources, getInboxSourceId } from './config'
 import { validatePath } from './permissions'
 import { logToFile } from '../utils/logger'
 
@@ -121,6 +121,61 @@ export async function createFile(relativePath: string, content: string): Promise
       timestamp: new Date().toISOString(),
       tool: 'create_file',
       path: relativePath,
+      status: 'error',
+      error: String(err)
+    })
+    throw err
+  }
+}
+
+export async function createInboxNote(relativePath: string, content: string, sourceId?: string): Promise<{ path: string; created: boolean }> {
+  const validation = validatePath(relativePath)
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const sources = getEnabledSources()
+  if (sources.length === 0) {
+    throw new Error('No enabled knowledge sources configured')
+  }
+
+  const targetSourceId = sourceId || getInboxSourceId()
+  const targetSource = sources.find(source => source.id === targetSourceId)
+  if (!targetSource) {
+    throw new Error(`Inbox source not found or disabled: ${targetSourceId}`)
+  }
+
+  const normalizedPath = path.normalize(relativePath)
+  const fullPath = path.resolve(path.join(targetSource.path, normalizedPath))
+  const sourceRoot = path.resolve(targetSource.path)
+
+  if (!fullPath.startsWith(sourceRoot)) {
+    throw new Error('Access denied. Path outside source.')
+  }
+
+  try {
+    if (fs.existsSync(fullPath)) {
+      throw new Error('File already exists')
+    }
+
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true })
+    fs.writeFileSync(fullPath, content, 'utf-8')
+
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'create_inbox_note',
+      path: relativePath,
+      sourceId: targetSource.id,
+      status: 'success'
+    })
+
+    return { path: relativePath, created: true }
+  } catch (err) {
+    logToFile({
+      timestamp: new Date().toISOString(),
+      tool: 'create_inbox_note',
+      path: relativePath,
+      sourceId: targetSource.id,
       status: 'error',
       error: String(err)
     })

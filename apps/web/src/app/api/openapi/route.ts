@@ -5,12 +5,14 @@ export async function GET() {
     openapi: '3.1.0',
     info: {
       title: 'Brain Bridge API',
-      version: '1.0.0',
-      description: 'Search and read across connected knowledge sources through ChatGPT Custom Actions'
+      version: '1.1.0',
+      description:
+        'Search, read, inspect, and write across connected local knowledge sources through Brain Bridge. Brain Bridge combines repositories, notes, research folders, and other connected local sources into one shared context for ChatGPT while keeping files local.'
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3054'
+        url: 'https://brainbridge.prochat.tools',
+        description: 'Brain Bridge public endpoint'
       }
     ],
     components: {
@@ -23,29 +25,52 @@ export async function GET() {
       }
     },
     paths: {
-      '/api/tools/status': {
-        post: {
-          summary: 'Get device status',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: { type: 'object' }
-              }
-            }
-          },
+      '/api/actions/status': {
+        get: {
+          operationId: 'getBrainBridgeStatus',
+          summary: 'Get Brain Bridge status',
+          description:
+            'Return the current Brain Bridge connection status and whether connected knowledge sources are available. Read-only.',
+          security: [{ bearerAuth: [] }],
           responses: {
             '200': {
-              description: 'Status response',
+              description: 'Brain Bridge status',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     properties: {
-                      online: { type: 'boolean' },
-                      deviceName: { type: 'string' },
-                      vaultConnected: { type: 'boolean' }
-                    }
+                      connected: {
+                        type: 'boolean',
+                        description: 'Whether Brain Bridge is connected and available'
+                      },
+                      sourceCount: {
+                        type: 'integer',
+                        description: 'Number of connected knowledge sources'
+                      },
+                      sourcesAvailable: {
+                        type: 'boolean',
+                        description: 'Whether at least one knowledge source is available'
+                      }
+                    },
+                    required: ['connected', 'sourceCount', 'sourcesAvailable']
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Authentication failed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }
@@ -53,193 +78,61 @@ export async function GET() {
           }
         }
       },
-      '/api/tools/search-brain': {
-        post: {
-          summary: 'Search local brain folder',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['query'],
-                  properties: {
-                    query: { type: 'string', description: 'Search query' },
-                    limit: { type: 'integer', default: 10 }
-                  }
-                }
-              }
-            }
-          },
+      '/api/actions/list-sources': {
+        get: {
+          operationId: 'listKnowledgeSources',
+          summary: 'List connected knowledge sources',
+          description:
+            'Return the currently connected knowledge sources available through Brain Bridge. Read-only. Useful for understanding which repositories or folders are connected before searching.',
+          security: [{ bearerAuth: [] }],
           responses: {
             '200': {
-              description: 'Search results',
+              description: 'Connected knowledge sources',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     properties: {
-                      results: {
+                      sources: {
                         type: 'array',
                         items: {
                           type: 'object',
                           properties: {
-                            path: { type: 'string' },
-                            title: { type: 'string' },
-                            snippet: { type: 'string' },
-                            modifiedAt: { type: 'string' }
-                          }
+                            id: {
+                              type: 'string',
+                              description: 'Stable knowledge source identifier'
+                            },
+                            label: {
+                              type: 'string',
+                              description: 'Human-readable knowledge source name'
+                            },
+                            enabled: {
+                              type: 'boolean',
+                              description: 'Whether this knowledge source is enabled'
+                            }
+                          },
+                          required: ['id', 'label', 'enabled']
                         }
                       }
-                    }
+                    },
+                    required: ['sources']
                   }
                 }
               }
-            }
-          }
-        }
-      },
-      '/api/tools/read-file': {
-        post: {
-          summary: 'Read a file from brain folder',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['path'],
-                  properties: {
-                    path: { type: 'string', description: 'File path' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'File content',
+            },
+            '401': {
+              description: 'Authentication failed',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     properties: {
-                      path: { type: 'string' },
-                      content: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/tools/create-note': {
-        post: {
-          summary: 'Create a new note in brain folder',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['content'],
-                  properties: {
-                    path: { type: 'string', description: 'Optional file path' },
-                    content: { type: 'string', description: 'File content' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Note created',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      path: { type: 'string' },
-                      created: { type: 'boolean' }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/tools/append-note': {
-        post: {
-          summary: 'Append to existing note',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['path', 'content'],
-                  properties: {
-                    path: { type: 'string' },
-                    content: { type: 'string' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Note appended',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      path: { type: 'string' },
-                      appended: { type: 'boolean' }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/tools/export-claude-plan': {
-        post: {
-          summary: 'Export a Claude Code implementation plan',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['title'],
-                  properties: {
-                    title: { type: 'string' },
-                    summary: { type: 'string' },
-                    projectGoal: { type: 'string' },
-                    techStack: { type: 'string' },
-                    implementationPlan: { type: 'string' },
-                    tasks: { type: 'array', items: { type: 'string' } },
-                    acceptanceCriteria: { type: 'array', items: { type: 'string' } }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Plan exported',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      path: { type: 'string' },
-                      created: { type: 'boolean' }
-                    }
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }
@@ -249,9 +142,10 @@ export async function GET() {
       },
       '/api/actions/search': {
         post: {
-          operationId: 'searchBrain',
-          summary: 'ChatGPT Custom Action: Search connected knowledge sources (read-only)',
-          description: 'Search across all connected knowledge sources for files matching the query. Results include the source identifier (sourceId) indicating which knowledge source each file came from. This is a read-only action that does not modify any files. Returns relative file paths safe for use with the read action. Absolute paths and ../ traversal are blocked.',
+          operationId: 'searchKnowledgeSources',
+          summary: 'Search connected knowledge sources',
+          description:
+            'Search across connected knowledge sources for matching files. Read-only. Returns safe relative paths for follow-up reads. Results may include sourceId showing which knowledge source a file came from. Absolute paths and ../ traversal are blocked.',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -261,8 +155,15 @@ export async function GET() {
                   type: 'object',
                   required: ['query'],
                   properties: {
-                    query: { type: 'string', description: 'Search query' },
-                    limit: { type: 'integer', default: 10, description: 'Maximum results to return' }
+                    query: {
+                      type: 'string',
+                      description: 'Search query'
+                    },
+                    limit: {
+                      type: 'integer',
+                      default: 10,
+                      description: 'Maximum results to return'
+                    }
                   }
                 }
               }
@@ -270,7 +171,7 @@ export async function GET() {
           },
           responses: {
             '200': {
-              description: 'Search results from local vault',
+              description: 'Search results from connected knowledge sources',
               content: {
                 'application/json': {
                   schema: {
@@ -281,16 +182,53 @@ export async function GET() {
                         items: {
                           type: 'object',
                           properties: {
-                            sourceId: { type: 'string', description: 'Source identifier (knowledge source where this file was found)' },
-                            path: { type: 'string', description: 'Relative file path (safe for read action)' },
-                            title: { type: 'string', description: 'File title' },
-                            score: { type: 'number', description: 'Relevance score' },
-                            snippet: { type: 'string', description: 'File content preview' },
-                            modifiedAt: { type: 'string', description: 'Last modified timestamp' }
-                          }
+                            sourceId: {
+                              type: 'string',
+                              description: 'Knowledge source identifier for the result'
+                            },
+                            path: {
+                              type: 'string',
+                              description: 'Relative file path within the source repository'
+                            },
+                            title: {
+                              type: 'string',
+                              description: 'File title'
+                            },
+                            score: {
+                              type: 'number',
+                              description: 'Relevance score'
+                            },
+                            snippet: {
+                              type: 'string',
+                              description: 'File content preview'
+                            },
+                            modifiedAt: {
+                              type: 'string',
+                              description: 'Last modified timestamp'
+                            }
+                          },
+                          required: ['path']
                         }
                       }
-                    }
+                    },
+                    required: ['results']
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Authentication failed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }
@@ -300,9 +238,10 @@ export async function GET() {
       },
       '/api/actions/read': {
         post: {
-          operationId: 'readBrainFile',
-          summary: 'ChatGPT Custom Action: Read file from knowledge sources (read-only)',
-          description: 'Read the full content of a file from the connected knowledge sources. This is a read-only action that does not modify any files. Only accepts relative paths returned by the search action. Absolute paths and ../ traversal are blocked for safety.',
+          operationId: 'readKnowledgeSourceFile',
+          summary: 'Read file from connected knowledge sources',
+          description:
+            'Read the full content of a file from connected knowledge sources. Read-only. Use only relative paths returned by search. Absolute paths and ../ traversal are blocked for safety.',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -312,7 +251,14 @@ export async function GET() {
                   type: 'object',
                   required: ['path'],
                   properties: {
-                    path: { type: 'string', description: 'Relative file path in vault (from search result only)' }
+                    path: {
+                      type: 'string',
+                      description: 'Relative file path returned by the search action'
+                    },
+                    sourceId: {
+                      type: 'string',
+                      description: 'Optional knowledge source identifier when known'
+                    }
                   }
                 }
               }
@@ -320,15 +266,26 @@ export async function GET() {
           },
           responses: {
             '200': {
-              description: 'File content',
+              description: 'File content from connected knowledge sources',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     properties: {
-                      path: { type: 'string', description: 'File path in vault' },
-                      content: { type: 'string', description: 'Full file content' }
-                    }
+                      path: {
+                        type: 'string',
+                        description: 'Relative file path'
+                      },
+                      sourceId: {
+                        type: 'string',
+                        description: 'Knowledge source identifier when available'
+                      },
+                      content: {
+                        type: 'string',
+                        description: 'Full file content'
+                      }
+                    },
+                    required: ['path', 'content']
                   }
                 }
               }
@@ -340,8 +297,29 @@ export async function GET() {
                   schema: {
                     type: 'object',
                     properties: {
-                      error: { type: 'string', description: 'Error message' }
-                    }
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Authentication failed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }
@@ -351,9 +329,10 @@ export async function GET() {
       },
       '/api/actions/search-and-read': {
         post: {
-          operationId: 'searchAndReadBrain',
-          summary: 'ChatGPT Custom Action: Search and read knowledge sources (read-only, combined)',
-          description: 'Search across all connected knowledge sources and read the top results in a single call. This is a read-only action that combines search and read operations for fewer confirmations. Limited to 3 results maximum. Does not modify any files. Absolute paths and ../ traversal are blocked.',
+          operationId: 'searchAndReadKnowledgeSources',
+          summary: 'Search and read connected knowledge sources',
+          description:
+            'Search connected knowledge sources and read the top results in one call. Read-only. Limited to 3 results maximum. Does not modify files. Absolute paths and ../ traversal are blocked.',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -363,8 +342,15 @@ export async function GET() {
                   type: 'object',
                   required: ['query'],
                   properties: {
-                    query: { type: 'string', description: 'Search query' },
-                    limit: { type: 'integer', default: 2, description: 'Maximum results to return (capped at 3)' }
+                    query: {
+                      type: 'string',
+                      description: 'Search query'
+                    },
+                    limit: {
+                      type: 'integer',
+                      default: 2,
+                      description: 'Maximum results to return, capped at 3'
+                    }
                   }
                 }
               }
@@ -383,16 +369,53 @@ export async function GET() {
                         items: {
                           type: 'object',
                           properties: {
-                            sourceId: { type: 'string', description: 'Source identifier (knowledge source where this file was found)' },
-                            path: { type: 'string', description: 'Relative file path' },
-                            title: { type: 'string', description: 'File title' },
-                            snippet: { type: 'string', description: 'File content preview' },
-                            content: { type: 'string', description: 'Full file content' },
-                            modifiedAt: { type: 'string', description: 'Last modified timestamp' }
-                          }
+                            sourceId: {
+                              type: 'string',
+                              description: 'Knowledge source identifier for the result, when available'
+                            },
+                            path: {
+                              type: 'string',
+                              description: 'Relative file path within the source repository'
+                            },
+                            title: {
+                              type: 'string',
+                              description: 'File title'
+                            },
+                            snippet: {
+                              type: 'string',
+                              description: 'File content preview'
+                            },
+                            content: {
+                              type: 'string',
+                              description: 'Full file content'
+                            },
+                            modifiedAt: {
+                              type: 'string',
+                              description: 'Last modified timestamp'
+                            }
+                          },
+                          required: ['path', 'content']
                         }
                       }
-                    }
+                    },
+                    required: ['results']
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Authentication failed',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }
@@ -403,8 +426,9 @@ export async function GET() {
       '/api/actions/append-inbox-note': {
         post: {
           operationId: 'appendInboxNote',
-          summary: 'ChatGPT Custom Action: Create a new personal inbox note',
-          description: 'Create a new markdown note in the personal inbox (01-inbox folder in the personal knowledge source). This action only allows writing to the inbox folder and never overwrites existing files. Filenames are auto-generated with timestamp to prevent collisions. The title is slugified for safe filename creation.',
+          summary: 'Create a new inbox note',
+          description:
+            'Create a markdown note in the configured inbox destination. Writes only to the approved inbox path and never overwrites files. Filenames use a timestamp and slugified title to avoid collisions.',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -414,8 +438,14 @@ export async function GET() {
                   type: 'object',
                   required: ['title', 'content'],
                   properties: {
-                    title: { type: 'string', description: 'Note title (used to generate filename)' },
-                    content: { type: 'string', description: 'Markdown content for the note' }
+                    title: {
+                      type: 'string',
+                      description: 'Note title used to generate the filename'
+                    },
+                    content: {
+                      type: 'string',
+                      description: 'Markdown content for the note'
+                    }
                   }
                 }
               }
@@ -429,9 +459,16 @@ export async function GET() {
                   schema: {
                     type: 'object',
                     properties: {
-                      path: { type: 'string', description: 'Path to created note in vault' },
-                      status: { type: 'string', description: 'Status (created)' }
-                    }
+                      path: {
+                        type: 'string',
+                        description: 'Path to the created note'
+                      },
+                      status: {
+                        type: 'string',
+                        description: 'Status value, typically created'
+                      }
+                    },
+                    required: ['path', 'status']
                   }
                 }
               }
@@ -443,8 +480,12 @@ export async function GET() {
                   schema: {
                     type: 'object',
                     properties: {
-                      error: { type: 'string', description: 'Error message' }
-                    }
+                      error: {
+                        type: 'string',
+                        description: 'Error message'
+                      }
+                    },
+                    required: ['error']
                   }
                 }
               }

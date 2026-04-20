@@ -2,10 +2,10 @@ import Fastify from 'fastify'
 import fs from 'fs'
 import { Indexer } from './indexer'
 import { VaultSearcher } from './search'
-import { readFile, createFile, appendFile, listFolder } from './vault'
+import { readFile, createFile, appendFile, createInboxNote, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces, getSources, addSource, removeSource, setSourceEnabled } from './config'
+import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled } from './config'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import type { Workspace } from '@brainbridge/shared'
 
@@ -46,6 +46,23 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       online: true,
       deviceName: 'Local Agent',
       vaultConnected: true
+    }
+  })
+
+  fastify.get('/api/status', async (request, reply) => {
+    try {
+      const sources = getSourcesSafe()
+      const sourceCount = sources.length
+
+      return reply.header('Cache-Control', 'no-store').send({
+        connected: true,
+        sourceCount,
+        sourcesAvailable: sourceCount > 0
+      })
+    } catch (err) {
+      return reply.code(500).header('Cache-Control', 'no-store').send({
+        error: String(err)
+      })
     }
   })
 
@@ -149,6 +166,16 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
     }
   })
 
+  fastify.post<{ Body: { path: string; content: string; sourceId?: string } }>('/api/create-inbox-note', async (request, reply) => {
+    try {
+      const { path, content, sourceId } = request.body
+      const result = await createInboxNote(path, content, sourceId)
+      return result
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
   // Append endpoint
   fastify.post<{ Body: { path: string; content: string } }>('/api/append', async (request, reply) => {
     try {
@@ -194,6 +221,22 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       return { sources }
     } catch (err) {
       return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.get('/api/sources/list', async (request, reply) => {
+    try {
+      const sources = getSourcesSafe().map(source => ({
+        id: source.id,
+        label: source.label,
+        enabled: source.enabled
+      }))
+
+      return reply.header('Cache-Control', 'no-store').send({ sources })
+    } catch (err) {
+      return reply.code(500).header('Cache-Control', 'no-store').send({
+        error: String(err)
+      })
     }
   })
 

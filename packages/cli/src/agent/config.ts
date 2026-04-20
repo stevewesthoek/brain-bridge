@@ -9,6 +9,7 @@ export interface AgentConfig {
   deviceToken: string
   apiBaseUrl: string
   vaultPath?: string
+  inboxSourceId?: string
   sources?: KnowledgeSource[]
   localPort?: number
   mode: 'read_create_append'
@@ -76,6 +77,16 @@ export function getSources(): KnowledgeSource[] {
   if (sources.length === 0 && !(config && config.sources !== undefined)) {
     throw new Error('No knowledge sources configured. Run: brainbridge connect <folder>')
   }
+
+  return sources.map(s => ({
+    ...s,
+    path: expandTilde(s.path)
+  }))
+}
+
+export function getSourcesSafe(): KnowledgeSource[] {
+  const config = loadConfig()
+  const sources = ensureSources(config ?? ({} as AgentConfig))
 
   return sources.map(s => ({
     ...s,
@@ -177,6 +188,11 @@ export function getVaultPath(): string {
   }
 
   return expandTilde(config.vaultPath)
+}
+
+export function getInboxSourceId(): string {
+  const config = loadConfig()
+  return config?.inboxSourceId || 'mind'
 }
 
 export function getLocalPort(): number {
