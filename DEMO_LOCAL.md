@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Local Demo Guide
+# BuildFlow MVP — Local Demo Guide
 
 This demo proves all local functionality works **without SaaS**. The CLI runs a local HTTP server you can test directly.
 
@@ -19,16 +19,16 @@ This demo proves all local functionality works **without SaaS**. The CLI runs a 
 ### Step 1: Create Test Vault
 
 ```bash
-mkdir -p /tmp/brainbridge-demo
+mkdir -p /tmp/buildflow-demo
 ```
 
 ### Step 2: Add Test Files
 
 ```bash
-cat > /tmp/brainbridge-demo/business.md << 'EOF'
+cat > /tmp/buildflow-demo/business.md << 'EOF'
 # Business Context
 
-Brain Bridge connects local Markdown vaults to ChatGPT.
+BuildFlow connects local Markdown vaults to ChatGPT.
 
 ## Goals
 - Search local notes from ChatGPT
@@ -42,7 +42,7 @@ Brain Bridge connects local Markdown vaults to ChatGPT.
 - Fuse.js for search
 EOF
 
-cat > /tmp/brainbridge-demo/architecture.md << 'EOF'
+cat > /tmp/buildflow-demo/architecture.md << 'EOF'
 # Architecture
 
 ## Components
@@ -55,7 +55,7 @@ cat > /tmp/brainbridge-demo/architecture.md << 'EOF'
 ## Security
 - No path traversal (blocks `..`, `/`, hidden files)
 - Read/create/append only (no delete)
-- Audit logging to ~/.brainbridge/audit.log
+- Audit logging to ~/.buildflow/audit.log
 
 ## Future
 - WebSocket bridge to SaaS
@@ -63,8 +63,8 @@ cat > /tmp/brainbridge-demo/architecture.md << 'EOF'
 - Multiple vaults
 EOF
 
-cat > /tmp/brainbridge-demo/project-plan.md << 'EOF'
-# Brain Bridge MVP Plan
+cat > /tmp/buildflow-demo/project-plan.md << 'EOF'
+# BuildFlow MVP Plan
 
 ## Phase 1: Local Agent
 - CLI commands ✅
@@ -87,7 +87,7 @@ EOF
 ### Step 3: Install and Build
 
 ```bash
-cd /Users/Office/Repos/stevewesthoek/brain-bridge
+cd /Users/Office/Repos/stevewesthoek/buildflow
 
 pnpm install
 pnpm build
@@ -107,21 +107,21 @@ pnpm dev init
 
 Output:
 ```
-[Brain Bridge] Brain Bridge initialized.
-[Brain Bridge] Config directory: /Users/Office/.brainbridge
+[BuildFlow] BuildFlow initialized.
+[BuildFlow] Config directory: /Users/Office/.buildflow
 ```
 
 ### Step 5: Connect Vault
 
 ```bash
-node dist/index.js connect /tmp/brainbridge-demo
+node dist/index.js connect /tmp/buildflow-demo
 ```
 
 Output:
 ```
-[Brain Bridge] Connected to vault: /tmp/brainbridge-demo
-[Brain Bridge] Indexed 3 files.
-[Brain Bridge] Next: brainbridge serve
+[BuildFlow] Connected to vault: /tmp/buildflow-demo
+[BuildFlow] Indexed 3 files.
+[BuildFlow] Next: buildflow serve
 ```
 
 ### Step 6: Show Status
@@ -132,15 +132,15 @@ node dist/index.js status
 
 Output:
 ```
-[Brain Bridge] Brain Bridge Status
-[Brain Bridge] ==================
-[Brain Bridge] Vault: /tmp/brainbridge-demo
-[Brain Bridge] Indexed files: 3
-[Brain Bridge] API Base: http://localhost:3000
-[Brain Bridge] Device Token: Not configured
-[Brain Bridge] 
-[Brain Bridge] Next steps:
-[Brain Bridge] - Run: brainbridge serve
+[BuildFlow] BuildFlow Status
+[BuildFlow] ==================
+[BuildFlow] Vault: /tmp/buildflow-demo
+[BuildFlow] Indexed files: 3
+[BuildFlow] API Base: http://localhost:3000
+[BuildFlow] Device Token: Not configured
+[BuildFlow] 
+[BuildFlow] Next steps:
+[BuildFlow] - Run: buildflow serve
 ```
 
 ### Step 7: Start Local Server
@@ -153,10 +153,10 @@ node dist/index.js serve
 
 Output:
 ```
-[Brain Bridge] Starting local agent server...
-[Brain Bridge] Local agent running on http://127.0.0.1:3001
-[Brain Bridge] No device token configured. Local agent running in standalone mode.
-[Brain Bridge] Brain Bridge agent is running!
+[BuildFlow] Starting local agent server...
+[BuildFlow] Local agent running on http://127.0.0.1:3001
+[BuildFlow] No device token configured. Local agent running in standalone mode.
+[BuildFlow] BuildFlow agent is running!
 ```
 
 **Keep this running.** The server listens on port 3001.
@@ -210,7 +210,7 @@ Expected response:
 ```json
 {
   "path": "business.md",
-  "content": "# Business Context\n\nBrain Bridge connects..."
+  "content": "# Business Context\n\nBuildFlow connects..."
 }
 ```
 
@@ -220,7 +220,7 @@ Expected response:
 curl -X POST http://127.0.0.1:3001/api/create \
   -H "Content-Type: application/json" \
   -d '{
-    "path": "BrainBridge/Inbox/test-note.md",
+    "path": "BuildFlow/Inbox/test-note.md",
     "content": "# Test Note\n\nThis was created via API."
   }'
 ```
@@ -228,21 +228,21 @@ curl -X POST http://127.0.0.1:3001/api/create \
 Expected response:
 ```json
 {
-  "path": "BrainBridge/Inbox/test-note.md",
+  "path": "BuildFlow/Inbox/test-note.md",
   "created": true
 }
 ```
 
 Verify file was created:
 ```bash
-cat /tmp/brainbridge-demo/BrainBridge/Inbox/test-note.md
+cat /tmp/buildflow-demo/BuildFlow/Inbox/test-note.md
 ```
 
 Should show frontmatter + content:
 ```
 ---
 created: 2026-04-16T10:00:00.000Z
-source: brainbridge
+source: buildflow
 type: plan
 ---
 
@@ -257,7 +257,7 @@ This was created via API.
 curl -X POST http://127.0.0.1:3001/api/append \
   -H "Content-Type: application/json" \
   -d '{
-    "path": "BrainBridge/Inbox/test-note.md",
+    "path": "BuildFlow/Inbox/test-note.md",
     "content": "\n\n## Update\n\nAppended content at $(date)."
   }'
 ```
@@ -265,14 +265,14 @@ curl -X POST http://127.0.0.1:3001/api/append \
 Expected response:
 ```json
 {
-  "path": "BrainBridge/Inbox/test-note.md",
+  "path": "BuildFlow/Inbox/test-note.md",
   "appended": true
 }
 ```
 
 Verify:
 ```bash
-cat /tmp/brainbridge-demo/BrainBridge/Inbox/test-note.md
+cat /tmp/buildflow-demo/BuildFlow/Inbox/test-note.md
 ```
 
 ### Test 6: Export Claude Plan
@@ -281,7 +281,7 @@ cat /tmp/brainbridge-demo/BrainBridge/Inbox/test-note.md
 curl -X POST http://127.0.0.1:3001/api/export-plan \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Brain Bridge MVP Implementation",
+    "title": "BuildFlow MVP Implementation",
     "summary": "Build a local vault connector for ChatGPT",
     "projectGoal": "Connect Obsidian to ChatGPT for context-aware ideation",
     "techStack": "Node.js CLI, Next.js SaaS, Fuse.js search",
@@ -306,14 +306,14 @@ curl -X POST http://127.0.0.1:3001/api/export-plan \
 Expected response:
 ```json
 {
-  "path": "Handoffs/claude-code/2026-04-16-brain-bridge-mvp-implementation.md",
+  "path": "Handoffs/claude-code/2026-04-16-buildflow-mvp-implementation.md",
   "created": true
 }
 ```
 
 Verify:
 ```bash
-cat /tmp/brainbridge-demo/Handoffs/claude-code/2026-04-16-brain-bridge-mvp-implementation.md
+cat /tmp/buildflow-demo/Handoffs/claude-code/2026-04-16-buildflow-mvp-implementation.md
 ```
 
 Should contain full Claude Code implementation brief.
@@ -321,7 +321,7 @@ Should contain full Claude Code implementation brief.
 ### Test 7: List Folder
 
 ```bash
-curl -X GET "http://127.0.0.1:3001/api/list?path=BrainBridge"
+curl -X GET "http://127.0.0.1:3001/api/list?path=BuildFlow"
 ```
 
 Expected response:
@@ -329,11 +329,11 @@ Expected response:
 {
   "items": [
     {
-      "path": "BrainBridge/Inbox",
+      "path": "BuildFlow/Inbox",
       "type": "folder"
     },
     {
-      "path": "BrainBridge/Inbox/test-note.md",
+      "path": "BuildFlow/Inbox/test-note.md",
       "type": "file"
     }
   ]
@@ -344,27 +344,27 @@ Expected response:
 
 ## Verify Audit Log
 
-All operations are logged to `~/.brainbridge/audit.log`:
+All operations are logged to `~/.buildflow/audit.log`:
 
 ```bash
-cat ~/.brainbridge/audit.log
+cat ~/.buildflow/audit.log
 ```
 
 Should show entries like:
 ```json
 {"timestamp":"2026-04-16T10:00:00.000Z","tool":"search","status":"success"}
 {"timestamp":"2026-04-16T10:00:01.000Z","tool":"read_file","path":"business.md","status":"success"}
-{"timestamp":"2026-04-16T10:00:02.000Z","tool":"create_file","path":"BrainBridge/Inbox/test-note.md","status":"success"}
+{"timestamp":"2026-04-16T10:00:02.000Z","tool":"create_file","path":"BuildFlow/Inbox/test-note.md","status":"success"}
 ```
 
 ---
 
 ## Check Index File
 
-The local search index is cached at `~/.brainbridge/index.json`:
+The local search index is cached at `~/.buildflow/index.json`:
 
 ```bash
-cat ~/.brainbridge/index.json | jq '.[] | {path, title}' | head -20
+cat ~/.buildflow/index.json | jq '.[] | {path, title}' | head -20
 ```
 
 Shows indexed documents with title extraction.
@@ -380,17 +380,17 @@ Save as `demo.sh`:
 
 set -e
 
-echo "=== Brain Bridge MVP Local Demo ==="
+echo "=== BuildFlow MVP Local Demo ==="
 echo ""
 
 # Create test vault
 echo "1. Creating test vault..."
-mkdir -p /tmp/brainbridge-demo
+mkdir -p /tmp/buildflow-demo
 
-cat > /tmp/brainbridge-demo/business.md << 'EOF'
+cat > /tmp/buildflow-demo/business.md << 'EOF'
 # Business Context
 
-Brain Bridge connects local Markdown vaults to ChatGPT.
+BuildFlow connects local Markdown vaults to ChatGPT.
 
 ## Goals
 - Search local notes from ChatGPT
@@ -398,7 +398,7 @@ Brain Bridge connects local Markdown vaults to ChatGPT.
 - Keep everything local and private
 EOF
 
-cat > /tmp/brainbridge-demo/architecture.md << 'EOF'
+cat > /tmp/buildflow-demo/architecture.md << 'EOF'
 # Architecture
 
 ## Components
@@ -410,7 +410,7 @@ EOF
 
 # Install and build
 echo "2. Installing dependencies..."
-cd /Users/Office/Repos/stevewesthoek/brain-bridge
+cd /Users/Office/Repos/stevewesthoek/buildflow
 pnpm install > /dev/null 2>&1
 
 echo "3. Building packages..."
@@ -422,7 +422,7 @@ cd packages/cli
 node dist/index.js init > /dev/null 2>&1
 
 echo "5. Connecting to vault..."
-node dist/index.js connect /tmp/brainbridge-demo > /dev/null 2>&1
+node dist/index.js connect /tmp/buildflow-demo > /dev/null 2>&1
 
 echo "6. Showing status..."
 node dist/index.js status
@@ -454,13 +454,13 @@ chmod +x demo.sh
 
 ```bash
 # Remove test vault
-rm -rf /tmp/brainbridge-demo
+rm -rf /tmp/buildflow-demo
 
 # Remove config
-rm -rf ~/.brainbridge
+rm -rf ~/.buildflow
 
 # Or re-run demo fresh
-rm -rf ~/.brainbridge && rm -rf /tmp/brainbridge-demo && ./demo.sh
+rm -rf ~/.buildflow && rm -rf /tmp/buildflow-demo && ./demo.sh
 ```
 
 ---
@@ -469,10 +469,10 @@ rm -rf ~/.brainbridge && rm -rf /tmp/brainbridge-demo && ./demo.sh
 
 All of these should work without errors:
 
-- ✅ `brainbridge init` — Config created
-- ✅ `brainbridge connect` — Vault connected and indexed
-- ✅ `brainbridge status` — Shows status
-- ✅ `brainbridge serve` — HTTP server starts
+- ✅ `buildflow init` — Config created
+- ✅ `buildflow connect` — Vault connected and indexed
+- ✅ `buildflow status` — Shows status
+- ✅ `buildflow serve` — HTTP server starts
 - ✅ Search endpoint returns results
 - ✅ Read endpoint returns file content
 - ✅ Create endpoint creates new file
@@ -489,7 +489,7 @@ All of these should work without errors:
 - **Standalone HTTP:** All endpoints on `http://127.0.0.1:3001`
 - **Real files:** Vault is actual Markdown files on disk
 - **No delete:** Operations are create/read/append only
-- **Audit trail:** Every operation logged to `~/.brainbridge/audit.log`
+- **Audit trail:** Every operation logged to `~/.buildflow/audit.log`
 - **Next:** Connect this to ChatGPT via separate bridge server (Phase 2)
 
 ---
@@ -505,23 +505,23 @@ lsof -i :3001
 **Vault not found?**
 ```bash
 # Check path
-ls -la /tmp/brainbridge-demo
+ls -la /tmp/buildflow-demo
 # Reconnect
-brainbridge connect /tmp/brainbridge-demo
+buildflow connect /tmp/buildflow-demo
 ```
 
 **Search returns no results?**
 ```bash
 # Rebuild index
-brainbridge index
+buildflow index
 ```
 
 **Permission denied on file creation?**
 ```bash
 # Check vault permissions
-chmod 755 /tmp/brainbridge-demo
+chmod 755 /tmp/buildflow-demo
 # Try creating in Inbox folder
-mkdir -p /tmp/brainbridge-demo/BrainBridge/Inbox
+mkdir -p /tmp/buildflow-demo/BuildFlow/Inbox
 ```
 
 ---

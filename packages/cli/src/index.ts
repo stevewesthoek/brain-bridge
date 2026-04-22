@@ -14,11 +14,11 @@ import { contextCommand } from './commands/context'
 
 const program = new Command()
 
-program.name('brainbridge').description('Connect your local brain folder to ChatGPT').version('0.1.0')
+program.name('buildflow').description('BuildFlow turns ideas into execution packets').version('0.1.0')
 
 program
   .command('init')
-  .description('Initialize Brain Bridge')
+  .description('Initialize BuildFlow')
   .action(() => initCommand())
 
 program
@@ -43,7 +43,7 @@ program
 
 program
   .command('status')
-  .description('Show Brain Bridge status')
+  .description('Show BuildFlow status')
   .action(() => statusCommand())
 
 program

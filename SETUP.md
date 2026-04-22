@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Setup Guide
+# BuildFlow MVP — Setup Guide
 
 ## Local Development Setup
 
@@ -10,7 +10,7 @@
 ### 1. Install Dependencies
 
 ```bash
-cd brain-bridge
+cd buildflow
 pnpm install
 ```
 
@@ -43,7 +43,7 @@ cd packages/cli
 npm link
 ```
 
-Now you can run `brainbridge` from anywhere.
+Now you can run `buildflow` from anywhere.
 
 ## Running Locally
 
@@ -62,9 +62,9 @@ node dist/index.js serve
 
 Output:
 ```
-[Brain Bridge] Connected to vault: /Users/you/path/to/vault
-[Brain Bridge] Indexed 42 files.
-[Brain Bridge] Local agent running on http://127.0.0.1:3001
+[BuildFlow] Connected to vault: /Users/you/path/to/vault
+[BuildFlow] Indexed 42 files.
+[BuildFlow] Local agent running on http://127.0.0.1:3001
 ```
 
 **Terminal 2:**
@@ -80,7 +80,7 @@ curl -X POST http://127.0.0.1:3001/api/read \
 
 curl -X POST http://127.0.0.1:3001/api/create \
   -H "Content-Type: application/json" \
-  -d '{"path": "BrainBridge/Inbox/test.md", "content": "# Test\nHello"}'
+  -d '{"path": "BuildFlow/Inbox/test.md", "content": "# Test\nHello"}'
 ```
 
 ### Test 2: SaaS Bridge (Full Stack)
@@ -154,16 +154,16 @@ npm publish
 
 Then users can:
 ```bash
-npm install -g brainbridge
+npm install -g buildflow
 ```
 
 ## Testing the Full Loop
 
 1. **Start local agent:**
    ```bash
-   brainbridge init
-   brainbridge connect ~/Obsidian/MyVault
-   brainbridge serve
+   buildflow init
+   buildflow connect ~/Obsidian/MyVault
+   buildflow serve
    ```
 
 2. **Create user on deployed SaaS:**
@@ -173,8 +173,8 @@ npm install -g brainbridge
 
 3. **Connect local agent to SaaS:**
    ```bash
-   brainbridge login <api-key>
-   # Restart: brainbridge serve
+   buildflow login <api-key>
+   # Restart: buildflow serve
    ```
 
 4. **Test with ChatGPT Custom GPT:**
@@ -183,7 +183,7 @@ npm install -g brainbridge
    - Instructions for GPT:
 
    ```
-   You are Brain Bridge, an assistant that helps the user ideate with context 
+   You are BuildFlow, an assistant that helps the user ideate with context 
    from their local brain folder.
    
    When the user asks about their business, projects, goals, plans, tech stack, 
@@ -197,7 +197,7 @@ npm install -g brainbridge
 
 5. **In ChatGPT:**
    ```
-   Search my brain for notes about Brain Bridge.
+   Search my brain for notes about BuildFlow.
    
    Read the most relevant result.
    
@@ -207,31 +207,31 @@ npm install -g brainbridge
 6. **Verify locally:**
    ```bash
    ls ~/Obsidian/MyVault/Handoffs/claude-code/
-   # Should see: 2026-04-16-brain-bridge-mvp.md
+   # Should see: 2026-04-16-buildflow-mvp.md
    ```
 
 ## Troubleshooting
 
 ### "No vault connected"
 ```bash
-brainbridge connect ~/Obsidian/MyVault
-brainbridge index
+buildflow connect ~/Obsidian/MyVault
+buildflow index
 ```
 
-### "Cannot find module '@brainbridge/shared'"
+### "Cannot find module '@buildflow/shared'"
 ```bash
 cd packages/shared && pnpm build
 cd ../../ && pnpm install
 ```
 
 ### WebSocket connection fails
-- Check `apiBaseUrl` in `~/.brainbridge/config.json`
+- Check `apiBaseUrl` in `~/.buildflow/config.json`
 - Make sure SaaS bridge is running
 - Check CORS settings if cross-origin
 
 ### Audit log not found
 ```bash
-mkdir -p ~/.brainbridge
+mkdir -p ~/.buildflow
 ```
 
 ### TypeScript errors
@@ -242,7 +242,7 @@ pnpm type-check  # in each package
 ## Project Structure for Development
 
 ```
-brain-bridge/
+buildflow/
 ├── packages/
 │   ├── shared/              # EDIT FIRST (shared types)
 │   │   ├── src/

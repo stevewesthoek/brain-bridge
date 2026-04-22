@@ -1,75 +1,27 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Brain Bridge API",
-    "version": "1.1.0",
-    "description": "Search, read, inspect, and write across connected local knowledge sources through Brain Bridge. Brain Bridge combines repositories, notes, research folders, and other connected local sources into one shared context for ChatGPT while keeping files local."
+    "title": "BuildFlow Custom GPT API",
+    "version": "2.0.0",
+    "description": "BuildFlow API for connected local knowledge sources. Use it to check status, list sources, search local context, read files, and create inbox notes."
   },
   "servers": [
     {
-      "url": "https://brainbridge.prochat.tools",
-      "description": "Brain Bridge public endpoint"
+      "url": "https://buildflow.prochat.tools",
+      "description": "BuildFlow public endpoint"
     }
   ],
   "paths": {
-    "/api/actions/status": {
-      "get": {
-        "operationId": "getBrainBridgeStatus",
-        "summary": "Get Brain Bridge status",
-        "description": "Return the current Brain Bridge connection status and whether connected knowledge sources are available. Read-only.",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Brain Bridge status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "connected": {
-                      "type": "boolean",
-                      "description": "Whether Brain Bridge is connected and available"
-                    },
-                    "sourceCount": {
-                      "type": "integer",
-                      "description": "Number of connected knowledge sources"
-                    },
-                    "sourcesAvailable": {
-                      "type": "boolean",
-                      "description": "Whether at least one knowledge source is available"
-                    }
-                  },
-                  "required": ["connected", "sourceCount", "sourcesAvailable"]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "description": "Error message"
-                    }
-                  },
-                  "required": ["error"]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/actions/list-sources": {
       "get": {
-        "operationId": "listKnowledgeSources",
+        "operationId": "listBuildFlowKnowledgeSources",
         "summary": "List connected knowledge sources",
-        "description": "Return the currently connected knowledge sources available through Brain Bridge. Read-only. Useful for understanding which repositories or folders are connected before searching.",
-        "security": [{ "bearerAuth": [] }],
+        "description": "Return the connected knowledge sources available through BuildFlow.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Connected knowledge sources",
@@ -84,23 +36,26 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string",
-                            "description": "Stable knowledge source identifier"
+                            "type": "string"
                           },
                           "label": {
-                            "type": "string",
-                            "description": "Human-readable knowledge source name"
+                            "type": "string"
                           },
                           "enabled": {
-                            "type": "boolean",
-                            "description": "Whether this knowledge source is enabled"
+                            "type": "boolean"
                           }
                         },
-                        "required": ["id", "label", "enabled"]
+                        "required": [
+                          "id",
+                          "label",
+                          "enabled"
+                        ]
                       }
                     }
                   },
-                  "required": ["sources"]
+                  "required": [
+                    "sources"
+                  ]
                 }
               }
             }
@@ -113,11 +68,70 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/actions/status": {
+      "get": {
+        "operationId": "getBuildFlowStatus",
+        "summary": "Get BuildFlow status",
+        "description": "Return the current BuildFlow connection status.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "BuildFlow status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "connected": {
+                      "type": "boolean"
+                    },
+                    "sourceCount": {
+                      "type": "integer"
+                    },
+                    "sourcesAvailable": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "connected",
+                    "sourceCount",
+                    "sourcesAvailable"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -127,35 +141,39 @@
     },
     "/api/actions/search": {
       "post": {
-        "operationId": "searchKnowledgeSources",
+        "operationId": "searchBuildFlowKnowledgeSources",
         "summary": "Search connected knowledge sources",
-        "description": "Search across connected knowledge sources for matching files. Read-only. Returns safe relative paths for follow-up reads. Results may include sourceId showing which knowledge source a file came from. Absolute paths and ../ traversal are blocked.",
-        "security": [{ "bearerAuth": [] }],
+        "description": "Search across connected knowledge sources for matching files.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["query"],
                 "properties": {
                   "query": {
-                    "type": "string",
-                    "description": "Search query"
+                    "type": "string"
                   },
                   "limit": {
                     "type": "integer",
-                    "default": 10,
-                    "description": "Maximum results to return"
+                    "default": 10
                   }
-                }
+                },
+                "required": [
+                  "query"
+                ]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Search results from connected knowledge sources",
+            "description": "Search results",
             "content": {
               "application/json": {
                 "schema": {
@@ -167,35 +185,33 @@
                         "type": "object",
                         "properties": {
                           "sourceId": {
-                            "type": "string",
-                            "description": "Knowledge source identifier for the result"
+                            "type": "string"
                           },
                           "path": {
-                            "type": "string",
-                            "description": "Relative file path within the source repository"
+                            "type": "string"
                           },
                           "title": {
-                            "type": "string",
-                            "description": "File title"
+                            "type": "string"
                           },
                           "score": {
-                            "type": "number",
-                            "description": "Relevance score"
+                            "type": "number"
                           },
                           "snippet": {
-                            "type": "string",
-                            "description": "File content preview"
+                            "type": "string"
                           },
                           "modifiedAt": {
-                            "type": "string",
-                            "description": "Last modified timestamp"
+                            "type": "string"
                           }
                         },
-                        "required": ["path"]
+                        "required": [
+                          "path"
+                        ]
                       }
                     }
                   },
-                  "required": ["results"]
+                  "required": [
+                    "results"
+                  ]
                 }
               }
             }
@@ -208,11 +224,12 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -222,70 +239,75 @@
     },
     "/api/actions/read": {
       "post": {
-        "operationId": "readKnowledgeSourceFile",
+        "operationId": "readBuildFlowKnowledgeSourceFile",
         "summary": "Read file from connected knowledge sources",
-        "description": "Read the full content of a file from connected knowledge sources. Read-only. Use only relative paths returned by search. Absolute paths and ../ traversal are blocked for safety.",
-        "security": [{ "bearerAuth": [] }],
+        "description": "Read the full content of a file from connected knowledge sources.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["path"],
                 "properties": {
                   "path": {
-                    "type": "string",
-                    "description": "Relative file path returned by the search action"
+                    "type": "string"
                   },
                   "sourceId": {
-                    "type": "string",
-                    "description": "Optional knowledge source identifier when known"
+                    "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "path"
+                ]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "File content from connected knowledge sources",
+            "description": "File content",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "path": {
-                      "type": "string",
-                      "description": "Relative file path"
+                      "type": "string"
                     },
                     "sourceId": {
-                      "type": "string",
-                      "description": "Knowledge source identifier when available"
+                      "type": "string"
                     },
                     "content": {
-                      "type": "string",
-                      "description": "Full file content"
+                      "type": "string"
                     }
                   },
-                  "required": ["path", "content"]
+                  "required": [
+                    "path",
+                    "content"
+                  ]
                 }
               }
             }
           },
           "400": {
-            "description": "Error reading file",
+            "description": "Read error",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -298,11 +320,12 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -312,28 +335,32 @@
     },
     "/api/actions/search-and-read": {
       "post": {
-        "operationId": "searchAndReadKnowledgeSources",
+        "operationId": "searchAndReadBuildFlowKnowledgeSources",
         "summary": "Search and read connected knowledge sources",
-        "description": "Search connected knowledge sources and read the top results in one call. Read-only. Limited to 3 results maximum. Does not modify files. Absolute paths and ../ traversal are blocked.",
-        "security": [{ "bearerAuth": [] }],
+        "description": "Search connected knowledge sources and read the top results in one call.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["query"],
                 "properties": {
                   "query": {
-                    "type": "string",
-                    "description": "Search query"
+                    "type": "string"
                   },
                   "limit": {
                     "type": "integer",
-                    "default": 2,
-                    "description": "Maximum results to return, capped at 3"
+                    "default": 2
                   }
-                }
+                },
+                "required": [
+                  "query"
+                ]
               }
             }
           }
@@ -352,35 +379,34 @@
                         "type": "object",
                         "properties": {
                           "sourceId": {
-                            "type": "string",
-                            "description": "Knowledge source identifier for the result, when available"
+                            "type": "string"
                           },
                           "path": {
-                            "type": "string",
-                            "description": "Relative file path within the source repository"
+                            "type": "string"
                           },
                           "title": {
-                            "type": "string",
-                            "description": "File title"
+                            "type": "string"
                           },
                           "snippet": {
-                            "type": "string",
-                            "description": "File content preview"
+                            "type": "string"
                           },
                           "content": {
-                            "type": "string",
-                            "description": "Full file content"
+                            "type": "string"
                           },
                           "modifiedAt": {
-                            "type": "string",
-                            "description": "Last modified timestamp"
+                            "type": "string"
                           }
                         },
-                        "required": ["path", "content"]
+                        "required": [
+                          "path",
+                          "content"
+                        ]
                       }
                     }
                   },
-                  "required": ["results"]
+                  "required": [
+                    "results"
+                  ]
                 }
               }
             }
@@ -393,11 +419,12 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -407,27 +434,32 @@
     },
     "/api/actions/append-inbox-note": {
       "post": {
-        "operationId": "appendInboxNote",
+        "operationId": "appendBuildFlowInboxNote",
         "summary": "Create a new inbox note",
-        "description": "Create a markdown note in the configured inbox destination. Writes only to the approved inbox path and never overwrites files. Filenames use a timestamp and slugified title to avoid collisions.",
-        "security": [{ "bearerAuth": [] }],
+        "description": "Create a markdown note in the configured inbox destination.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title", "content"],
                 "properties": {
                   "title": {
-                    "type": "string",
-                    "description": "Note title used to generate the filename"
+                    "type": "string"
                   },
                   "content": {
-                    "type": "string",
-                    "description": "Markdown content for the note"
+                    "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "title",
+                  "content"
+                ]
               }
             }
           }
@@ -441,15 +473,16 @@
                   "type": "object",
                   "properties": {
                     "path": {
-                      "type": "string",
-                      "description": "Path to the created note"
+                      "type": "string"
                     },
                     "status": {
-                      "type": "string",
-                      "description": "Status value, typically created"
+                      "type": "string"
                     }
                   },
-                  "required": ["path", "status"]
+                  "required": [
+                    "path",
+                    "status"
+                  ]
                 }
               }
             }
@@ -462,11 +495,12 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string",
-                      "description": "Error message"
+                      "type": "string"
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }

@@ -1,7 +1,7 @@
 {
-  "name": "@brainbridge/bridge",
+  "name": "@buildflow/bridge",
   "version": "0.1.0",
-  "description": "Brain Bridge relay server",
+  "description": "BuildFlow relay server",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

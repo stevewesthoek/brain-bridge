@@ -8,7 +8,7 @@
       "@/*": [
         "./src/*"
       ],
-      "@brainbridge/shared": [
+      "@buildflow/shared": [
         "../../packages/shared/src"
       ]
     },

@@ -6,13 +6,13 @@ Phase 3.4 provides the complete runbook for manual ChatGPT Custom GPT Actions in
 
 This phase is **runbook-only**: Documentation and local verification provided. User performs manual ChatGPT Custom GPT setup and testing via ChatGPT UI.
 
-⚠️ **Important:** Tunnel URLs are temporary and must NOT be committed to the repo. `/tmp/brainbridge-openapi-chatgpt.json` is for local use only.
+⚠️ **Important:** Tunnel URLs are temporary and must NOT be committed to the repo. `/tmp/buildflow-openapi-chatgpt.json` is for local use only.
 
 ## Automated Stack Setup
 
 ```bash
 # Terminal 1: Bridge Server (port 3053)
-cd ~/Repos/stevewesthoek/brain-bridge/packages/bridge
+cd ~/Repos/stevewesthoek/buildflow/packages/bridge
 node dist/server.js
 
 # Terminal 2: Local Agent (port 3052, connected to bridge)
@@ -20,7 +20,7 @@ BRIDGE_URL=ws://127.0.0.1:3053 DEVICE_TOKEN=test-device \
   node packages/cli/dist/index.js serve
 
 # Terminal 3: Web App (port 3054)
-cd ~/Repos/stevewesthoek/brain-bridge/apps/web
+cd ~/Repos/stevewesthoek/buildflow/apps/web
 npm run dev
 
 # Terminal 4: Start tunnel
@@ -51,7 +51,7 @@ curl -s -X POST http://127.0.0.1:3054/api/actions/search \
 ```
 
 Expected output:
-- OpenAPI returns `"Brain Bridge API"`
+- OpenAPI returns `"BuildFlow API"`
 - Search returns a file path like `"operations/runbooks/..."`
 
 ## Prepare OpenAPI for ChatGPT Import
@@ -61,8 +61,8 @@ Expected output:
 
 ```bash
 TUNNEL_URL="https://your-tunnel-domain.trycloudflare.com"
-jq '.servers[0].url = "'$TUNNEL_URL'"' docs/openapi.chatgpt.json > /tmp/brainbridge-openapi-chatgpt.json
-cat /tmp/brainbridge-openapi-chatgpt.json
+jq '.servers[0].url = "'$TUNNEL_URL'"' docs/openapi.chatgpt.json > /tmp/buildflow-openapi-chatgpt.json
+cat /tmp/buildflow-openapi-chatgpt.json
 ```
 
 3. Verify it looks correct (servers[0].url should have your tunnel domain)
@@ -79,7 +79,7 @@ cat /tmp/brainbridge-openapi-chatgpt.json
 
 1. Go to the **Actions** tab
 2. Click **Create new action**
-3. Under **Schema**, paste the entire contents of `/tmp/brainbridge-openapi-chatgpt.json`
+3. Under **Schema**, paste the entire contents of `/tmp/buildflow-openapi-chatgpt.json`
 4. Click **Save** (ChatGPT will validate the schema)
 
 You should see:
@@ -123,7 +123,7 @@ Expected response:
 
 ### "Invalid OpenAPI schema"
 
-- Verify the schema is valid JSON: `jq . /tmp/brainbridge-openapi-chatgpt.json`
+- Verify the schema is valid JSON: `jq . /tmp/buildflow-openapi-chatgpt.json`
 - Confirm both `/api/actions/search` and `/api/actions/read` paths are present
 - Check that `servers[0].url` uses `https://` (not `http://`)
 
@@ -189,4 +189,4 @@ Expected response:
 6. Observe and verify results
 7. Document outcomes
 
-If tests pass, Brain Bridge MVP is feature-complete for ChatGPT integration.
+If tests pass, BuildFlow MVP is feature-complete for ChatGPT integration.

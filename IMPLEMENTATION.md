@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Implementation Complete
+# BuildFlow MVP — Implementation Complete
 
 ## What's Built
 
@@ -7,12 +7,12 @@ This is a fully-implemented MVP ready for testing and refinement. The architectu
 ### Local CLI Agent (`packages/cli/`)
 
 **Commands:**
-- `brainbridge init` — Initialize configuration
-- `brainbridge login <api-key>` — Authenticate
-- `brainbridge connect <folder>` — Point to Obsidian vault
-- `brainbridge index` — Rebuild search index
-- `brainbridge serve` — Start local server + bridge connection
-- `brainbridge status` — Show connection status
+- `buildflow init` — Initialize configuration
+- `buildflow login <api-key>` — Authenticate
+- `buildflow connect <folder>` — Point to Obsidian vault
+- `buildflow index` — Rebuild search index
+- `buildflow serve` — Start local server + bridge connection
+- `buildflow status` — Show connection status
 
 **Core Modules:**
 
@@ -20,8 +20,8 @@ This is a fully-implemented MVP ready for testing and refinement. The architectu
 |--------|---------|
 | `agent/vault.ts` | Safe file operations (read, create, append) with path traversal protection |
 | `agent/permissions.ts` | Validate paths, block hidden files, enforce .md/.txt only |
-| `agent/config.ts` | Manage ~/.brainbridge/config.json |
-| `agent/indexer.ts` | Scan and index Markdown files, persist to `~/.brainbridge/index.json` |
+| `agent/config.ts` | Manage ~/.buildflow/config.json |
+| `agent/indexer.ts` | Scan and index Markdown files, persist to `~/.buildflow/index.json` |
 | `agent/search.ts` | Fuse.js-based full-text search with relevance scoring |
 | `agent/server.ts` | Fastify HTTP server for local testing (port 3052) |
 | `agent/bridge-client.ts` | WebSocket client connecting to SaaS bridge |
@@ -32,7 +32,7 @@ This is a fully-implemented MVP ready for testing and refinement. The architectu
 - ✅ Path traversal blocked (no `..`, `/`, hidden files)
 - ✅ File operations limited to `.md` and `.txt`
 - ✅ No deletion/overwrite (create/append only)
-- ✅ Audit logging to `~/.brainbridge/audit.log`
+- ✅ Audit logging to `~/.buildflow/audit.log`
 
 ### SaaS Bridge (`apps/web/`)
 
@@ -87,9 +87,9 @@ ToolCallLog (id, userId, deviceId, toolName, status, inputJson, error)
 
 1. **Terminal 1** — Start local agent:
    ```bash
-   brainbridge init
-   brainbridge connect ~/Obsidian/MyVault
-   brainbridge serve
+   buildflow init
+   buildflow connect ~/Obsidian/MyVault
+   buildflow serve
    ```
    This starts HTTP server on http://127.0.0.1:3052
 
@@ -102,9 +102,9 @@ ToolCallLog (id, userId, deviceId, toolName, status, inputJson, error)
 
 ### ChatGPT Actions (Phase 3+)
 
-1. **Start local agent** on port 3052: `brainbridge serve`
+1. **Start local agent** on port 3052: `buildflow serve`
 2. **Start relay** on port 3053: `docker compose up -d` (optional for device coordination)
-3. **Start web app** on port 3054: `cd apps/web && npm start` (requires BRAIN_BRIDGE_ACTION_TOKEN env var)
+3. **Start web app** on port 3054: `cd apps/web && npm start` (requires BUILDFLOW_ACTION_TOKEN env var)
 4. **Configure ChatGPT** Custom GPT with action schema from web app's `/api/openapi` endpoint
 5. **ChatGPT calls** web app (/api/actions/*) → web app forwards to local agent (/api/search, /api/read, /api/create) → agent responds
 6. **Relay is NOT in the ChatGPT request path** (relay is WebSocket-only for device coordination)
@@ -112,13 +112,13 @@ ToolCallLog (id, userId, deviceId, toolName, status, inputJson, error)
 ## File Paths
 
 ### Config
-- `~/.brainbridge/config.json` — User, device, vault configuration
-- `~/.brainbridge/audit.log` — Audit trail (JSON lines)
-- `~/.brainbridge/index.json` — Search index (cached)
+- `~/.buildflow/config.json` — User, device, vault configuration
+- `~/.buildflow/audit.log` — Audit trail (JSON lines)
+- `~/.buildflow/index.json` — Search index (cached)
 
 ### Source Tree
 ```
-brainbridge/
+buildflow/
 ├── packages/
 │   ├── shared/              # Types, schemas, constants
 │   │   └── src/
@@ -155,7 +155,7 @@ brainbridge/
 2. **Build packages:** `pnpm build`
 3. **Terminal 1 — Start relay (optional):** `docker compose up -d`
 4. **Terminal 2 — Start agent:** `cd packages/cli && BRIDGE_URL=ws://localhost:3053 DEVICE_TOKEN=test npx tsx src/index.ts serve`
-5. **Terminal 3 — Start web app:** `cd apps/web && BRAIN_BRIDGE_ACTION_TOKEN=test npm start`
+5. **Terminal 3 — Start web app:** `cd apps/web && BUILDFLOW_ACTION_TOKEN=test npm start`
 6. **Test ChatGPT Actions:**
    ```bash
    curl -X POST http://localhost:3054/api/actions/search \
@@ -174,7 +174,7 @@ brainbridge/
 
 ### File Writing
 - Auto-generates paths if not provided
-- Default folder: `BrainBridge/Inbox/`
+- Default folder: `BuildFlow/Inbox/`
 - Adds frontmatter with timestamps
 - No overwrites allowed (error if file exists)
 
@@ -185,16 +185,16 @@ brainbridge/
 
 ### Error Handling
 Clear, user-friendly errors:
-- "No active Brain Bridge device is online." → device offline
+- "No active BuildFlow device is online." → device offline
 - "Access denied. This file is outside the approved brain folder." → path traversal attempt
 - "Unsupported file type. MVP only supports .md and .txt files." → wrong extension
 - "File already exists. Use append-note or choose a new path." → create conflict
 
 ## Testing Checklist
 
-- [ ] `brainbridge init` creates config dir
-- [ ] `brainbridge connect` scans and indexes files
-- [ ] `brainbridge serve` starts HTTP server
+- [ ] `buildflow init` creates config dir
+- [ ] `buildflow connect` scans and indexes files
+- [ ] `buildflow serve` starts HTTP server
 - [ ] Local HTTP endpoints work (curl test)
 - [ ] SaaS dashboard loads
 - [ ] User registration creates API key
@@ -233,4 +233,4 @@ Clear, user-friendly errors:
 
 **Status:** ✅ MVP Complete and Ready for Testing
 
-This implementation is production-ready for a single-user beta. All core features work end-to-end. Deploy to Vercel, install CLI globally, and start using Brain Bridge with ChatGPT.
+This implementation is production-ready for a single-user beta. All core features work end-to-end. Deploy to Vercel, install CLI globally, and start using BuildFlow with ChatGPT.

@@ -10,7 +10,7 @@ export async function initCommand(): Promise<void> {
   const configPath = path.join(configDir, 'config.json')
 
   if (fs.existsSync(configPath)) {
-    log('Brain Bridge is already initialized.')
+    log('BuildFlow is already initialized.')
     return
   }
 
@@ -18,23 +18,23 @@ export async function initCommand(): Promise<void> {
     userId: '',
     deviceId: '',
     deviceToken: '',
-    apiBaseUrl: process.env.BRAIN_BRIDGE_API || 'http://localhost:3000',
+    apiBaseUrl: process.env.BUILDFLOW_API || 'http://localhost:3000',
     sources: [],
     vaultPath: '',
     localPort: 3052,
     mode: 'read_create_append',
     allowedExtensions: ['.md', '.txt'],
-    ignorePatterns: ['.git/**', '.obsidian/**', 'node_modules/**', '.brainbridgeignore']
+    ignorePatterns: ['.git/**', '.obsidian/**', 'node_modules/**', '.buildflowignore']
   }
 
   fs.mkdirSync(configDir, { recursive: true })
   saveConfig(config)
 
-  log('Brain Bridge initialized.')
+  log('BuildFlow initialized.')
   log(`Config directory: ${configDir}`)
   log('')
   log('Next steps:')
-  log('1. Run: brainbridge connect <path-to-knowledge-source>')
-  log('2. (Optional) Run: brainbridge connect <another-path> for additional sources')
-  log('3. Run: brainbridge serve')
+  log('1. Run: buildflow connect <path-to-knowledge-source>')
+  log('2. (Optional) Run: buildflow connect <another-path> for additional sources')
+  log('3. Run: buildflow serve')
 }

@@ -4,7 +4,7 @@ import matter from 'gray-matter'
 import { globSync } from 'fast-glob'
 import { getEnabledSources } from './config'
 import { getIndexPath } from '../utils/paths'
-import { IndexedDoc } from '@brainbridge/shared'
+import { IndexedDoc } from '@buildflow/shared'
 
 export class Indexer {
   private docs: IndexedDoc[] = []

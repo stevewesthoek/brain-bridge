@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js'
-import { IndexedDoc, SearchResult } from '@brainbridge/shared'
+import { IndexedDoc, SearchResult } from '@buildflow/shared'
 
 export class VaultSearcher {
   private fuse: Fuse<IndexedDoc>

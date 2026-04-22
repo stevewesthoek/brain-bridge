@@ -28,15 +28,15 @@ export function logToFile(entry: LogEntry): void {
 }
 
 export function log(message: string): void {
-  console.log(`[Brain Bridge] ${message}`)
+  console.log(`[BuildFlow] ${message}`)
 }
 
 export function error(message: string): void {
-  console.error(`[Brain Bridge] Error: ${message}`)
+  console.error(`[BuildFlow] Error: ${message}`)
 }
 
 export function debug(message: string): void {
   if (process.env.DEBUG) {
-    console.log(`[Brain Bridge Debug] ${message}`)
+    console.log(`[BuildFlow Debug] ${message}`)
   }
 }

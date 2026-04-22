@@ -13,7 +13,7 @@ export interface RuntimeConfig {
 export function loadConfig(): RuntimeConfig {
   const bridgePort = parseInt(process.env.BRIDGE_PORT || '3053', 10)
   const relayDataDir = process.env.RELAY_DATA_DIR
-  const dataDir = relayDataDir ? path.resolve(relayDataDir) : path.join(os.homedir(), '.brainbridge')
+  const dataDir = relayDataDir ? path.resolve(relayDataDir) : path.join(os.homedir(), '.buildflow')
   const relayAdminToken = process.env.RELAY_ADMIN_TOKEN || null
   const relayProxyToken = process.env.RELAY_PROXY_TOKEN || null
   const enableDefaultTokens = process.env.RELAY_ENABLE_DEFAULT_TOKENS !== 'false'

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     if (!device) {
       return NextResponse.json(
-        { error: 'No active Brain Bridge device is online.' },
+        { error: 'No active BuildFlow device is online.' },
         { status: 503 }
       )
     }

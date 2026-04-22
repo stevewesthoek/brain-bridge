@@ -1,4 +1,4 @@
-# Brain Bridge Phase 2.0 — Minimal SaaS Relay
+# BuildFlow Phase 2.0 — Minimal SaaS Relay
 
 **Status:** ✅ **MVP RELAY COMPLETE**
 
@@ -44,23 +44,23 @@
 ### Terminal 1: Start Local Agent
 
 ```bash
-cd ~/Repos/stevewesthoek/brain-bridge/packages/cli
+cd ~/Repos/stevewesthoek/buildflow/packages/cli
 node dist/index.js serve
 ```
 
 **Output:**
 ```
-[Brain Bridge] Starting local agent server...
-[Brain Bridge] No device token configured. Local agent running in standalone mode.
-[Brain Bridge] Brain Bridge agent is running!
-[Brain Bridge] Local server: http://127.0.0.1:3052
-[Brain Bridge] Press Ctrl+C to stop.
+[BuildFlow] Starting local agent server...
+[BuildFlow] No device token configured. Local agent running in standalone mode.
+[BuildFlow] BuildFlow agent is running!
+[BuildFlow] Local server: http://127.0.0.1:3052
+[BuildFlow] Press Ctrl+C to stop.
 ```
 
 ### Terminal 2: Start Web App
 
 ```bash
-cd ~/Repos/stevewesthoek/brain-bridge/apps/web
+cd ~/Repos/stevewesthoek/buildflow/apps/web
 npm run dev
 ```
 
@@ -87,7 +87,7 @@ curl -s http://localhost:3054/api/relay/health | jq .
   "localAgentHealth": {
     "status": "ok",
     "port": 3052,
-    "vaultPath": "/tmp/brainbridge-demo",
+    "vaultPath": "/tmp/buildflow-demo",
     "indexedFiles": 4,
     "version": "0.1.0"
   },
@@ -108,7 +108,7 @@ curl -s -X POST http://localhost:3054/api/relay/search \
 {
   "results": [
     {
-      "path": "BrainBridge/Inbox/demo-plan.md",
+      "path": "BuildFlow/Inbox/demo-plan.md",
       "title": "demo-plan",
       "score": 0.001,
       "snippet": "...",
@@ -149,7 +149,7 @@ LOCAL_AGENT_URL=http://127.0.0.1:3052
 
 **Local Agent** (automatic):
 - Port: 3052 (fixed)
-- Vault path: Configured via `brainbridge connect`
+- Vault path: Configured via `buildflow connect`
 
 ---
 
@@ -161,13 +161,13 @@ Run full Phase 2.0 proof:
 #!/bin/bash
 
 # Terminal 1: Start local agent
-cd ~/Repos/stevewesthoek/brain-bridge/packages/cli
+cd ~/Repos/stevewesthoek/buildflow/packages/cli
 node dist/index.js serve &
 AGENT_PID=$!
 sleep 2
 
 # Terminal 2: Start web app
-cd ~/Repos/stevewesthoek/brain-bridge
+cd ~/Repos/stevewesthoek/buildflow
 pnpm dev &
 WEB_PID=$!
 sleep 5

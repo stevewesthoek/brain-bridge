@@ -6,7 +6,7 @@ export async function indexCommand(): Promise<void> {
   const config = loadConfig()
 
   if (!config?.vaultPath) {
-    error('No vault connected. Run: brainbridge connect <path>')
+    error('No vault connected. Run: buildflow connect <path>')
     return
   }
 

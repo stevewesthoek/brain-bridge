@@ -1,4 +1,4 @@
-# Multi-stage build for Brain Bridge Relay
+# Multi-stage build for BuildFlow Relay
 
 # Build stage
 FROM node:20-alpine AS builder
@@ -25,7 +25,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Create non-root user (use dynamic UID/GID to avoid conflicts)
-RUN addgroup -S brainbridge && adduser -S brainbridge -G brainbridge -s /sbin/nologin
+RUN addgroup -S buildflow && adduser -S buildflow -G buildflow -s /sbin/nologin
 
 # Copy built code and dependencies (pnpm workspace structure)
 COPY --from=builder /app/packages/bridge/dist ./packages/bridge/dist
@@ -34,11 +34,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/bridge/node_modules ./packages/bridge/node_modules
 
 # Create data directory with proper permissions
-RUN mkdir -p /var/lib/brainbridge && chown -R brainbridge:brainbridge /var/lib/brainbridge
+RUN mkdir -p /var/lib/buildflow && chown -R buildflow:buildflow /var/lib/buildflow
 
 # Switch to package directory and non-root user
 WORKDIR /app/packages/bridge
-USER brainbridge
+USER buildflow
 
 # Expose relay port
 EXPOSE 3053
@@ -48,5 +48,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "const http = require('http'); http.get('http://localhost:3053/ready', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
 
 # Start relay server with data directory
-ENV RELAY_DATA_DIR=/var/lib/brainbridge
+ENV RELAY_DATA_DIR=/var/lib/buildflow
 CMD ["node", "./dist/server.js"]

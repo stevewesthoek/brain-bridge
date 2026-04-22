@@ -1,337 +1,302 @@
-# Brain Bridge
+BuildFlow
 
-**Connect your local knowledge sources to ChatGPT. Search, read, and create notes across your repositories—all without uploading your files to the cloud.**
+Turn ideas into execution packets tailored to your actual local toolchain.
 
-Brain Bridge is a privacy-first bridge that brings your personal knowledge base into AI conversations. Use ChatGPT or Claude to search across your local markdown repositories, retrieve specific files for context, and save insights back to your vault—all while keeping your files on your machine.
+BuildFlow helps solo developers and indie hackers go from a rough idea to a structured, execution-ready plan they can use with Codex CLI, Claude Code, or any IDE workflow.
 
-## Why Brain Bridge?
+It starts with your real local context — your repositories, notes, docs, methods, and project files — then helps you:
 
-- **Local-first by design** — Your files never leave your computer. ChatGPT sees only the search results and content you explicitly request.
-- **Multi-source support** — Combine knowledge from multiple repositories (Obsidian vaults, markdown folders, code docs, research notes) into a single searchable index.
-- **ChatGPT + Your Brain** — Use ChatGPT's reasoning with your actual context. Search your vault from ChatGPT's Custom GPT interface and save the results back.
-- **Simple, honest security** — Append-only writes, no deletion or overwrite, path traversal protection, extension filtering. Audit logs for all operations.
-- **Open source & looking for help** — MIT licensed. Early stage. Actively seeking testers, bug reports, and contributors.
+* clarify the idea
+* scan your actual local toolchain
+* generate a blueprint and phased plan
+* produce execution packets and prompts
+* hand everything off into the coding tool you already use
 
-## Who Is It For?
+Think in ChatGPT. Build anywhere.
 
-- **Knowledge workers** — Keep your personal notes private while leveraging AI for synthesis and discovery
-- **Developers** — Give Claude/ChatGPT access to your project README, architecture docs, and codebase notes
-- **Researchers** — Manage literature, experiments, and findings locally; use AI to find connections and generate reports
-- **Anyone with local markdown** — If you store knowledge as markdown or text files, Brain Bridge bridges you to ChatGPT
+BuildFlow is a local-first, open-source planning and handoff layer for AI-native builders.
 
-## What Brain Bridge Does
+Why BuildFlow?
 
-✅ **Search across repositories** — Full-text search across all connected knowledge sources
-✅ **Read files** — Retrieve specific file content for use as context in ChatGPT
-✅ **Create & append notes** — Save ChatGPT insights back to your vault
-✅ **Multi-source indexing** — Connect Obsidian, markdown folders, GitHub docs, etc.
-✅ **Audit logging** — All operations logged with timestamps and source info
-✅ **Bearer token auth** — Secure API access for ChatGPT via custom bearer token
-✅ **Health & readiness probes** — Ready for container orchestration (Kubernetes, Docker, etc.)
+Most AI workflows break between thinking and doing.
 
-## What Brain Bridge Does NOT Do
+You can reason through an idea in ChatGPT, but the moment you move into implementation, the workflow usually falls apart. You still have to rebuild context in your coding tool, turn rough thinking into structured tasks, figure out what your local machine can actually do, and keep everything aligned across chats, files, repos, and terminals.
 
-❌ **Cloud sync** — Your files stay local. No SaaS backend, no file uploads
-❌ **Multi-device sync** — Currently single-device per relay; multi-device coordination planned
-❌ **Arbitrary file access** — Only `.md` and `.txt` files; path traversal blocked
-❌ **Deletion or overwrite** — File operations are append-only for safety
-❌ **Semantic search** — Full-text search only; embedding-based search planned
-❌ **Structured logging** — Plain text logs; JSON logging planned
+BuildFlow fixes that handoff.
 
-## Quick Start
+It turns a planning session into a reusable local execution packet tailored to the repo, machine, and tools you actually have.
 
-### 1. Clone & Install
+What makes BuildFlow different?
 
-```bash
-git clone https://github.com/stevewesthoek/brain-bridge
-cd brain-bridge
+* Local-first context — Your files stay on your machine. BuildFlow works with your local repos, notes, and markdown knowledge sources.
+* Toolchain-aware planning — BuildFlow detects the tools and environment you actually have installed and adapts the plan accordingly.
+* Execution packets — It turns ideas into structured local artifacts: phases, tasks, prompts, decisions, and status files.
+* Works with your existing tools — Use Codex CLI, Claude Code, Cursor, VS Code, or any workflow you already prefer.
+* Open-source and inspectable — The packet format is file-based, transparent, and easy to understand.
+* Free to try — The local workflow is the core product, not a teaser.
+
+Who is it for?
+
+BuildFlow is built for:
+
+* solo developers who want more structure from AI planning
+* indie hackers moving from idea to implementation quickly
+* founder-operators who think in ChatGPT but build with local tools
+* AI-native builders who want better handoff between reasoning and execution
+
+If you already use ChatGPT to think and Codex / Claude / your IDE to build, BuildFlow is designed for you.
+
+What BuildFlow does
+
+✅ Loads local context — Search and read across connected local knowledge sources
+✅ Guides planning — Capture the idea through a Blueprint-style planning flow
+✅ Scans your environment — Detect available executors, runtimes, package managers, deployment tools, and repo signals
+✅ Generates execution packets — Write structured local artifacts into a standard folder
+✅ Creates per-tool prompts — Generate copy-ready prompts for Codex CLI and Claude Code
+✅ Shows progress in a dashboard — Visualize plans, packets, phases, and execution timeline
+✅ Keeps files local — No cloud sync of your project files
+
+What BuildFlow does NOT do
+
+❌ Replace your coding tool — BuildFlow is the planning and handoff layer, not a full IDE agent replacement
+❌ Upload your repo to a hosted SaaS by default — The core workflow is local-first
+❌ Promise perfect automation — v1 is designed for reliable handoff, not fully autonomous execution
+❌ Hide everything behind a paywall — The free local product is meant to be genuinely useful
+
+Core workflow
+
+1. Start with an idea in ChatGPT
+2. BuildFlow loads local context from your repos, notes, and docs
+3. BuildFlow captures the blueprint
+4. BuildFlow scans your local toolchain and repo
+5. BuildFlow generates an execution packet
+6. You copy a tool-specific prompt into Codex CLI, Claude Code, or your IDE
+7. BuildFlow tracks progress in the dashboard
+
+Example execution packet
+
+BuildFlow writes structured local artifacts like these:
+
+.buildflow/
+  blueprint/
+    session.json
+    summary.md
+    capability-profile.json
+    repo-profile.json
+  plan/
+    overview.md
+    phases.json
+    tasks.json
+    acceptance-criteria.md
+  prompts/
+    codex/
+      phase-01.txt
+    claude/
+      phase-01.txt
+  execution/
+    active-run.json
+    timeline.jsonl
+    status.json
+  artifacts/
+    decisions.md
+    risks.md
+
+This means your planning output is no longer trapped inside one chat. It becomes a portable, inspectable handoff format your local tools can use.
+
+Architecture
+
+BuildFlow runs three services locally:
+
+┌──────────────────────────────────────────────────────────────┐
+│                  ChatGPT / Claude (via HTTPS)               │
+│      planning, reasoning, summarization, clarification      │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+         ┌───────▼────────┐    ┌──────▼────────┐
+         │   Web (3054)   │    │ Relay (3053)  │
+         │ Next.js +      │    │ WebSocket     │
+         │ Actions/API    │    │ bridge        │
+         └───────┬────────┘    └──────┬────────┘
+                 │                    │
+                 └──────────┬─────────┘
+                            │
+                    ┌───────▼────────┐
+                    │ Agent (3052)   │
+                    │ • Context      │
+                    │ • Search/read  │
+                    │ • Scan         │
+                    │ • Packet gen   │
+                    │ • File ops     │
+                    └────────┬───────┘
+                             │
+         ┌───────────────────▼────────────────────┐
+         │ Your Local Workspace                   │
+         │ • repos                                │
+         │ • notes                                │
+         │ • docs                                 │
+         │ • skills / methods                     │
+         │ • .buildflow execution packets           │
+         └────────────────────────────────────────┘
+
+Two execution modes
+
+direct-agent (default):
+
+* Web forwards requests directly to the local agent (3052)
+* Simplest setup for local-only use
+* No relay needed
+* BUILDFLOW_BACKEND_MODE=direct-agent
+
+relay-agent:
+
+* Web routes through relay (3053) to the agent via WebSocket
+* Enables device coordination and bearer token auth
+* Designed for more advanced and future hosted workflows
+* BUILDFLOW_BACKEND_MODE=relay-agent
+
+Quick Start
+
+1. Clone & install
+
+git clone https://github.com/stevewesthoek/buildflow
+cd buildflow
 pnpm install
-```
 
-### 2. Start the Services
+2. Start the local services
 
-```bash
-# Generate a secure token for ChatGPT authentication
-export BRAIN_BRIDGE_ACTION_TOKEN=$(openssl rand -hex 32)
-
-# Start all services locally
-# • Agent: 3052 (indexing & file operations)
-# • Relay: 3053 (device coordination)
-# • Web: 3054 (ChatGPT Custom Actions)
-pnpm dev
-```
-
-### 3. Connect Your Knowledge Source
-
-```bash
-# Point to your Obsidian vault, markdown folder, or any local repo
-export LOCAL_AGENT_URL="http://127.0.0.1:3052"
-
-# Via CLI (when init/connect commands are implemented):
-# brainbridge init
-# brainbridge connect ~/Obsidian/MyVault
-
-# For now, configure directly in the agent and restart
-```
-
-### 4. Set Up ChatGPT Custom GPT
-
-1. Create a new **Custom GPT** in ChatGPT
-2. Import the OpenAPI schema from `https://brainbridge.prochat.tools/api/openapi` or the synced local export in `docs/openapi.chatgpt.json`
-3. Set authentication to **Bearer token**, using your `BRAIN_BRIDGE_ACTION_TOKEN`
-4. Save and test with: _"Search my brain for notes on [topic]"_
-
-## Example Workflow
-
-```
-You (ChatGPT):
-"Search my brain for notes about Claude Code"
-     ↓
-Brain Bridge:
-Returns matching files from your local vault
-     ↓
-You (ChatGPT):
-"Read the top result"
-     ↓
-Brain Bridge:
-Returns full file content
-     ↓
-You (ChatGPT):
-"Create an implementation plan and save it to my inbox"
-     ↓
-Brain Bridge:
-Writes new note to your vault
-```
-
-## Architecture
-
-Brain Bridge runs three services locally:
-
-```
-┌───────────────────────────────────────────────────┐
-│           ChatGPT (via HTTPS)                     │
-└────────────────────┬──────────────────────────────┘
-                     │
-        ┌────────────┴───────────┐
-        │                        │
-   ┌────▼────────┐        ┌─────▼──────┐
-   │  Web (3054) │        │ Relay      │
-   │  Next.js    │        │ (3053)     │
-   │  + ChatGPT  │        │ WebSocket  │
-   │  Actions    │        │ bridge     │
-   └────┬────────┘        └─────┬──────┘
-        │                       │
-        └───────────┬───────────┘
-                    │
-            ┌───────▼────────┐
-            │ Agent (3052)   │
-            │ • Indexing     │
-            │ • Search       │
-            │ • File ops     │
-            └────────┬───────┘
-                     │
-              ┌──────▼──────┐
-              │ Your Local  │
-              │ Repositories│
-              │ (.md, .txt) │
-              └─────────────┘
-```
-
-### Two Execution Modes
-
-**direct-agent (default):**
-- Web forwards requests directly to local agent (3052)
-- Simplest setup for local-only use
-- No relay needed
-- `BRAIN_BRIDGE_BACKEND_MODE=direct-agent`
-
-**relay-agent:**
-- Web routes through relay (3053) to agent via WebSocket
-- Enables device coordination and bearer token auth
-- Designed for multi-device deployments (single device currently supported)
-- `BRAIN_BRIDGE_BACKEND_MODE=relay-agent`
-
-## Privacy & Security
-
-**Local-first by design:**
-- Your files never leave your machine
-- ChatGPT only receives search results and content you explicitly request
-- All indexing happens locally
-
-**Security guarantees:**
-- ✅ **Path traversal prevention** — No `../` or absolute paths allowed
-- ✅ **Extension filtering** — Only `.md` and `.txt` files accessible
-- ✅ **Append-only writes** — No deletion, overwrite, or modification of existing content
-- ✅ **Bearer token authentication** — API key required for ChatGPT access
-- ✅ **Audit logging** — All operations logged with timestamps (`~/.brainbridge/audit.log`)
-- ✅ **Device token validation** — Agent-relay communication authenticated
-
-**What this README does NOT include:**
-- No private user data, credentials, or API keys
-- This is the public open-source repo; it has no PII or sensitive configuration
-
-## Installation & Configuration
-
-### Local Development
-
-```bash
-pnpm install
-export BRAIN_BRIDGE_ACTION_TOKEN=$(openssl rand -hex 32)
+export BUILDFLOW_ACTION_TOKEN=$(openssl rand -hex 32)
 export LOCAL_AGENT_URL="http://127.0.0.1:3052"
 pnpm dev
-```
 
-### Docker
+This starts:
 
-```bash
-docker compose up -d
+* Agent on 3052
+* Relay on 3053
+* Web on 3054
 
-# Verify relay is ready
-curl http://localhost:3053/ready | jq .
+3. Connect your local source(s)
 
-# Verify web app is running
-curl http://localhost:3054
-```
+Point BuildFlow at a local repo, markdown folder, notes vault, or workspace you want to plan with.
 
-### Environment Variables
+For now, source setup is managed in the current local flow. The BuildFlow UX builds on top of that foundation.
 
-**Web app** (`apps/web/.env.local`):
-- `BRAIN_BRIDGE_ACTION_TOKEN` — Bearer token for ChatGPT (generate with `openssl rand -hex 32`)
-- `LOCAL_AGENT_URL` — Local agent endpoint (default: `http://127.0.0.1:3052`)
-- `BRAIN_BRIDGE_BACKEND_MODE` — `direct-agent` (default) or `relay-agent`
-- `RELAY_PROXY_TOKEN` — Bearer token for relay proxy (if using relay-agent mode)
+4. Set up your Custom GPT
 
-**Relay** (`packages/bridge/.env.relay`):
-- `BRIDGE_PORT` — Listen port (default: 3053)
-- `RELAY_ADMIN_TOKEN` — Bearer token for admin endpoints
-- `RELAY_PROXY_TOKEN` — Bearer token for web app requests
-- `NODE_ENV` — `development` (default) or `production`
+1. Create a new Custom GPT in ChatGPT
+2. Import the OpenAPI schema from https://buildflow.prochat.tools/api/openapi or the synced local export in docs/openapi.chatgpt.json
+3. Set authentication to Bearer token, using your BUILDFLOW_ACTION_TOKEN
+4. Test with a simple prompt like:
+    * “Search my local project context for notes about pricing”
+    * “Help me turn this idea into a phased implementation plan”
 
-See `DEPLOYMENT.md` for complete configuration reference.
+First things to try
 
-## ChatGPT Custom GPT Setup
+Try one of these prompts after setup:
 
-### Import OpenAPI Schema
+"Search my local context for everything related to my SaaS idea and summarize the current direction."
+"Help me turn this idea into a phased implementation plan for Codex CLI."
+"Read my local strategy docs and create a build-ready task breakdown."
+"Search my repo and notes, then create a local execution plan for the next phase."
 
-1. Go to ChatGPT and create a new **Custom GPT**
-2. In the Custom GPT editor, import the live OpenAPI schema from `https://brainbridge.prochat.tools/api/openapi` or paste the synced local export in `docs/openapi.chatgpt.json`
-3. Set authentication to **Bearer token**, using your `BRAIN_BRIDGE_ACTION_TOKEN`
-4. Test with a simple prompt: _"Get Brain Bridge status"_
+Privacy & security
 
-### Available Actions
+Local-first by design:
 
-**Read-only actions:**
-- `POST /api/actions/search` — Full-text search across your repositories
-- `POST /api/actions/read` — Retrieve specific file content
-- `POST /api/actions/search-and-read` — Search then automatically read top result
+* your files stay on your machine
+* indexing and scanning happen locally
+* ChatGPT only receives the results and content explicitly returned through the bridge
 
-**Write actions:**
-- `POST /api/actions/append-inbox-note` — Create a new note in your personal inbox
+Current security guarantees:
 
-### Example Prompts for ChatGPT
+* path traversal prevention
+* extension filtering
+* append-only write flows where applicable
+* bearer token authentication
+* audit logging
+* user-controlled local runtime
 
-```
-"Search my brain for notes about AI and find the top 3 matches"
+Current limitations
 
-"Read my implementation architecture doc and summarize it"
+BuildFlow is early and evolving.
 
-"Search for 'decision log' and create a summary, then save it to my inbox"
-```
+Current limitations include:
 
-## Current Limitations
+* some product language and internals may still reference BuildFlow while the project transitions to BuildFlow
+* the strongest v1 workflow is planning + packet generation + handoff, not full autonomous execution
+* multi-device and team workflows are future work
+* semantic search and richer packet templates are planned
+* the current setup is still more builder-focused than beginner-friendly
 
-- **Single relay per deployment** — Horizontal scaling for multiple relays planned
-- **No external secret management** — Tokens via environment variables (use container secrets in production)
-- **No structured logging** — Plain text logs; JSON logging with rotation planned
-- **In-memory state** — Agent state lost on relay restart; database persistence planned
-- **Single device per relay** — Multi-device support planned for Phase 5D+
-- **No semantic search** — Full-text search only; embedding-based search planned
+Roadmap
 
-## Testing
+Near term
 
-```bash
-# Type checking
-pnpm type-check
+* BuildFlow rebrand and docs update
+* Blueprint Wizard flow
+* local capability scan
+* execution packet generator
+* packet visualization in dashboard
+* per-tool prompt generation
 
-# Run tests
-pnpm test
+Later
 
-# Verify search endpoint
-curl -X POST http://localhost:3054/api/actions/search \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"brain","limit":5}'
+* richer executor integrations
+* live timeline improvements
+* better template packs
+* hosted control plane for BuildFlow Pro
+* team workflows
 
-# Verify relay health
-curl http://localhost:3053/health | jq .
-```
+Why try it now?
 
-## Roadmap
+Because the core loop is already useful today:
 
-### ✅ Completed
+Plan in ChatGPT. Generate a packet. Build with the tools you already use.
 
-- Multi-source knowledge support across agent, API, and dashboard
-- Relay WebSocket bridge with device coordination
-- Bearer token authentication for relay-agent mode
-- Personal inbox notes (append to local vault)
-- Dual-repo architecture (Brain + Mind symlink)
+If you care about:
 
-### 📋 Planned (Open Source)
+* local-first AI workflows
+* better planning-to-execution handoff
+* AI-native developer tooling
+* structured execution instead of messy copy-paste
 
-- **Enhanced CLI** — `init` and `connect` commands for one-shot setup
-- **Semantic search** — Embedding-based relevance ranking (Phase 6)
-- **PDF/DOCX support** — Beyond Markdown and text files (Phase 6)
-- **GitHub export** — Push notes as Gists or repo files (Phase 7)
-- **JSON logging with rotation** — Structured logs, auto-cleanup
-- **Horizontal scaling** — Multiple relay instances with load balancing
+then BuildFlow is worth trying now.
 
-## For Testers & Contributors
+It is early, but the product direction is clear and the workflow is inspectable.
 
-Brain Bridge is early stage and **actively seeking community feedback**.
+For testers & contributors
 
-### How You Can Help
+BuildFlow is early stage and actively looking for:
 
-**Test & Report:**
-- Try the quick start locally and report bugs (or successes!) via [GitHub issues](https://github.com/stevewesthoek/brain-bridge/issues)
-- Test with your own knowledge sources and let us know what works/breaks
-- Try the ChatGPT Custom GPT integration and share feedback
+* testers
+* bug reports
+* feedback on the packet format
+* feedback on the best Codex / Claude / IDE handoff workflow
+* contributors interested in local-first AI tooling
 
-**Contribute:**
-- Pick an issue labeled `good-first-issue` or `help-wanted`
-- Submit PRs for bug fixes, refactoring, or small features
-- Improve documentation, examples, or tests
-- Add support for new file formats or knowledge sources
+Ways to help
 
-**Spread the Word:**
-- ⭐ Star the repo if Brain Bridge is interesting to you
-- Share your use case in [Discussions](https://github.com/stevewesthoek/brain-bridge/discussions)
-- Write a blog post or tutorial if you build something cool
+* ⭐ Star the repo if the direction is interesting
+* open an issue with what broke or confused you
+* share your preferred Codex / Claude / IDE workflow
+* suggest better packet structures or dashboard views
+* contribute docs, fixes, scans, templates, or integrations
 
-### Development
+Development
 
-```bash
-# Install dependencies
 pnpm install
-
-# Run all services in dev mode
 pnpm dev
-
-# Type checking
 pnpm type-check
-
-# Run tests
 pnpm test
-
-# Build for production
 pnpm build
-```
 
-## Support & Feedback
+Support & feedback
 
-- **Issues & bugs**: [GitHub Issues](https://github.com/stevewesthoek/brain-bridge/issues)
-- **Questions & ideas**: [GitHub Discussions](https://github.com/stevewesthoek/brain-bridge/discussions)
-- **Deployment docs**: See `DEPLOYMENT.md` for ops guides and troubleshooting
+* Issues & bugs: GitHub Issues
+* Questions & ideas: GitHub Discussions
+* Roadmap / docs: repo docs and future BuildFlow docs
 
-## License
+License
 
-MIT — Free to use, modify, and distribute
+MIT — free to use, modify, and distribute

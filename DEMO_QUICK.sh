@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Brain Bridge MVP — Quick Demo (Copy & Paste)
+# BuildFlow MVP — Quick Demo (Copy & Paste)
 # Everything below is one workflow to test the MVP end-to-end
 
 set -e
 
-DEMO_VAULT="/tmp/brainbridge-demo"
-REPO="/Users/Office/Repos/stevewesthoek/brain-bridge"
+DEMO_VAULT="/tmp/buildflow-demo"
+REPO="/Users/Office/Repos/stevewesthoek/buildflow"
 
 # Clean slate
-rm -rf ~/.brainbridge "$DEMO_VAULT"
+rm -rf ~/.buildflow "$DEMO_VAULT"
 
 # Create test vault
 mkdir -p "$DEMO_VAULT"
@@ -17,7 +17,7 @@ mkdir -p "$DEMO_VAULT"
 cat > "$DEMO_VAULT/business.md" << 'EOF'
 # Business Context
 
-Brain Bridge connects local Markdown vaults to ChatGPT.
+BuildFlow connects local Markdown vaults to ChatGPT.
 
 ## Vision
 - Search your local notes from ChatGPT
@@ -48,7 +48,7 @@ EOF
 
 # Build
 cd "$REPO"
-echo "📦 Building Brain Bridge..."
+echo "📦 Building BuildFlow..."
 pnpm build > /dev/null 2>&1
 
 # Initialize CLI
@@ -67,7 +67,7 @@ node dist/index.js status
 # Start server in background on port 3052
 echo ""
 echo "🚀 Starting local server on http://127.0.0.1:3052"
-echo "   (Registered in ProBot local-apps.json)"
+echo "   (Registered in ProBot local-apps.json as BuildFlow)"
 node dist/index.js serve > /tmp/bb-server.log 2>&1 &
 SERVER_PID=$!
 sleep 2
@@ -90,14 +90,14 @@ echo "2️⃣  Read file 'business.md'"
 READ=$(curl -s -X POST http://127.0.0.1:3052/api/read \
   -H 'Content-Type: application/json' \
   -d '{"path": "business.md"}')
-echo "$READ" | grep -q "Brain Bridge" && echo "   ✓ Read file content" || echo "   ✗ Read failed"
+echo "$READ" | grep -q "BuildFlow" && echo "   ✓ Read file content" || echo "   ✗ Read failed"
 
 # Test 3: Create
 echo ""
 echo "3️⃣  Create new note"
 CREATE=$(curl -s -X POST http://127.0.0.1:3052/api/create \
   -H 'Content-Type: application/json' \
-  -d '{"path": "BrainBridge/Inbox/demo-plan.md", "content": "# Demo Plan\n\nCreated via local API!"}')
+  -d '{"path": "BuildFlow/Inbox/demo-plan.md", "content": "# Demo Plan\n\nCreated via local API!"}')
 echo "$CREATE" | grep -q "created" && echo "   ✓ Note created" || echo "   ✗ Create failed"
 
 # Test 4: Append
@@ -105,7 +105,7 @@ echo ""
 echo "4️⃣  Append to note"
 APPEND=$(curl -s -X POST http://127.0.0.1:3052/api/append \
   -H 'Content-Type: application/json' \
-  -d '{"path": "BrainBridge/Inbox/demo-plan.md", "content": "\n\n## Update\n\nAppended content works!"}')
+  -d '{"path": "BuildFlow/Inbox/demo-plan.md", "content": "\n\n## Update\n\nAppended content works!"}')
 echo "$APPEND" | grep -q "appended" && echo "   ✓ Content appended" || echo "   ✗ Append failed"
 
 # Test 5: Export Plan
@@ -114,7 +114,7 @@ echo "5️⃣  Export Claude Code plan"
 EXPORT=$(curl -s -X POST http://127.0.0.1:3052/api/export-plan \
   -H 'Content-Type: application/json' \
   -d '{
-    "title": "Brain Bridge Demo",
+    "title": "BuildFlow Demo",
     "summary": "Local demo proof of concept",
     "projectGoal": "Connect vault to ChatGPT",
     "techStack": "Node.js, Fuse.js, Fastify",

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { getConfigPath, expandTilde } from '../utils/paths'
-import type { Workspace, KnowledgeSource } from '@brainbridge/shared'
+import type { Workspace, KnowledgeSource } from '@buildflow/shared'
 
 export interface AgentConfig {
   userId: string
@@ -75,7 +75,7 @@ export function getSources(): KnowledgeSource[] {
   const config = loadConfig()
   const sources = ensureSources(config ?? ({} as AgentConfig))
   if (sources.length === 0 && !(config && config.sources !== undefined)) {
-    throw new Error('No knowledge sources configured. Run: brainbridge connect <folder>')
+    throw new Error('No knowledge sources configured. Run: buildflow connect <folder>')
   }
 
   return sources.map(s => ({
@@ -101,7 +101,7 @@ export function getEnabledSources(): KnowledgeSource[] {
 export function addSource(pathInput: string, label?: string, id?: string): KnowledgeSource[] {
   const config = loadConfig()
   if (!config) {
-    throw new Error('Please run: brainbridge init')
+    throw new Error('Please run: buildflow init')
   }
 
   if (!pathInput) {
@@ -142,7 +142,7 @@ export function addSource(pathInput: string, label?: string, id?: string): Knowl
 export function removeSource(sourceId: string): KnowledgeSource[] {
   const config = loadConfig()
   if (!config) {
-    throw new Error('Please run: brainbridge init')
+    throw new Error('Please run: buildflow init')
   }
 
   const sources = ensureSources(config)
@@ -158,7 +158,7 @@ export function removeSource(sourceId: string): KnowledgeSource[] {
 export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeSource[] {
   const config = loadConfig()
   if (!config) {
-    throw new Error('Please run: brainbridge init')
+    throw new Error('Please run: buildflow init')
   }
 
   const sources = ensureSources(config)
@@ -184,7 +184,7 @@ export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeS
 export function getVaultPath(): string {
   const config = loadConfig()
   if (!config?.vaultPath) {
-    throw new Error('No vault path configured. Run: brainbridge connect <folder>')
+    throw new Error('No vault path configured. Run: buildflow connect <folder>')
   }
 
   return expandTilde(config.vaultPath)

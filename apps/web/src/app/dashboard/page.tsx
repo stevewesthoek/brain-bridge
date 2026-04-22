@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
-import type { KnowledgeSource } from '@brainbridge/shared'
+import type { KnowledgeSource } from '@buildflow/shared'
 
 export default function Dashboard() {
   const [sources, setSources] = useState<KnowledgeSource[]>([])
@@ -89,7 +89,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Brain Bridge Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">BuildFlow Dashboard</h1>
 
         {/* Connected Agent Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -164,7 +164,7 @@ export default function Dashboard() {
             </div>
           ) : sources.length === 0 ? (
             <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center text-gray-500">
-              No knowledge sources configured. Run: <code className="text-gray-700 font-mono">brainbridge connect &lt;path&gt;</code>
+              No knowledge sources configured. Run: <code className="text-gray-700 font-mono">buildflow connect &lt;path&gt;</code>
             </div>
           ) : (
             <div className="space-y-3">
@@ -212,14 +212,14 @@ export default function Dashboard() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
           <h2 className="text-lg font-bold text-blue-900 mb-2">Execution Modes</h2>
           <p className="text-blue-800 text-sm">
-            Brain Bridge supports two execution modes for ChatGPT Actions:
+            BuildFlow supports two execution modes for ChatGPT Actions:
           </p>
           <ul className="text-blue-800 text-sm space-y-1 mt-3 ml-4">
             <li>• <strong>direct-agent (default):</strong> Web app calls local agent directly on port 3052</li>
             <li>• <strong>relay-agent (Phase 5C+):</strong> Web app calls relay on port 3053, which routes to agent via WebSocket. Requires matching RELAY_PROXY_TOKEN on both sides.</li>
           </ul>
           <p className="text-blue-700 text-xs mt-3">
-            Set mode via <code className="bg-blue-100 px-1 rounded">BRAIN_BRIDGE_BACKEND_MODE</code> environment variable.
+            Set mode via <code className="bg-blue-100 px-1 rounded">BUILDFLOW_BACKEND_MODE</code> environment variable.
           </p>
         </div>
 
@@ -230,20 +230,20 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">1. Install and Initialize</h3>
-              <code className="bg-gray-100 p-3 rounded block text-sm mb-2">npm install -g brainbridge</code>
-              <code className="bg-gray-100 p-3 rounded block text-sm">brainbridge init</code>
+              <code className="bg-gray-100 p-3 rounded block text-sm mb-2">npm install -g buildflow</code>
+              <code className="bg-gray-100 p-3 rounded block text-sm">buildflow init</code>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">2. Add Knowledge Sources</h3>
               <p className="text-gray-600 text-sm mb-2">Connect local folders to search and read from:</p>
-              <code className="bg-gray-100 p-3 rounded block text-sm mb-2">brainbridge connect ~/my-vault</code>
+              <code className="bg-gray-100 p-3 rounded block text-sm mb-2">buildflow connect ~/my-vault</code>
               <p className="text-gray-600 text-xs">Repeat to add multiple sources (Brain, Mind, docs, etc.)</p>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">3. Start the Agent</h3>
-              <code className="bg-gray-100 p-3 rounded block text-sm">brainbridge serve</code>
+              <code className="bg-gray-100 p-3 rounded block text-sm">buildflow serve</code>
               <p className="text-gray-600 text-xs mt-2">Agent listens on http://127.0.0.1:3052</p>
             </div>
 

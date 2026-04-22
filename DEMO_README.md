@@ -1,8 +1,8 @@
-# Brain Bridge MVP — Local Demo
+# BuildFlow MVP — Local Demo
 
 **Status:** ✅ **FULLY WORKING** — All functionality tested and proven.
 
-This MVP demonstrates a **local-only Brain Bridge** that works without SaaS. Perfect for testing and validation before Phase 2 integration.
+This MVP demonstrates a **local-only BuildFlow** that works without SaaS. Perfect for testing and validation before Phase 2 integration.
 
 ---
 
@@ -45,7 +45,7 @@ Returns full file content.
 ```bash
 curl -X POST http://127.0.0.1:3001/api/create \
   -H 'Content-Type: application/json' \
-  -d '{"path": "BrainBridge/Inbox/new.md", "content": "# Note"}'
+  -d '{"path": "BuildFlow/Inbox/new.md", "content": "# Note"}'
 ```
 Creates file with YAML frontmatter.
 
@@ -53,7 +53,7 @@ Creates file with YAML frontmatter.
 ```bash
 curl -X POST http://127.0.0.1:3001/api/append \
   -H 'Content-Type: application/json' \
-  -d '{"path": "BrainBridge/Inbox/new.md", "content": "\n## Update"}'
+  -d '{"path": "BuildFlow/Inbox/new.md", "content": "\n## Update"}'
 ```
 Appends content to existing file.
 
@@ -81,17 +81,17 @@ If you want to run each step manually:
 
 ### Step 1: Create Test Vault
 ```bash
-mkdir -p /tmp/brainbridge-demo
+mkdir -p /tmp/buildflow-demo
 
-cat > /tmp/brainbridge-demo/business.md << 'EOF'
+cat > /tmp/buildflow-demo/business.md << 'EOF'
 # Business Context
-Brain Bridge connects local vaults to ChatGPT.
+BuildFlow connects local vaults to ChatGPT.
 EOF
 ```
 
 ### Step 2: Build
 ```bash
-cd /Users/Office/Repos/stevewesthoek/brain-bridge
+cd /Users/Office/Repos/stevewesthoek/buildflow
 pnpm install
 pnpm build
 ```
@@ -100,7 +100,7 @@ pnpm build
 ```bash
 cd packages/cli
 node dist/index.js init
-node dist/index.js connect /tmp/brainbridge-demo
+node dist/index.js connect /tmp/buildflow-demo
 node dist/index.js status
 ```
 
@@ -111,7 +111,7 @@ node dist/index.js serve
 
 Output:
 ```
-[Brain Bridge] Local agent running on http://127.0.0.1:3001
+[BuildFlow] Local agent running on http://127.0.0.1:3001
 ```
 
 ### Step 5: Test Endpoints (Terminal 2)
@@ -137,36 +137,36 @@ See test commands above.
 
 ## Files Created
 
-After running demo, check `/tmp/brainbridge-demo/`:
+After running demo, check `/tmp/buildflow-demo/`:
 
 ```
-/tmp/brainbridge-demo/
+/tmp/buildflow-demo/
 ├── business.md                          # Test file 1
 ├── architecture.md                      # Test file 2
-├── BrainBridge/
+├── BuildFlow/
 │   └── Inbox/
 │       └── demo-plan.md                 # Created via API
 └── Handoffs/
     └── claude-code/
-        └── 2026-04-16-brain-bridge-demo.md  # Exported plan
+        └── 2026-04-16-buildflow-demo.md  # Exported plan
 ```
 
 ---
 
 ## Check Audit Log
 
-All operations logged to `~/.brainbridge/audit.log`:
+All operations logged to `~/.buildflow/audit.log`:
 
 ```bash
-cat ~/.brainbridge/audit.log
+cat ~/.buildflow/audit.log
 ```
 
 Shows JSON entries for each operation:
 ```json
 {"timestamp":"...","tool":"search","status":"success"}
 {"timestamp":"...","tool":"read_file","path":"business.md","status":"success"}
-{"timestamp":"...","tool":"create_file","path":"BrainBridge/Inbox/demo-plan.md","status":"success"}
-{"timestamp":"...","tool":"append_file","path":"BrainBridge/Inbox/demo-plan.md","status":"success"}
+{"timestamp":"...","tool":"create_file","path":"BuildFlow/Inbox/demo-plan.md","status":"success"}
+{"timestamp":"...","tool":"append_file","path":"BuildFlow/Inbox/demo-plan.md","status":"success"}
 {"timestamp":"...","tool":"export_claude_plan","status":"success"}
 ```
 
@@ -185,7 +185,7 @@ bash DEMO_QUICK.sh
 Output shows:
 ```
 🚀 Starting local server on http://127.0.0.1:3052
-   (Registered in ProBot local-apps.json)
+   (Registered in ProBot local-apps.json as BuildFlow)
 
 ✅ Testing Operations:
 ...
@@ -238,7 +238,7 @@ kill 12345
 ### Restart the Server
 
 ```bash
-pkill -f "node dist/index.js serve" && sleep 1 && cd ~/Repos/stevewesthoek/brain-bridge/packages/cli && node dist/index.js serve
+pkill -f "node dist/index.js serve" && sleep 1 && cd ~/Repos/stevewesthoek/buildflow/packages/cli && node dist/index.js serve
 ```
 
 ---
@@ -247,7 +247,7 @@ pkill -f "node dist/index.js serve" && sleep 1 && cd ~/Repos/stevewesthoek/brain
 
 Remove test data:
 ```bash
-rm -rf ~/.brainbridge /tmp/brainbridge-demo
+rm -rf ~/.buildflow /tmp/buildflow-demo
 ```
 
 ---
@@ -299,19 +299,19 @@ kill -9 <PID>  # Kill it
 
 **Vault not found?**
 ```bash
-ls -la /tmp/brainbridge-demo
-brainbridge connect /tmp/brainbridge-demo
+ls -la /tmp/buildflow-demo
+buildflow connect /tmp/buildflow-demo
 ```
 
 **Search empty?**
 ```bash
-brainbridge index  # Rebuild index
+buildflow index  # Rebuild index
 ```
 
 **Server won't start?**
 ```bash
-cat ~/.brainbridge/config.json  # Check config
-brainbridge init                # Re-init if needed
+cat ~/.buildflow/config.json  # Check config
+buildflow init                # Re-init if needed
 ```
 
 ---
@@ -321,14 +321,14 @@ brainbridge init                # Re-init if needed
 ```
 ┌─────────────────────────────────────┐
 │      Test Files (Markdown)          │
-│  /tmp/brainbridge-demo/             │
+│  /tmp/buildflow-demo/             │
 │  ├── business.md                    │
 │  └── architecture.md                │
 └────────────┬────────────────────────┘
              │
              ▼
 ┌─────────────────────────────────────┐
-│      Brain Bridge CLI               │
+│      BuildFlow CLI               │
 │  packages/cli/dist/                 │
 │  ├── init (setup config)            │
 │  ├── connect (point to vault)       │

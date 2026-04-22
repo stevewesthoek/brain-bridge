@@ -1,4 +1,4 @@
-# Brain Bridge Relay — Local Secret Placement Guide
+# BuildFlow Relay — Local Secret Placement Guide
 
 This document describes the recommended pattern for managing relay secrets locally, from dev to production-like containerized deployment.
 
@@ -6,17 +6,17 @@ This document describes the recommended pattern for managing relay secrets local
 
 ```bash
 # 1. Create local secrets file (gitignored)
-mkdir -p ~/.config/brain-bridge
-cp packages/bridge/.env.relay ~/.config/brain-bridge/.env.relay
+mkdir -p ~/.config/buildflow
+cp packages/bridge/.env.relay ~/.config/buildflow/.env.relay
 
 # 2. Generate admin token
-echo "RELAY_ADMIN_TOKEN=$(openssl rand -hex 32)" >> ~/.config/brain-bridge/.env.relay
+echo "RELAY_ADMIN_TOKEN=$(openssl rand -hex 32)" >> ~/.config/buildflow/.env.relay
 
 # 3. Set production mode
-echo "RELAY_ENABLE_DEFAULT_TOKENS=false" >> ~/.config/brain-bridge/.env.relay
+echo "RELAY_ENABLE_DEFAULT_TOKENS=false" >> ~/.config/buildflow/.env.relay
 
 # 4. Source and run relay
-export $(cat ~/.config/brain-bridge/.env.relay | xargs)
+export $(cat ~/.config/buildflow/.env.relay | xargs)
 pnpm dev  # or docker compose up -d
 ```
 
@@ -26,11 +26,11 @@ pnpm dev  # or docker compose up -d
 
 ### Local Development
 
-**Pattern:** Env var from `~/.config/brain-bridge/.env.relay` (user home, never committed)
+**Pattern:** Env var from `~/.config/buildflow/.env.relay` (user home, never committed)
 
 **File:**
 ```
-~/.config/brain-bridge/.env.relay    (mode 600, gitignored)
+~/.config/buildflow/.env.relay    (mode 600, gitignored)
 ```
 
 **Contents:**
@@ -44,14 +44,14 @@ NODE_ENV=development
 **Setup:**
 ```bash
 # One-time setup
-mkdir -p ~/.config/brain-bridge
-cp brain-bridge/packages/bridge/.env.relay ~/.config/brain-bridge/.env.relay
+mkdir -p ~/.config/buildflow
+cp buildflow/packages/bridge/.env.relay ~/.config/buildflow/.env.relay
 
 # Edit with real token
-nano ~/.config/brain-bridge/.env.relay
+nano ~/.config/buildflow/.env.relay
 
 # Source before running relay
-export $(cat ~/.config/brain-bridge/.env.relay | xargs)
+export $(cat ~/.config/buildflow/.env.relay | xargs)
 pnpm dev
 ```
 
@@ -70,26 +70,26 @@ pnpm dev
 
 **Files:**
 ```
-~/.config/brain-bridge/.env.relay         (actual secrets, gitignored)
-brain-bridge/docker-compose.yml           (template, references .env file, committed)
-brain-bridge/packages/bridge/.env.relay   (template only, no secrets, committed)
+~/.config/buildflow/.env.relay         (actual secrets, gitignored)
+buildflow/docker-compose.yml           (template, references .env file, committed)
+buildflow/packages/bridge/.env.relay   (template only, no secrets, committed)
 ```
 
 **Setup:**
 
 ```bash
 # 1. Create actual secrets file
-mkdir -p ~/.config/brain-bridge
-cat > ~/.config/brain-bridge/.env.relay << 'EOF'
+mkdir -p ~/.config/buildflow
+cat > ~/.config/buildflow/.env.relay << 'EOF'
 RELAY_ADMIN_TOKEN=$(openssl rand -hex 32)
 RELAY_ENABLE_DEFAULT_TOKENS=false
 BRIDGE_PORT=3053
 NODE_ENV=production
 EOF
-chmod 600 ~/.config/brain-bridge/.env.relay
+chmod 600 ~/.config/buildflow/.env.relay
 
 # 2. Tell docker-compose where to find it
-export RELAY_ENV_FILE=~/.config/brain-bridge/.env.relay
+export RELAY_ENV_FILE=~/.config/buildflow/.env.relay
 
 # 3. Start container
 docker compose up -d
@@ -119,7 +119,7 @@ services:
 **How it works:**
 ```bash
 # Kubernetes (example)
-kubectl create secret generic brain-bridge-relay \
+kubectl create secret generic buildflow-relay \
   --from-literal=RELAY_ADMIN_TOKEN=<vault-secret> \
   --from-literal=RELAY_ENABLE_DEFAULT_TOKENS=false
 
@@ -128,7 +128,7 @@ env:
   - name: RELAY_ADMIN_TOKEN
     valueFrom:
       secretKeyRef:
-        name: brain-bridge-relay
+        name: buildflow-relay
         key: RELAY_ADMIN_TOKEN
 ```
 
@@ -201,7 +201,7 @@ These are:
 
 ## Checklist for Local Deployment
 
-- [ ] Created `~/.config/brain-bridge/.env.relay`
+- [ ] Created `~/.config/buildflow/.env.relay`
 - [ ] Generated admin token with `openssl rand -hex 32`
 - [ ] Set `RELAY_ENABLE_DEFAULT_TOKENS=false` for production-like test
 - [ ] Added `.env.relay` to `.gitignore` (already done)
@@ -215,7 +215,7 @@ These are:
 ## References
 
 - **Credentials index:** `~/Repos/stevewesthoek/brain/operations/accounts/credentials-index.md`
-- **Deployment docs:** `brain-bridge/DEPLOYMENT.md`
+- **Deployment docs:** `buildflow/DEPLOYMENT.md`
 - **Config code:** `packages/bridge/src/config.ts`
 - **Startup validation:** `packages/bridge/src/startup.ts`
 - **Token storage:** `packages/bridge/src/storage/token-store.ts`

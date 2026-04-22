@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Brain Bridge unified start script
+# BuildFlow unified start script
 # Starts agent (3052), web (3054), and relay (3053)
-# Logs to /tmp/brain-bridge-{agent,web,relay}.log
+# Logs to /tmp/buildflow-{agent,web,relay}.log
 
 set -e
 
@@ -16,15 +16,15 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 log_info() {
-  echo -e "${GREEN}[Brain Bridge]${NC} $1"
+  echo -e "${GREEN}[BuildFlow]${NC} $1"
 }
 
 log_warn() {
-  echo -e "${YELLOW}[Brain Bridge]${NC} $1"
+  echo -e "${YELLOW}[BuildFlow]${NC} $1"
 }
 
 log_error() {
-  echo -e "${RED}[Brain Bridge ERROR]${NC} $1"
+  echo -e "${RED}[BuildFlow ERROR]${NC} $1"
 }
 
 # Step 1: Verify Docker/OrbStack availability
@@ -52,7 +52,7 @@ if curl -s http://localhost:3054/api/openapi > /dev/null 2>&1; then
   log_warn "Web (3054) already running"
 fi
 
-if docker ps --filter name=brainbridge-relay --filter status=running | grep -q brainbridge-relay; then
+if docker ps --filter name=buildflow-relay --filter status=running | grep -q buildflow-relay; then
   RELAY_RUNNING=1
   log_warn "Relay (3053) already running"
 fi
@@ -73,7 +73,7 @@ if [ $AGENT_RUNNING -eq 0 ] || [ $WEB_RUNNING -eq 0 ]; then
   sleep 1
 
   # Start pnpm dev in background (runs both agent and web)
-  nohup pnpm dev > "$LOG_DIR/brain-bridge.log" 2>&1 &
+  nohup pnpm dev > "$LOG_DIR/buildflow.log" 2>&1 &
   PNPM_PID=$!
 
   # Wait for services to be ready
@@ -111,10 +111,10 @@ if [ $RELAY_RUNNING -eq 0 ]; then
   log_info "Starting relay via Docker..."
   cd "$REPO_ROOT"
 
-  export RELAY_ENV_FILE=~/.config/brain-bridge/.env.relay
-  if ! docker compose up -d > "$LOG_DIR/brain-bridge-relay.log" 2>&1; then
+  export RELAY_ENV_FILE=~/.config/buildflow/.env.relay
+  if ! docker compose up -d > "$LOG_DIR/buildflow-relay.log" 2>&1; then
     log_error "Failed to start relay (docker compose error)"
-    cat "$LOG_DIR/brain-bridge-relay.log"
+    cat "$LOG_DIR/buildflow-relay.log"
     exit 1
   fi
 

@@ -4,15 +4,15 @@ export async function GET() {
   const openapi = {
     openapi: '3.1.0',
     info: {
-      title: 'Brain Bridge API',
+      title: 'BuildFlow API',
       version: '1.1.0',
       description:
-        'Search, read, inspect, and write across connected local knowledge sources through Brain Bridge. Brain Bridge combines repositories, notes, research folders, and other connected local sources into one shared context for ChatGPT while keeping files local.'
+        'Search, read, inspect, and write across connected local knowledge sources through BuildFlow. BuildFlow combines repositories, notes, research folders, and other connected local sources into one shared context for ChatGPT while keeping files local.'
     },
     servers: [
       {
-        url: 'https://brainbridge.prochat.tools',
-        description: 'Brain Bridge public endpoint'
+        url: 'https://buildflow.prochat.tools',
+        description: 'BuildFlow public endpoint'
       }
     ],
     components: {
@@ -27,14 +27,14 @@ export async function GET() {
     paths: {
       '/api/actions/status': {
         get: {
-          operationId: 'getBrainBridgeStatus',
-          summary: 'Get Brain Bridge status',
+          operationId: 'getBuildFlowStatus',
+          summary: 'Get BuildFlow status',
           description:
-            'Return the current Brain Bridge connection status and whether connected knowledge sources are available. Read-only.',
+            'Return the current BuildFlow connection status and whether connected knowledge sources are available. Read-only.',
           security: [{ bearerAuth: [] }],
           responses: {
             '200': {
-              description: 'Brain Bridge status',
+              description: 'BuildFlow status',
               content: {
                 'application/json': {
                   schema: {
@@ -42,7 +42,7 @@ export async function GET() {
                     properties: {
                       connected: {
                         type: 'boolean',
-                        description: 'Whether Brain Bridge is connected and available'
+                        description: 'Whether BuildFlow is connected and available'
                       },
                       sourceCount: {
                         type: 'integer',
@@ -83,7 +83,7 @@ export async function GET() {
           operationId: 'listKnowledgeSources',
           summary: 'List connected knowledge sources',
           description:
-            'Return the currently connected knowledge sources available through Brain Bridge. Read-only. Useful for understanding which repositories or folders are connected before searching.',
+            'Return the currently connected knowledge sources available through BuildFlow. Read-only. Useful for understanding which repositories or folders are connected before searching.',
           security: [{ bearerAuth: [] }],
           responses: {
             '200': {

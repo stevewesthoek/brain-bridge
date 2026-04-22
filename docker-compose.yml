@@ -3,16 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: brainbridge-relay
+    container_name: buildflow-relay
     ports:
       - "3053:3053"
     env_file:
-      # PRODUCTION: export RELAY_ENV_FILE=~/.config/brain-bridge/.env.relay && docker compose up -d
+      # PRODUCTION: export RELAY_ENV_FILE=~/.config/buildflow/.env.relay && docker compose up -d
       # DEV ONLY: docker compose up -d (uses committed template with no real secrets)
       - ${RELAY_ENV_FILE:-packages/bridge/.env.relay}
     environment:
       BRIDGE_PORT: 3053
-      RELAY_DATA_DIR: /var/lib/brainbridge
+      RELAY_DATA_DIR: /var/lib/buildflow
       NODE_ENV: production
       # Phase 5C: Relay proxy token for authenticated relay-agent requests
       # Generate with: openssl rand -hex 32
@@ -20,7 +20,7 @@ services:
       RELAY_PROXY_TOKEN: ${RELAY_PROXY_TOKEN:-dev-proxy-token}
     volumes:
       # Persist state across container restarts
-      - brainbridge-data:/var/lib/brainbridge
+      - buildflow-data:/var/lib/buildflow
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:3053/ready', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -30,5 +30,5 @@ services:
       start_period: 5s
 
 volumes:
-  brainbridge-data:
+  buildflow-data:
     driver: local

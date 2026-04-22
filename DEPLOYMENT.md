@@ -1,10 +1,10 @@
 # Deployment Readiness MVP
 
-This document describes the runtime contract and deployment workflow for Brain Bridge Relay Server.
+This document describes the runtime contract and deployment workflow for BuildFlow Relay Server.
 
 ## Overview
 
-Brain Bridge Relay is a WebSocket bridge that:
+BuildFlow Relay is a WebSocket bridge that:
 - Receives device connections from local agents
 - Routes commands between external requesters and local devices
 - Maintains session state with audit logging
@@ -18,7 +18,7 @@ Brain Bridge Relay is a WebSocket bridge that:
 | Variable | Type | Default | Required | Purpose |
 |----------|------|---------|----------|---------|
 | `BRIDGE_PORT` | int | 3053 | no | Relay server listen port |
-| `RELAY_DATA_DIR` | string | `~/.brainbridge` | no | Data directory for state persistence |
+| `RELAY_DATA_DIR` | string | `~/.buildflow` | no | Data directory for state persistence |
 | `RELAY_ADMIN_TOKEN` | string | — | no | Bearer token for admin endpoints; enables auth if set |
 | `RELAY_PROXY_TOKEN` | string | `dev-proxy-token` | no | Bearer token for web app proxy requests (Phase 5C); enables auth if set in production |
 | `RELAY_ENABLE_DEFAULT_TOKENS` | string | `"true"` | no | Enable default development tokens for testing |
@@ -26,7 +26,7 @@ Brain Bridge Relay is a WebSocket bridge that:
 
 ### Data Directory
 
-All persistent state is stored in `RELAY_DATA_DIR` (defaults to `~/.brainbridge`):
+All persistent state is stored in `RELAY_DATA_DIR` (defaults to `~/.buildflow`):
 
 ```
 RELAY_DATA_DIR/
@@ -55,12 +55,12 @@ If any check fails, the server exits with code 1 and logs a clear error.
 [Startup] Loading configuration...
 [Startup] Configuration loaded:
   • bridgePort: 3053
-  • dataDir: /var/lib/brainbridge
+  • dataDir: /var/lib/buildflow
   • relayAdminToken: [REDACTED]
   • enableDefaultTokens: false
   • nodeEnv: production
 [Startup] Testing data directory writability...
-[Startup] ✓ Data directory ready: /var/lib/brainbridge
+[Startup] ✓ Data directory ready: /var/lib/buildflow
 [Startup] ✓ All startup checks passed
 [Bridge] Loading persisted state...
 [Bridge] ✓ Default tokens disabled
@@ -106,7 +106,7 @@ Returns 200 if relay is ready for traffic:
 ```json
 {
   "ready": true,
-  "dataDir": "/var/lib/brainbridge"
+  "dataDir": "/var/lib/buildflow"
 }
 ```
 
@@ -158,13 +158,13 @@ POST /api/commands/session      # Route command via session (new)
 
 ```bash
 # Clone and install
-git clone <repo> brain-bridge
-cd brain-bridge
+git clone <repo> buildflow
+cd buildflow
 pnpm install
 
 # Configure environment
 export BRIDGE_PORT=3053
-export RELAY_DATA_DIR=~/.brainbridge
+export RELAY_DATA_DIR=~/.buildflow
 export RELAY_ADMIN_TOKEN=dev-token-123
 export RELAY_ENABLE_DEFAULT_TOKENS=false
 
@@ -194,11 +194,11 @@ curl -H "Authorization: Bearer dev-token-123" \
 
 ```bash
 # Create persistent data directory
-mkdir -p /var/lib/brainbridge
-chmod 700 /var/lib/brainbridge
+mkdir -p /var/lib/buildflow
+chmod 700 /var/lib/buildflow
 
 # Set environment
-export RELAY_DATA_DIR=/var/lib/brainbridge
+export RELAY_DATA_DIR=/var/lib/buildflow
 export RELAY_ADMIN_TOKEN=<generate-strong-token>
 export RELAY_ENABLE_DEFAULT_TOKENS=false
 export NODE_ENV=production
@@ -214,20 +214,20 @@ pnpm start
 
 ```bash
 # Build image
-docker build -t brainbridge:latest .
+docker build -t buildflow:latest .
 
 # Run container
 docker run -d \
-  --name brainbridge-relay \
+  --name buildflow-relay \
   -p 3053:3053 \
   -e RELAY_ADMIN_TOKEN=prod-token-123 \
   -e RELAY_ENABLE_DEFAULT_TOKENS=false \
-  -v brainbridge-data:/var/lib/brainbridge \
-  brainbridge:latest
+  -v buildflow-data:/var/lib/buildflow \
+  buildflow:latest
 
 # Verify
-docker logs brainbridge-relay
-docker exec brainbridge-relay curl -s http://localhost:3053/ready | jq .
+docker logs buildflow-relay
+docker exec buildflow-relay curl -s http://localhost:3053/ready | jq .
 ```
 
 **With environment file:**
@@ -243,11 +243,11 @@ EOF
 
 # Run with env file
 docker run -d \
-  --name brainbridge-relay \
+  --name buildflow-relay \
   -p 3053:3053 \
   --env-file .env.deployment \
-  -v brainbridge-data:/var/lib/brainbridge \
-  brainbridge:latest
+  -v buildflow-data:/var/lib/buildflow \
+  buildflow:latest
 ```
 
 ### 3. Docker Compose
@@ -304,7 +304,7 @@ ls -la $(echo $RELAY_DATA_DIR)
 chmod 700 $RELAY_DATA_DIR
 
 # If running in container, check volume mount
-docker inspect brainbridge-relay | grep -A 5 Mounts
+docker inspect buildflow-relay | grep -A 5 Mounts
 ```
 
 ### Readiness Check Returns 503
@@ -318,7 +318,7 @@ df -h $RELAY_DATA_DIR
 ls -la $RELAY_DATA_DIR
 
 # Restart relay
-docker restart brainbridge-relay
+docker restart buildflow-relay
 ```
 
 ### Admin Endpoint Returns 403
@@ -368,7 +368,7 @@ Create a `.env.local` file in the `apps/web/` directory with:
 
 ```bash
 # ChatGPT Custom Actions authentication
-BRAIN_BRIDGE_ACTION_TOKEN="<generate-with-openssl-rand-hex-32>"
+BUILDFLOW_ACTION_TOKEN="<generate-with-openssl-rand-hex-32>"
 
 # Local agent endpoint (defaults to localhost:3052 if not set)
 LOCAL_AGENT_URL="http://127.0.0.1:3052"
@@ -384,7 +384,7 @@ openssl rand -hex 32
 
 ### ChatGPT Actions Contract
 
-**Public endpoints** (require `Authorization: Bearer <BRAIN_BRIDGE_ACTION_TOKEN>`):
+**Public endpoints** (require `Authorization: Bearer <BUILDFLOW_ACTION_TOKEN>`):
 
 - `POST /api/actions/search` — Search local vault
 - `POST /api/actions/read` — Read file from vault
@@ -431,7 +431,7 @@ npx tsx src/index.ts serve
 
 # Terminal 3: Start web app with token
 cd apps/web
-export BRAIN_BRIDGE_ACTION_TOKEN="test-action-token-from-openssl"
+export BUILDFLOW_ACTION_TOKEN="test-action-token-from-openssl"
 export LOCAL_AGENT_URL="http://127.0.0.1:3052"
 npm run start
 ```
@@ -463,7 +463,7 @@ Expected response (if agent is running):
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| `"Server configuration error: BRAIN_BRIDGE_ACTION_TOKEN not set"` | Token not in env | Set `BRAIN_BRIDGE_ACTION_TOKEN` before starting web app |
+| `"Server configuration error: BUILDFLOW_ACTION_TOKEN not set"` | Token not in env | Set `BUILDFLOW_ACTION_TOKEN` before starting web app |
 | `"Unauthorized"` | Wrong or missing Bearer token | Verify `Authorization: Bearer <token>` header matches env var |
 | `"Search error: TypeError: fetch failed"` | Agent not running on 3052 | Ensure agent is running with `BRIDGE_URL=ws://localhost:3053` |
 | `"Search failed: 500"` | Agent error | Check agent logs for vault path or permission errors |
@@ -474,14 +474,14 @@ The web app supports configurable backend modes for action execution:
 
 **direct-agent (default):**
 - Web app (3054) forwards requests directly to local agent (3052)
-- Set: `BRAIN_BRIDGE_BACKEND_MODE=direct-agent` or leave unset
+- Set: `BUILDFLOW_BACKEND_MODE=direct-agent` or leave unset
 - Status: Fully supported and tested
 - Use case: Local-only deployments, development
 - Authentication: None required (direct local connection)
 
 **relay-agent (Phase 5C):**
 - Web app routes requests through relay (3053) to connected device (3052)
-- Set: `BRAIN_BRIDGE_BACKEND_MODE=relay-agent`
+- Set: `BUILDFLOW_BACKEND_MODE=relay-agent`
 - Status: Fully supported with optional Bearer token authentication (Phase 5C)
 - Limitations: Supports exactly one connected device; multiple devices return 503
 - Use case: Multi-device deployments, enterprise architectures, relay coordination
@@ -495,7 +495,7 @@ The web app supports configurable backend modes for action execution:
 - Production: Generate strong token with `openssl rand -hex 32` and set on both sides
 
 To enable relay-backed execution:
-1. Set `BRAIN_BRIDGE_BACKEND_MODE=relay-agent` on web app
+1. Set `BUILDFLOW_BACKEND_MODE=relay-agent` on web app
 2. Relay is running on port 3053 (`docker compose up -d`)
 3. Agent is connected to relay with valid device token
 4. (Phase 5C) Relay and web app have matching `RELAY_PROXY_TOKEN` values

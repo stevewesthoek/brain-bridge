@@ -26,13 +26,13 @@ export async function POST(request: NextRequest) {
 
     if (!device) {
       return NextResponse.json(
-        { error: 'No active Brain Bridge device is online.' },
+        { error: 'No active BuildFlow device is online.' },
         { status: 503 }
       )
     }
 
     // Call tool on device
-    const result = await bridgeManager.callTool(device.id, 'search_brain', {
+    const result = await bridgeManager.callTool(device.id, 'search_plan', {
       query,
       limit
     })
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         deviceId: device.id,
-        toolName: 'search_brain',
+        toolName: 'search_plan',
         status: 'success',
         inputJson: JSON.stringify({ query, limit })
       }

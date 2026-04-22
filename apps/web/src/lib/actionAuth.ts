@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export function checkActionAuth(request: NextRequest): NextResponse | null {
-  const token = process.env.BRAIN_BRIDGE_ACTION_TOKEN
+  const token = process.env.BUILDFLOW_ACTION_TOKEN
 
   if (!token) {
     return NextResponse.json(
-      { error: 'Server configuration error: BRAIN_BRIDGE_ACTION_TOKEN not set' },
+      { error: 'Server configuration error: BUILDFLOW_ACTION_TOKEN not set' },
       { status: 500 }
     )
   }

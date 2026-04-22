@@ -7,7 +7,7 @@ import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
 import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled } from './config'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
-import type { Workspace } from '@brainbridge/shared'
+import type { Workspace } from '@buildflow/shared'
 
 export async function startLocalServer(port: number = 3052): Promise<void> {
   const fastify = Fastify({ logger: true })
@@ -149,11 +149,11 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       if (!path) {
         const timestamp = new Date().toISOString().split('T')[0]
         const slug = content.slice(0, 50).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-        path = `BrainBridge/Inbox/${timestamp}-${slug}.md`
+        path = `BuildFlow/Inbox/${timestamp}-${slug}.md`
       }
 
       // Add frontmatter
-      const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: brainbridge\ntype: plan\n---\n\n`
+      const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: buildflow\ntype: plan\n---\n\n`
       const fullContent = frontmatter + content
 
       const result = await createFile(path, fullContent)

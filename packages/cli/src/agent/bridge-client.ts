@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { ToolCallMessage, ToolResponseMessage } from '@brainbridge/shared'
+import { ToolCallMessage, ToolResponseMessage } from '@buildflow/shared'
 import { readFile, createFile, appendFile } from './vault'
 import { Indexer } from './indexer'
 import { VaultSearcher } from './search'
@@ -29,7 +29,7 @@ export class BridgeClient {
         this.ws = new WebSocket(`${this.url}/api/bridge/ws`)
 
         this.ws.on('open', () => {
-          log('Connected to SaaS bridge')
+          log('Connected to relay')
 
           // Authenticate
           this.ws?.send(JSON.stringify({
@@ -50,7 +50,7 @@ export class BridgeClient {
         })
 
         this.ws.on('close', () => {
-          log('Disconnected from SaaS bridge')
+          log('Disconnected from relay')
         })
       } catch (err) {
         reject(err)
@@ -62,7 +62,7 @@ export class BridgeClient {
     try {
       const message = JSON.parse(data)
 
-      // Handle command requests from relay (SaaS bridge flow)
+      // Handle command requests from relay transport
       if (message.type === 'command_request') {
         await this.handleCommandRequest(message)
         return
@@ -94,7 +94,7 @@ export class BridgeClient {
 
         try {
           switch (toolMessage.tool) {
-            case 'search_brain':
+            case 'search_plan':
               const searchInput = toolMessage.input as { query: string; limit?: number }
               const searchResults = this.searcher.search(searchInput.query, searchInput.limit)
               result = { results: searchResults }
@@ -375,8 +375,8 @@ export class BridgeClient {
             break
           }
           try {
-            const path = params.path || `BrainBridge/Inbox/${new Date().toISOString().split('T')[0]}-note.md`
-            const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: brainbridge\ntype: note\n---\n\n`
+            const path = params.path || `BuildFlow/Inbox/${new Date().toISOString().split('T')[0]}-note.md`
+            const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: buildflow\ntype: note\n---\n\n`
             const fullContent = frontmatter + content
             result = await createFile(path, fullContent)
             await this.indexer.buildIndex()
@@ -421,7 +421,7 @@ export class BridgeClient {
 
     logToFile({
       timestamp: new Date().toISOString(),
-      tool: 'bridge_client_command',
+      tool: 'relay_client_command',
       status: error ? 'error' : 'success',
       command,
       requestId,

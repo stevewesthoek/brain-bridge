@@ -1,8 +1,8 @@
 {
-  "name": "brain-bridge",
+  "name": "buildflow",
   "version": "0.1.0",
   "private": true,
-  "description": "Connect your local brain folder to ChatGPT",
+  "description": "BuildFlow turns ideas into execution packets tailored to your actual local toolchain",
   "workspaces": [
     "apps/*",
     "packages/*"

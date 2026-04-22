@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Project Manifest
+# BuildFlow MVP — Project Manifest
 
 **Version:** 0.4.0  
 **Status:** ✅ **Phase 4 Complete: Transport Abstraction Ready**  
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Brain Bridge is a **local-first system** that connects your Markdown vault to ChatGPT via a web app and relay infrastructure.
+BuildFlow is a **local-first system** that connects your Markdown vault to ChatGPT via a web app and relay infrastructure.
 
 - **Search** local notes from ChatGPT
 - **Read** files with context from ChatGPT
@@ -27,7 +27,7 @@ Brain Bridge is a **local-first system** that connects your Markdown vault to Ch
 ## Directory Structure
 
 ```
-brain-bridge/
+buildflow/
 ├── README.md                    # User-facing overview
 ├── SETUP.md                     # Developer setup guide
 ├── DEMO_LOCAL.md                # Detailed demo walkthrough
@@ -132,16 +132,16 @@ curl -X POST http://127.0.0.1:3054/api/actions/search \
 - **Path Traversal Protection** — No `..`, no `/`, no hidden files
 - **File Extension Restriction** — `.md` and `.txt` only
 - **Deletion Prevention** — Create/append only, no delete
-- **Audit Logging** — All operations logged to `~/.brainbridge/audit.log`
+- **Audit Logging** — All operations logged to `~/.buildflow/audit.log`
 
 ### ✅ CLI Commands
 ```
-brainbridge init                      # Create config
-brainbridge login <api-key>          # Store credentials
-brainbridge connect <path>           # Point to vault
-brainbridge index                    # Rebuild search index
-brainbridge serve                    # Start HTTP server
-brainbridge status                   # Show state
+buildflow init                      # Create config
+buildflow login <api-key>          # Store credentials
+buildflow connect <path>           # Point to vault
+buildflow index                    # Rebuild search index
+buildflow serve                    # Start HTTP server
+buildflow status                   # Show state
 ```
 
 ### ✅ HTTP Endpoints
@@ -242,7 +242,7 @@ GET /ready                # Readiness check
 
 ## Configuration
 
-### ~/.brainbridge/config.json
+### ~/.buildflow/config.json
 ```json
 {
   "userId": "",
@@ -256,7 +256,7 @@ GET /ready                # Readiness check
 }
 ```
 
-### Audit Log (~/.brainbridge/audit.log)
+### Audit Log (~/.buildflow/audit.log)
 ```json
 {"timestamp":"...","tool":"search","status":"success"}
 {"timestamp":"...","tool":"create_file","path":"...","status":"success"}
@@ -477,7 +477,7 @@ MIT
 
 ## Summary
 
-**Brain Bridge MVP** is a **fully-functional local-only implementation** that proves all core concepts work. It's ready for:
+**BuildFlow MVP** is a **fully-functional local-only implementation** that proves all core concepts work. It's ready for:
 - ✅ Local testing and validation
 - ✅ Demo to stakeholders
 - ✅ Performance benchmarking

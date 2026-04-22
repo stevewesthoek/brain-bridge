@@ -10,7 +10,7 @@ interface LogEntry {
 }
 
 function getAuditLogPath(): string {
-  const bridgeDir = path.join(os.homedir(), '.brainbridge')
+  const bridgeDir = path.join(os.homedir(), '.buildflow')
   return path.join(bridgeDir, 'relay.audit.log')
 }
 

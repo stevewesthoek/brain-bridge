@@ -7,12 +7,12 @@ export async function serveCommand(): Promise<void> {
   const config = loadConfig()
 
   if (!config) {
-    error('Brain Bridge not initialized. Run: brainbridge init')
+    error('BuildFlow not initialized. Run: buildflow init')
     return
   }
 
   if (!config.vaultPath) {
-    error('No vault connected. Run: brainbridge connect <path-to-vault>')
+    error('No vault connected. Run: buildflow connect <path-to-vault>')
     return
   }
 
@@ -52,7 +52,7 @@ export async function serveCommand(): Promise<void> {
     }
 
     log('')
-    log('Brain Bridge agent is running!')
+    log('BuildFlow agent is running!')
     log(`Local server: http://127.0.0.1:${port}`)
     log('Press Ctrl+C to stop.')
 

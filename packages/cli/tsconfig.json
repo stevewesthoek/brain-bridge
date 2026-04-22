@@ -18,8 +18,8 @@
     "sourceMap": false,
     "baseUrl": ".",
     "paths": {
-      "@brainbridge/shared": ["../../packages/shared"],
-      "@brainbridge/shared/*": ["../../packages/shared/*"]
+      "@buildflow/shared": ["../../packages/shared"],
+      "@buildflow/shared/*": ["../../packages/shared/*"]
     }
   },
   "include": ["src"]

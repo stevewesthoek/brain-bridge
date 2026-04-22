@@ -18,7 +18,7 @@ Both modes are now fully implemented and tested.
 All three services must be running:
 - Relay: `docker compose up -d` (port 3053)
 - Agent: `cd packages/cli && BRIDGE_URL=ws://localhost:3053 DEVICE_TOKEN=test npx tsx src/index.ts serve` (port 3052)
-- Web app: `cd apps/web && BRAIN_BRIDGE_ACTION_TOKEN=test npm start` (port 3054)
+- Web app: `cd apps/web && BUILDFLOW_ACTION_TOKEN=test npm start` (port 3054)
 
 ### Step 1: Verify Type Check and Build
 
@@ -34,7 +34,7 @@ Expected: Zero TypeScript errors, successful build of all packages.
 ### Step 2: Verify Direct-Agent Mode (Default)
 
 ```bash
-# Start web app without setting BRAIN_BRIDGE_BACKEND_MODE
+# Start web app without setting BUILDFLOW_BACKEND_MODE
 cd apps/web
 npm start
 
@@ -55,7 +55,7 @@ Expected:
 ```bash
 # Start web app with relay mode
 cd apps/web
-BRAIN_BRIDGE_BACKEND_MODE=relay-agent npm start
+BUILDFLOW_BACKEND_MODE=relay-agent npm start
 
 # In another terminal, test the endpoint
 curl -X POST http://localhost:3054/api/actions/search \
@@ -77,7 +77,7 @@ Expected:
 # (Ctrl+C in agent terminal)
 
 # Try relay-agent mode
-BRAIN_BRIDGE_BACKEND_MODE=relay-agent
+BUILDFLOW_BACKEND_MODE=relay-agent
 curl -X POST http://localhost:3054/api/actions/search \
   -H "Authorization: Bearer test" \
   -H "Content-Type: application/json" \
@@ -96,7 +96,7 @@ Expected:
 # Agent 2: BRIDGE_URL=ws://localhost:3053 DEVICE_TOKEN=device2 npx tsx src/index.ts serve
 
 # Try relay-agent mode
-BRAIN_BRIDGE_BACKEND_MODE=relay-agent
+BUILDFLOW_BACKEND_MODE=relay-agent
 curl -X POST http://localhost:3054/api/actions/search \
   -H "Authorization: Bearer test" \
   -H "Content-Type: application/json" \
@@ -113,7 +113,7 @@ Expected:
 # Start relay and agent normally, but trigger a timeout
 # Search for a query that takes >30 seconds (if such exists)
 
-BRAIN_BRIDGE_BACKEND_MODE=relay-agent
+BUILDFLOW_BACKEND_MODE=relay-agent
 curl -X POST http://localhost:3054/api/actions/search \
   -H "Authorization: Bearer test" \
   -H "Content-Type: application/json" \
@@ -128,7 +128,7 @@ Expected:
 
 ```bash
 # Check relay audit log for action proxy entries
-tail -f ~/.brainbridge/relay.audit.log | grep "relay_action_proxy"
+tail -f ~/.buildflow/relay.audit.log | grep "relay_action_proxy"
 ```
 
 Expected output (example):
@@ -191,7 +191,7 @@ These limitations are intentional for Phase 5B. Phase 5C+ will add multi-device 
 ## Rollback Plan
 
 To disable relay-agent mode and fall back to direct-agent:
-1. Set `BRAIN_BRIDGE_BACKEND_MODE=direct-agent` (or unset)
+1. Set `BUILDFLOW_BACKEND_MODE=direct-agent` (or unset)
 2. Relay endpoint `/api/actions/proxy/*` can remain; it won't be called
 3. Action handlers and transport.ts are unchanged; no action needed
 4. If needed, remove relay proxy endpoint by reverting server.ts

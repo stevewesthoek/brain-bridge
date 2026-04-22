@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Brain Bridge',
+  title: 'BuildFlow',
   description: 'Connect your local brain folder to ChatGPT'
 }
 

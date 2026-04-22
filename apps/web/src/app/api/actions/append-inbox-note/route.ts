@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const filename = `${timestamp}-${slug}.md`
     const inboxSourceId = 'mind'
     const notePath = `${inboxSourceId}/01-inbox/${filename}`
-    const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: brainbridge\ntype: note\n---\n\n`
+    const frontmatter = `---\ncreated: ${new Date().toISOString()}\nsource: buildflow\ntype: note\n---\n\n`
     await executeAction('/api/create-inbox-note', {
       path: `01-inbox/${filename}`,
       sourceId: inboxSourceId,

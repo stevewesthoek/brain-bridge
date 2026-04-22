@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const bridgeUrl = process.env.BRIDGE_URL || 'http://127.0.0.1:3053'
+  const relayUrl = process.env.BRIDGE_URL || 'http://127.0.0.1:3053'
 
   try {
-    const response = await fetch(`${bridgeUrl}/health`)
+    const response = await fetch(`${relayUrl}/health`)
     if (!response.ok) {
       return NextResponse.json(
-        { error: 'Bridge health check failed', status: response.status },
+        { error: 'Relay health check failed', status: response.status },
         { status: 502 }
       )
     }
@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json(data)
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to reach bridge: ${String(err)}` },
+      { error: `Failed to reach relay: ${String(err)}` },
       { status: 503 }
     )
   }

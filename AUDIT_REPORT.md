@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Audit & Repair Report
+# BuildFlow MVP — Audit & Repair Report
 
 **Status:** ✅ **FIXED** — All packages install, type-check, build, and run.
 
@@ -32,7 +32,7 @@
 
 - **Issue #2:** Web app tsconfig missing path aliases
   - **File:** `apps/web/tsconfig.json`
-  - **Fix:** Added `@/*` and `@brainbridge/shared` path aliases
+  - **Fix:** Added `@/*` and `@buildflow/shared` path aliases
 
 ### 5. Missing Dependencies
 - **Issue:** `ws` not in web app dependencies (used in bridge.ts)
@@ -103,7 +103,7 @@ node packages/cli/dist/index.js --version
 
 # Init command works
 node packages/cli/dist/index.js init
-# Output: "[Brain Bridge] Brain Bridge initialized..."
+# Output: "[BuildFlow] BuildFlow initialized..."
 
 # Status command works
 node packages/cli/dist/index.js status
@@ -197,7 +197,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 - `packages/cli/tsconfig.json` — Changed to CommonJS, node resolution, removed rootDir
 - `packages/shared/tsconfig.json` — Changed to CommonJS, standalone config, no extends
 - `apps/web/package.json` — Added ws dependency
-- `apps/web/tsconfig.json` — Added path aliases for @/ and @brainbridge/shared
+- `apps/web/tsconfig.json` — Added path aliases for @/ and @buildflow/shared
 - `apps/web/next.config.ts` → `next.config.js` — Converted to .js format
 
 ### Code Fixes

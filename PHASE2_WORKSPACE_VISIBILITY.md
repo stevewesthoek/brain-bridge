@@ -2,13 +2,13 @@
 
 **Status:** ✅ **IMPLEMENTED**  
 **Date:** 2026-04-18  
-**Purpose:** Enable Brain Bridge to safely expose and reason over the complete structure of registered local workspace roots.
+**Purpose:** Enable BuildFlow to safely expose and reason over the complete structure of registered local workspace roots.
 
 ---
 
 ## Overview
 
-Phase 2 extends Brain Bridge to support multiple registered workspace roots, enabling:
+Phase 2 extends BuildFlow to support multiple registered workspace roots, enabling:
 
 1. **Workspace Registration** — Define approved directory roots in config
 2. **Safe Path Resolution** — Prevent directory traversal attacks
@@ -24,7 +24,7 @@ All operations are **read-only**, use **explicit workspace roots**, enforce **sa
 
 ### Config Format
 
-Add `workspaces` array to `~/.brainbridge/config.json`:
+Add `workspaces` array to `~/.buildflow/config.json`:
 
 ```json
 {
@@ -65,7 +65,7 @@ Add `workspaces` array to `~/.brainbridge/config.json`:
 
 ### Backward Compatibility
 
-If no `workspaces` array is defined, Brain Bridge automatically creates a default workspace from the existing `vaultPath`:
+If no `workspaces` array is defined, BuildFlow automatically creates a default workspace from the existing `vaultPath`:
 
 ```json
 {
@@ -82,7 +82,7 @@ If no `workspaces` array is defined, Brain Bridge automatically creates a defaul
 ### List Workspaces
 
 ```bash
-brainbridge workspace list
+buildflow workspace list
 ```
 
 Output:
@@ -102,13 +102,13 @@ Registered Workspaces:
 ### Tree Inspection
 
 ```bash
-brainbridge tree <workspace> [path] [--depth N]
+buildflow tree <workspace> [path] [--depth N]
 ```
 
 Examples:
 ```bash
-brainbridge tree brain
-brainbridge tree brain src --depth 4
+buildflow tree brain
+buildflow tree brain src --depth 4
 ```
 
 Output:
@@ -131,13 +131,13 @@ Total items: 15
 ### Grep / Search
 
 ```bash
-brainbridge grep <workspace> <pattern> [--max N]
+buildflow grep <workspace> <pattern> [--max N]
 ```
 
 Examples:
 ```bash
-brainbridge grep brain "export function"
-brainbridge grep brain "TODO" --max 20
+buildflow grep brain "export function"
+buildflow grep brain "TODO" --max 20
 ```
 
 Output:
@@ -157,13 +157,13 @@ Total matches: 12
 ### Context Assembly
 
 ```bash
-brainbridge context <workspace> [query] [--depth N]
+buildflow context <workspace> [query] [--depth N]
 ```
 
 Examples:
 ```bash
-brainbridge context brain
-brainbridge context brain "search implementation" --depth 3
+buildflow context brain
+buildflow context brain "search implementation" --depth 3
 ```
 
 Output:
@@ -356,7 +356,7 @@ Assemble a comprehensive context bundle for AI analysis.
 
 ### Audit Logging
 
-All workspace operations logged to `~/.brainbridge/audit.log`:
+All workspace operations logged to `~/.buildflow/audit.log`:
 
 ```json
 {
@@ -471,7 +471,7 @@ New types:
 ### Unit Tests
 
 ```bash
-pnpm --filter=brainbridge test
+pnpm --filter=buildflow test
 ```
 
 Tests cover:
@@ -585,7 +585,7 @@ Existing API calls (e.g., `/api/read`, `/api/create`) continue to work with the 
 Error: Workspace not found: missing
 ```
 
-**Solution:** Run `brainbridge workspace list` to see configured workspaces. Check `~/.brainbridge/config.json` for typos.
+**Solution:** Run `buildflow workspace list` to see configured workspaces. Check `~/.buildflow/config.json` for typos.
 
 ### Access denied: Path outside workspace
 

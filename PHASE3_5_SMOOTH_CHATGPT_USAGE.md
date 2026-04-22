@@ -1,7 +1,7 @@
 # Phase 3.5: Smooth ChatGPT Custom GPT Usage
 
 ## Status
-✅ **Live** — Brain Bridge is confirmed working with ChatGPT Custom GPT.
+✅ **Live** — BuildFlow is confirmed working with ChatGPT Custom GPT.
 
 ## Problem: Why ChatGPT Asks for Confirmations
 
@@ -18,7 +18,7 @@ ChatGPT's Custom Actions interface requires explicit user confirmation for **eve
 
 ## Solution: Use the Combined Search-and-Read Action
 
-Brain Bridge now provides **three read-only actions**:
+BuildFlow now provides **three read-only actions**:
 
 ### 1. `/api/actions/search` (read-only)
 - Search the vault for files by query
@@ -41,10 +41,10 @@ Brain Bridge now provides **three read-only actions**:
 
 ## Recommended GPT Instructions
 
-Add this to your Brain Bridge Custom GPT system prompt:
+Add this to your BuildFlow Custom GPT system prompt:
 
 ```
-You have access to Brain Bridge, a local knowledge vault API. Use these actions to search and read user's personal knowledge:
+You have access to BuildFlow, a local knowledge vault API. Use these actions to search and read user's personal knowledge:
 
 1. **search-and-read (preferred)**: Use this to search and read results in one call. Provide a search query and limit (1-3). Returns full file contents. This action reduces confirmation prompts.
 
@@ -101,7 +101,7 @@ Expected: Search results, then optionally read the top file. User may see two co
 ## Implementation Details
 
 - **Port**: 3054 (web app)
-- **Public URL**: https://brainbridge.prochat.tools
+- **Public URL**: https://buildflow.prochat.tools
 - **Search-and-read limit**: Max 3 results (capped for safety)
 - **Rate limiting**: None (MVP testing only)
 - **Authentication**: Disabled (MVP testing only)
@@ -126,11 +126,11 @@ To stop public access after testing:
 
 ```bash
 # Stop local stack
-cd /Users/Office/Repos/stevewesthoek/brain-bridge
+cd /Users/Office/Repos/stevewesthoek/buildflow
 pnpm stop  # or Ctrl+C in running terminal
 
 # Verify tunnel is down
-curl -s https://brainbridge.prochat.tools/api/openapi || echo "✓ Public endpoint is down"
+curl -s https://buildflow.prochat.tools/api/openapi || echo "✓ Public endpoint is down"
 ```
 
 Or, disable Cloudflare tunnel:

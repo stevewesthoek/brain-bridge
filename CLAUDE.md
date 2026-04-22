@@ -1,4 +1,4 @@
-# CLAUDE.md — brain-bridge
+# CLAUDE.md — buildflow
 
 ## Purpose
 
@@ -52,8 +52,8 @@ pnpm build            # Production build
 pnpm test             # Run tests
 
 # Verify endpoints
-curl -s https://brainbridge.prochat.tools/api/openapi | jq '.paths | keys'
-curl -s -X POST https://brainbridge.prochat.tools/api/actions/search \
+curl -s https://buildflow.prochat.tools/api/openapi | jq '.paths | keys'
+curl -s -X POST https://buildflow.prochat.tools/api/actions/search \
   -H 'Content-Type: application/json' \
   -d '{"query":"brain","limit":2}' | jq .
 ```
@@ -69,7 +69,7 @@ curl -s -X POST https://brainbridge.prochat.tools/api/actions/search \
 
 ## Integrations
 
-- **Cloudflare**: `brainbridge.prochat.tools` public hostname (tunnel only, not in repo)
+- **Cloudflare**: `buildflow.prochat.tools` public hostname (tunnel only, not in repo)
 - **ChatGPT Custom GPT**: Imports the live `/api/openapi` schema or the synced `docs/openapi.chatgpt.json` export for Custom Actions
 - **Local brain CLI**: Agent on port 3052 (separate repo, separate install)
 - **Relay server**: Port 3053 (bridges web ↔ agent)

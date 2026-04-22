@@ -2,25 +2,25 @@
 
 set -e
 
-DEMO_VAULT="/tmp/brainbridge-demo"
-REPO_ROOT="/Users/Office/Repos/stevewesthoek/brain-bridge"
+DEMO_VAULT="/tmp/buildflow-demo"
+REPO_ROOT="/Users/Office/Repos/stevewesthoek/buildflow"
 
 echo ""
 echo "╔════════════════════════════════════════╗"
-echo "║  Brain Bridge MVP — Local Demo Setup   ║"
+echo "║  BuildFlow MVP — Local Demo Setup   ║"
 echo "╚════════════════════════════════════════╝"
 echo ""
 
 # Step 1: Create vault
 echo "📁 Step 1: Creating test vault..."
 mkdir -p "$DEMO_VAULT"
-mkdir -p "$DEMO_VAULT/BrainBridge/Inbox"
+mkdir -p "$DEMO_VAULT/BuildFlow/Inbox"
 
 # Create test files
 cat > "$DEMO_VAULT/business.md" << 'EOF'
 # Business Context
 
-Brain Bridge connects local Markdown vaults to ChatGPT.
+BuildFlow connects local Markdown vaults to ChatGPT.
 
 ## Goals
 - Search local notes from ChatGPT
@@ -78,7 +78,7 @@ User → CLI → Vault (local files)
 EOF
 
 cat > "$DEMO_VAULT/roadmap.md" << 'EOF'
-# Brain Bridge Roadmap
+# BuildFlow Roadmap
 
 ## MVP (Phase 1) — Local Agent ✅
 - [x] CLI commands
@@ -169,7 +169,7 @@ echo ""
 echo "   # Create note:"
 echo "   curl -X POST http://127.0.0.1:3001/api/create \\"
 echo "     -H 'Content-Type: application/json' \\"
-echo "     -d '{\"path\": \"BrainBridge/Inbox/new-note.md\", \"content\": \"# New Note\"}'"
+echo "     -d '{\"path\": \"BuildFlow/Inbox/new-note.md\", \"content\": \"# New Note\"}'"
 echo ""
 echo "   # Export plan:"
 echo "   curl -X POST http://127.0.0.1:3001/api/export-plan \\"
@@ -182,5 +182,5 @@ echo "   See DEMO_LOCAL.md in the repo root"
 echo ""
 
 echo "🧹 TO CLEAN UP:"
-echo "   rm -rf /tmp/brainbridge-demo ~/.brainbridge"
+echo "   rm -rf /tmp/buildflow-demo ~/.buildflow"
 echo ""

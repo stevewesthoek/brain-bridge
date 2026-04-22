@@ -1,16 +1,16 @@
 # Phase 3.3: ChatGPT Custom Action Import Test & Runbook
 
-Phase 3.3 is a verification and documentation phase for importing Brain Bridge search/read actions into a ChatGPT Custom GPT.
+Phase 3.3 is a verification and documentation phase for importing BuildFlow search/read actions into a ChatGPT Custom GPT.
 
 This phase does NOT add new actions—it provides the runbook for manual ChatGPT UI testing.
 
 ## Local Verification (Automated)
 
-### 1. Start Brain Bridge Stack
+### 1. Start BuildFlow Stack
 
 ```bash
 # Terminal 1: Bridge Server (port 3053)
-cd ~/Repos/stevewesthoek/brain-bridge/packages/bridge
+cd ~/Repos/stevewesthoek/buildflow/packages/bridge
 node dist/server.js
 
 # Terminal 2: Local Agent (port 3052)
@@ -18,7 +18,7 @@ BRIDGE_URL=ws://127.0.0.1:3053 DEVICE_TOKEN=test-device \
   node packages/cli/dist/index.js serve
 
 # Terminal 3: Web App (port 3054)
-cd ~/Repos/stevewesthoek/brain-bridge/apps/web
+cd ~/Repos/stevewesthoek/buildflow/apps/web
 npm run dev
 ```
 
@@ -88,7 +88,7 @@ Forwarding  https://abc123-xyz789.ngrok.io -> http://localhost:3054
 
 ```bash
 # Copy the static spec with tunnel URL
-cp docs/openapi.chatgpt.json /tmp/brainbridge-openapi-chatgpt.json
+cp docs/openapi.chatgpt.json /tmp/buildflow-openapi-chatgpt.json
 
 # Edit the file to replace server URL
 # Change servers[0].url from "http://localhost:3054" to your actual tunnel URL
@@ -99,7 +99,7 @@ Or do it programmatically:
 
 ```bash
 TUNNEL_URL="https://your-tunnel-domain.trycloudflare.com"
-jq '.servers[0].url = "'$TUNNEL_URL'"' docs/openapi.chatgpt.json > /tmp/brainbridge-openapi-chatgpt.json
+jq '.servers[0].url = "'$TUNNEL_URL'"' docs/openapi.chatgpt.json > /tmp/buildflow-openapi-chatgpt.json
 ```
 
 ### Step 2: Import into ChatGPT
@@ -109,7 +109,7 @@ jq '.servers[0].url = "'$TUNNEL_URL'"' docs/openapi.chatgpt.json > /tmp/brainbri
 3. Click **+ Create a GPT**
 4. Go to the **Actions** tab
 5. Click **Create new action**
-6. Under **Schema**, paste the contents of `/tmp/brainbridge-openapi-chatgpt.json`
+6. Under **Schema**, paste the contents of `/tmp/buildflow-openapi-chatgpt.json`
 7. Click **Save** (it will validate the schema)
 
 ### Step 3: Test in ChatGPT
@@ -195,7 +195,7 @@ All should return valid responses with 200 status.
 
 ### "ChatGPT import fails"
 
-- Verify OpenAPI spec is valid JSON: `jq . /tmp/brainbridge-openapi-chatgpt.json`
+- Verify OpenAPI spec is valid JSON: `jq . /tmp/buildflow-openapi-chatgpt.json`
 - Confirm server URL is correct (use actual tunnel domain, not localhost)
 - Check both `/api/actions/search` and `/api/actions/read` are in spec
 
@@ -211,7 +211,7 @@ All should return valid responses with 200 status.
 
 ## Next Steps
 
-1. Start the Brain Bridge stack locally
+1. Start the BuildFlow stack locally
 2. Expose port 3054 via Cloudflare or ngrok tunnel
 3. Follow the ChatGPT Custom GPT import steps
 4. Test with the provided prompts

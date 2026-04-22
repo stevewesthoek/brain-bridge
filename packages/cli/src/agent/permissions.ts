@@ -1,4 +1,4 @@
-import { ALLOWED_EXTENSIONS, IGNORE_PATTERNS } from '@brainbridge/shared'
+import { ALLOWED_EXTENSIONS, IGNORE_PATTERNS } from '@buildflow/shared'
 
 export function isPathAllowed(relativePath: string): boolean {
   // Block path traversal attempts

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Added the smallest safe write capability to Brain Bridge: `POST /api/actions/append-inbox-note`.
+Added the smallest safe write capability to BuildFlow: `POST /api/actions/append-inbox-note`.
 
 Allows ChatGPT Custom GPT to create new markdown notes in the personal Mind vault (via symlink) inbox folder only. No arbitrary paths, no edit/delete/overwrite, bearer token authenticated.
 
@@ -37,7 +37,7 @@ Allows ChatGPT Custom GPT to create new markdown notes in the personal Mind vaul
 
 - **Path safety**: No path parameter accepted. Filename is auto-generated from title only.
 - **Target folder locked**: Always writes to `mind/01-inbox/` via symlink (fixed in code). Never writes to brain root or old paths.
-- **Dual-repo access**: Brain Bridge reads from brain repo root; writes personal notes to mind repo (symlinked at repo root as `mind/`).
+- **Dual-repo access**: BuildFlow reads from brain repo root; writes personal notes to mind repo (symlinked at repo root as `mind/`).
 - **No overwrites**: Timestamp prefix + slug prevents collisions even with identical titles.
 - **Read-only contract preserved**: Existing search/read/search-and-read actions unchanged.
 - **Auth required**: Bearer token checked via `checkActionAuth()` (same as other actions).
@@ -50,7 +50,7 @@ Allows ChatGPT Custom GPT to create new markdown notes in the personal Mind vaul
 pnpm dev
 
 # Load token (already set from Phase 3.6)
-export BRAIN_BRIDGE_ACTION_TOKEN="your-token"
+export BUILDFLOW_ACTION_TOKEN="your-token"
 ```
 
 ### Local endpoint (port 3054)
@@ -63,23 +63,23 @@ curl -i -X POST http://127.0.0.1:3054/api/actions/append-inbox-note \
 # Test 2: Authenticated request (should create note)
 curl -s -X POST http://127.0.0.1:3054/api/actions/append-inbox-note \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
-  -d '{"title":"Brain Bridge write test","content":"This is a test note created by the Custom GPT action."}' | jq .
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
+  -d '{"title":"BuildFlow write test","content":"This is a test note created by the Custom GPT action."}' | jq .
 
 # Test 3: Second note with same title (should not overwrite, timestamp prevents collision)
 curl -s -X POST http://127.0.0.1:3054/api/actions/append-inbox-note \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
-  -d '{"title":"Brain Bridge write test","content":"Different content."}' | jq .
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
+  -d '{"title":"BuildFlow write test","content":"Different content."}' | jq .
 ```
 
 ### Public endpoint (Cloudflare tunnel)
 ```bash
 # Test 4: Public endpoint (requires Cloudflare tunnel running)
-curl -s -X POST https://brainbridge.prochat.tools/api/actions/append-inbox-note \
+curl -s -X POST https://buildflow.prochat.tools/api/actions/append-inbox-note \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
-  -d '{"title":"Brain Bridge public write test","content":"This is a public endpoint write test."}' | jq .
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
+  -d '{"title":"BuildFlow public write test","content":"This is a public endpoint write test."}' | jq .
 ```
 
 ### Verification in vault
@@ -107,7 +107,7 @@ pnpm build          # Should pass
 
 **Headers:**
 ```
-Authorization: Bearer {BRAIN_BRIDGE_ACTION_TOKEN}
+Authorization: Bearer {BUILDFLOW_ACTION_TOKEN}
 Content-Type: application/json
 ```
 
@@ -139,8 +139,8 @@ Content-Type: application/json
 1. **Timestamp + slug, not UUID**: Human-readable filenames, sortable chronologically, easier to debug.
 2. **Title slugification**: Removes special chars, converts to kebab-case, safe for filesystem.
 3. **Fixed mind/01-inbox folder via symlink**: No path parameter = no path traversal possible. Writes to symlinked mind repo inbox only.
-4. **Dual-repo architecture**: Brain Bridge bridges two repos (brain as machine knowledge base, mind as personal Obsidian vault via symlink). Personal notes always go to mind.
-5. **Bearer token auth**: Consistent with existing actions; token stored securely in ~/.config/brain-bridge/.env.
+4. **Dual-repo architecture**: BuildFlow bridges two repos (brain as machine knowledge base, mind as personal Obsidian vault via symlink). Personal notes always go to mind.
+5. **Bearer token auth**: Consistent with existing actions; token stored securely in ~/.config/buildflow/.env.
 6. **Forward to local agent**: Reuses existing vault I/O infrastructure, no direct filesystem access.
 
 ## Backward Compatibility

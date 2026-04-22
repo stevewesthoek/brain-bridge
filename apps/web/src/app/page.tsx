@@ -3,7 +3,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">Brain Bridge</h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">BuildFlow</h1>
           <p className="text-xl text-gray-600 mb-8">
             Connect your local brain folder to ChatGPT. Ideate with context. Export Claude-ready plans.
           </p>

@@ -9,7 +9,7 @@ export function expandTilde(filePath: string): string {
 }
 
 export function getConfigDir(): string {
-  return expandTilde('~/.brainbridge')
+  return expandTilde('~/.buildflow')
 }
 
 export function getConfigPath(): string {

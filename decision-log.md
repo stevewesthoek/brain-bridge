@@ -1,12 +1,12 @@
 # Decision Log
 
-Durable decisions for brain-bridge. Append-only archive.
+Durable decisions for buildflow. Append-only archive.
 
 ## 2026-04-16 -- Port migration and Cloudflare tunnel
 
 - Decision: Migrate web app from port 3000 to fixed port 3054
 - Reason: Avoid conflicts with other dev apps; stable endpoint for Cloudflare tunnel
-- Impact: All references updated (package.json, README, docs, OpenAPI); public URL stable at https://brainbridge.prochat.tools
+- Impact: All references updated (package.json, README, docs, OpenAPI); public URL stable at https://buildflow.prochat.tools
 
 ## 2026-04-16 -- ChatGPT Custom GPT MVP scope
 

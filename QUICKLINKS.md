@@ -1,4 +1,4 @@
-# Brain Bridge MVP — Quick Links
+# BuildFlow MVP — Quick Links
 
 **Status:** ✅ **READY FOR DEMO**
 
@@ -17,7 +17,7 @@ bash DEMO_QUICK.sh
 ## 📖 Documentation Guide
 
 ### I'm a User
-- **[README.md](README.md)** — What is Brain Bridge?
+- **[README.md](README.md)** — What is BuildFlow?
 - **[DEMO_README.md](DEMO_README.md)** — How to run the demo
 
 ### I'm a Developer
@@ -47,7 +47,7 @@ bash DEMO_QUICK.sh
 | File Create | ✅ | `/api/create` | 3052 |
 | File Append | ✅ | `/api/append` | 3052 |
 | Export Plans | ✅ | `/api/export-plan` | 3052 |
-| Audit Logging | ✅ | `~/.brainbridge/audit.log` | — |
+| Audit Logging | ✅ | `~/.buildflow/audit.log` | — |
 | Path Security | ✅ | `permissions.ts` | — |
 
 ---
@@ -103,8 +103,8 @@ curl -X POST http://127.0.0.1:3052/api/search \
 
 ### Check Logs
 ```bash
-cat ~/.brainbridge/audit.log
-cat ~/.brainbridge/config.json
+cat ~/.buildflow/audit.log
+cat ~/.buildflow/config.json
 ```
 
 ---
@@ -112,7 +112,7 @@ cat ~/.brainbridge/config.json
 ## 📂 Project Structure
 
 ```
-brain-bridge/
+buildflow/
 ├── README.md               ← Start here
 ├── QUICKLINKS.md           ← You are here
 ├── SETUP.md                ← Dev setup
@@ -202,7 +202,7 @@ A: `bash DEMO_QUICK.sh`
 A: Yes! Local HTTP server on port 3001.
 
 **Q: How do I connect to my own vault?**  
-A: `brainbridge connect ~/my/vault/path`
+A: `buildflow connect ~/my/vault/path`
 
 **Q: Is it production-ready?**  
 A: MVP-ready for local use. Phase 2 adds SaaS bridge.

@@ -7,11 +7,11 @@ export async function statusCommand(): Promise<void> {
   const config = loadConfig()
 
   if (!config) {
-    error('Brain Bridge not initialized. Run: brainbridge init')
+    error('BuildFlow not initialized. Run: buildflow init')
     return
   }
 
-  log('Brain Bridge Status')
+  log('BuildFlow Status')
   log('==================')
   log('')
 
@@ -35,10 +35,10 @@ export async function statusCommand(): Promise<void> {
   log('')
   log('Next steps:')
   if (!config.vaultPath) {
-    log('- Run: brainbridge connect <path>')
+    log('- Run: buildflow connect <path>')
   }
   if (!config.deviceToken) {
-    log('- Run: brainbridge login <api-key>')
+    log('- Run: buildflow login <api-key>')
   }
-  log('- Run: brainbridge serve')
+  log('- Run: buildflow serve')
 }

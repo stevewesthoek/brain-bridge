@@ -4,11 +4,11 @@ Phase 3.1 verifies and hardens the ChatGPT Custom Action integration for search-
 
 ## Setup: Local Testing
 
-### 1. Start Brain Bridge Stack
+### 1. Start BuildFlow Stack
 
 ```bash
 # Terminal 1: Bridge Server (port 3053)
-cd ~/Repos/stevewesthoek/brain-bridge/packages/bridge
+cd ~/Repos/stevewesthoek/buildflow/packages/bridge
 node dist/server.js
 
 # Terminal 2: Local Agent (port 3052, connected to bridge)
@@ -16,7 +16,7 @@ BRIDGE_URL=ws://127.0.0.1:3053 DEVICE_TOKEN=test-device \
   node packages/cli/dist/index.js serve
 
 # Terminal 3: Web App (port 3054)
-cd ~/Repos/stevewesthoek/brain-bridge/apps/web
+cd ~/Repos/stevewesthoek/buildflow/apps/web
 npm run dev
 ```
 

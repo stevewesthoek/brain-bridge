@@ -5,12 +5,12 @@ export async function loginCommand(apiKey: string): Promise<void> {
   const config = loadConfig()
 
   if (!config) {
-    error('Please run: brainbridge init')
+    error('Please run: buildflow init')
     return
   }
 
   if (!apiKey) {
-    error('API key required. Use: brainbridge login <api-key>')
+    error('API key required. Use: buildflow login <api-key>')
     return
   }
 
@@ -21,5 +21,5 @@ export async function loginCommand(apiKey: string): Promise<void> {
   saveConfig(config)
 
   log('Logged in successfully!')
-  log('Next: brainbridge connect <vault-path>')
+  log('Next: buildflow connect <vault-path>')
 }

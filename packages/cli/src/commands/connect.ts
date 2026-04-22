@@ -6,12 +6,12 @@ export async function connectCommand(vaultPath: string, sourceId?: string, sourc
   const config = loadConfig()
 
   if (!config) {
-    error('Please run: brainbridge init')
+    error('Please run: buildflow init')
     return
   }
 
   if (!vaultPath) {
-    error('Vault path required. Use: brainbridge connect <path> [source-id] [source-label]')
+    error('Vault path required. Use: buildflow connect <path> [source-id] [source-label]')
     return
   }
 
@@ -37,7 +37,7 @@ export async function connectCommand(vaultPath: string, sourceId?: string, sourc
     const docs = indexer.getDocs()
     log(`✓ Indexed ${docs.length} files from all sources.`)
     log('')
-    log('Next: brainbridge serve')
+    log('Next: buildflow serve')
   } catch (err) {
     error(`Failed to connect: ${String(err)}`)
   }

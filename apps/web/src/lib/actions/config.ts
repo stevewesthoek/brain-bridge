@@ -1,9 +1,9 @@
 export type BackendMode = 'direct-agent' | 'relay-agent'
 
 export function getBackendMode(): BackendMode {
-  const mode = process.env.BRAIN_BRIDGE_BACKEND_MODE as BackendMode | undefined
+  const mode = process.env.BUILDFLOW_BACKEND_MODE as BackendMode | undefined
   if (mode && !['direct-agent', 'relay-agent'].includes(mode)) {
-    console.warn(`Unknown BRAIN_BRIDGE_BACKEND_MODE: ${mode}. Defaulting to direct-agent.`)
+    console.warn(`Unknown BUILDFLOW_BACKEND_MODE: ${mode}. Defaulting to direct-agent.`)
     return 'direct-agent'
   }
   return mode || 'direct-agent'

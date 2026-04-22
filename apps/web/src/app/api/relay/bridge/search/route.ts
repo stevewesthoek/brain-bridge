@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const bridgeUrl = process.env.BRIDGE_URL || 'http://127.0.0.1:3053'
+    const relayUrl = process.env.BRIDGE_URL || 'http://127.0.0.1:3053'
     const localAgentUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
 
-    // For now, forward to local agent via bridge (assumes bridge connects to local agent)
+    // Forward to the local agent through the relay path.
     const response = await fetch(`${localAgentUrl}/api/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

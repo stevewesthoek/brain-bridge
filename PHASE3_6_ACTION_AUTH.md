@@ -1,4 +1,4 @@
-# Phase 3.6 — Brain Bridge Public API Authentication
+# Phase 3.6 — BuildFlow Public API Authentication
 
 ## Overview
 
@@ -6,7 +6,7 @@ Phase 3.6 secures the public ChatGPT Actions endpoints with a minimal bearer tok
 
 ## Security Model
 
-- **Environment variable:** `BRAIN_BRIDGE_ACTION_TOKEN`
+- **Environment variable:** `BUILDFLOW_ACTION_TOKEN`
 - **Auth scheme:** HTTP Bearer token
 - **Protected endpoints:**
   - `POST /api/actions/search`
@@ -22,15 +22,15 @@ Phase 3.6 secures the public ChatGPT Actions endpoints with a minimal bearer tok
 ### 1. Generate a Token
 
 ```bash
-export BRAIN_BRIDGE_ACTION_TOKEN="$(openssl rand -hex 32)"
-echo "$BRAIN_BRIDGE_ACTION_TOKEN"
+export BUILDFLOW_ACTION_TOKEN="$(openssl rand -hex 32)"
+echo "$BUILDFLOW_ACTION_TOKEN"
 ```
 
 ### 2. Start the Web App Locally with Token
 
 ```bash
 cd apps/web
-BRAIN_BRIDGE_ACTION_TOKEN="$BRAIN_BRIDGE_ACTION_TOKEN" npm run dev
+BUILDFLOW_ACTION_TOKEN="$BUILDFLOW_ACTION_TOKEN" npm run dev
 ```
 
 The web app listens on port 3054. Any request to `/api/actions/*` without a valid bearer token will receive a 401 response.
@@ -45,22 +45,22 @@ pkill -f "next dev" || true
 pkill -f "next start" || true
 
 # Set token
-export BRAIN_BRIDGE_ACTION_TOKEN="$(openssl rand -hex 32)"
+export BUILDFLOW_ACTION_TOKEN="$(openssl rand -hex 32)"
 
 # Terminal 1: Bridge server
-cd ~/Repos/stevewesthoek/brain-bridge/packages/bridge
-node dist/server.js > /tmp/brainbridge-bridge.log 2>&1 &
+cd ~/Repos/stevewesthoek/buildflow/packages/bridge
+node dist/server.js > /tmp/buildflow-bridge.log 2>&1 &
 
 # Terminal 2: Local brain agent
-cd ~/Repos/stevewesthoek/brain-bridge
+cd ~/Repos/stevewesthoek/buildflow
 node packages/cli/dist/index.js connect /Users/Office/Repos/stevewesthoek/brain
 node packages/cli/dist/index.js index
 BRIDGE_URL=ws://127.0.0.1:3053 DEVICE_TOKEN=test-device \
-  node packages/cli/dist/index.js serve > /tmp/brainbridge-agent.log 2>&1 &
+  node packages/cli/dist/index.js serve > /tmp/buildflow-agent.log 2>&1 &
 
 # Terminal 3: Web app
-cd ~/Repos/stevewesthoek/brain-bridge/apps/web
-BRAIN_BRIDGE_ACTION_TOKEN="$BRAIN_BRIDGE_ACTION_TOKEN" npm run dev > /tmp/brainbridge-web.log 2>&1 &
+cd ~/Repos/stevewesthoek/buildflow/apps/web
+BUILDFLOW_ACTION_TOKEN="$BUILDFLOW_ACTION_TOKEN" npm run dev > /tmp/buildflow-web.log 2>&1 &
 
 sleep 5
 ```
@@ -93,7 +93,7 @@ curl -i -s -X POST http://127.0.0.1:3054/api/actions/search \
 ```bash
 curl -s -X POST http://127.0.0.1:3054/api/actions/search \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
   -d '{"query":"brain","limit":2}' | jq .
 ```
 
@@ -104,7 +104,7 @@ curl -s -X POST http://127.0.0.1:3054/api/actions/search \
 ```bash
 curl -s -X POST http://127.0.0.1:3054/api/actions/read \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
   -d '{"path":"mind/home.md"}' | jq .
 ```
 
@@ -113,22 +113,22 @@ curl -s -X POST http://127.0.0.1:3054/api/actions/read \
 ```bash
 curl -s -X POST http://127.0.0.1:3054/api/actions/search-and-read \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
   -d '{"query":"brain","limit":2}' | jq .
 ```
 
 ### Test 6: Public Endpoint with Token
 
 ```bash
-curl -s -X POST https://brainbridge.prochat.tools/api/actions/search-and-read \
+curl -s -X POST https://buildflow.prochat.tools/api/actions/search-and-read \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $BRAIN_BRIDGE_ACTION_TOKEN" \
+  -H "Authorization: Bearer $BUILDFLOW_ACTION_TOKEN" \
   -d '{"query":"brain","limit":2}' | jq .
 ```
 
 ## ChatGPT Custom GPT Configuration
 
-To use Brain Bridge with ChatGPT Custom Actions:
+To use BuildFlow with ChatGPT Custom Actions:
 
 1. **Open ChatGPT Custom GPT editor**
 2. **Navigate to "Configure" → "Actions"**
@@ -138,7 +138,7 @@ To use Brain Bridge with ChatGPT Custom Actions:
    - **API Key:** `<your-token-here>`
 4. **Upload OpenAPI schema:**
    - **Schema source:** Paste the contents of `docs/openapi.chatgpt.json`
-   - **Or import URL:** `https://brainbridge.prochat.tools/api/openapi`
+   - **Or import URL:** `https://buildflow.prochat.tools/api/openapi`
 5. **Test the action:** Use ChatGPT to search and read files
 
 ### Important Notes
@@ -153,7 +153,7 @@ To use Brain Bridge with ChatGPT Custom Actions:
 ### Auth Helper: `apps/web/src/lib/actionAuth.ts`
 
 The `checkActionAuth()` function:
-- Reads `BRAIN_BRIDGE_ACTION_TOKEN` from environment
+- Reads `BUILDFLOW_ACTION_TOKEN` from environment
 - Checks the `Authorization` header for `Bearer <token>`
 - Returns `null` (success) if token matches
 - Returns `401` response if token is missing or invalid
@@ -194,25 +194,25 @@ Each action operation includes:
 
 ### Token Not Set Error
 
-If you see: `{"error": "Server configuration error: BRAIN_BRIDGE_ACTION_TOKEN not set"}`
+If you see: `{"error": "Server configuration error: BUILDFLOW_ACTION_TOKEN not set"}`
 
 **Solution:** Set the environment variable before starting the app:
 ```bash
-export BRAIN_BRIDGE_ACTION_TOKEN="your-token-here"
+export BUILDFLOW_ACTION_TOKEN="your-token-here"
 npm run dev
 ```
 
 ### 401 Unauthorized
 
 If authentication fails locally:
-1. Verify the token matches: `echo $BRAIN_BRIDGE_ACTION_TOKEN`
+1. Verify the token matches: `echo $BUILDFLOW_ACTION_TOKEN`
 2. Check the header format: `Authorization: Bearer <token>` (with space after Bearer)
 3. Regenerate a new token if unsure
 
 ### Public Endpoint 401
 
 If the public endpoint returns 401 with the correct token:
-1. Verify the Cloudflare tunnel is active: `brainbridge.prochat.tools`
+1. Verify the Cloudflare tunnel is active: `buildflow.prochat.tools`
 2. Check that the web app is running with the same token
 3. Ensure the bearer token format is exactly: `Bearer <token>`
 

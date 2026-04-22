@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Brain Bridge unified stop script
+# BuildFlow unified stop script
 # Stops agent (3052), web (3054), and relay (3053)
 
 set -e
@@ -14,21 +14,21 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 log_info() {
-  echo -e "${GREEN}[Brain Bridge]${NC} $1"
+  echo -e "${GREEN}[BuildFlow]${NC} $1"
 }
 
 log_warn() {
-  echo -e "${YELLOW}[Brain Bridge]${NC} $1"
+  echo -e "${YELLOW}[BuildFlow]${NC} $1"
 }
 
 log_error() {
-  echo -e "${RED}[Brain Bridge ERROR]${NC} $1"
+  echo -e "${RED}[BuildFlow ERROR]${NC} $1"
 }
 
 # Step 1: Stop relay via docker compose
 log_info "Stopping relay..."
 cd "$REPO_ROOT"
-if docker ps --filter name=brainbridge-relay --filter status=running | grep -q brainbridge-relay; then
+if docker ps --filter name=buildflow-relay --filter status=running | grep -q buildflow-relay; then
   if docker compose down > /dev/null 2>&1; then
     log_info "✓ Relay stopped"
   else
@@ -76,7 +76,7 @@ if curl -s http://localhost:3054/api/openapi > /dev/null 2>&1; then
   log_error "Web still running on 3054"
 fi
 
-if docker ps --filter name=brainbridge-relay --filter status=running | grep -q brainbridge-relay; then
+if docker ps --filter name=buildflow-relay --filter status=running | grep -q buildflow-relay; then
   RELAY_RUNNING=1
   log_error "Relay still running on 3053"
 fi

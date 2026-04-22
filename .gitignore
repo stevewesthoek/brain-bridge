@@ -7,7 +7,7 @@ build/
 .env.*.local
 *.log
 .DS_Store
-.brainbridge/
+.buildflow/
 .ai/
 coverage/
 .turbo/
