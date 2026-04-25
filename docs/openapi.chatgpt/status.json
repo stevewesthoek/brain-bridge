@@ -17,7 +17,8 @@
         "type": "http",
         "scheme": "bearer"
       }
-    }
+    },
+    "schemas": {}
   },
   "paths": {
     "/api/actions/status": {

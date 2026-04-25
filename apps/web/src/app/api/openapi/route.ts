@@ -31,6 +31,16 @@ const paths = {
   ...createPlan.paths
 }
 
+const components = {
+  schemas: {},
+  securitySchemes: {
+    bearerAuth: {
+      type: 'http',
+      scheme: 'bearer'
+    }
+  }
+}
+
 const openapi = {
   openapi: '3.1.0',
   info: {
@@ -40,7 +50,7 @@ const openapi = {
       'Search, read, inspect, and write across connected local knowledge sources through BuildFlow. BuildFlow combines repositories, notes, research folders, and other connected local sources into one shared context for ChatGPT while keeping files local.'
   },
   servers: status.servers,
-  components: status.components,
+  components,
   paths
 }
 
