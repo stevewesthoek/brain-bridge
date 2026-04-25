@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [sourceId, setSourceId] = useState('')
   const [mutationLoading, setMutationLoading] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
+  const [loadErrorDetail, setLoadErrorDetail] = useState<string | null>(null)
   const [activeMode, setActiveMode] = useState<ActiveSourcesMode>('all')
   const [activeSourceIds, setActiveSourceIds] = useState<string[]>([])
   const [writeMode, setWriteMode] = useState<WriteMode>('safeWrites')
@@ -21,23 +22,34 @@ export default function Dashboard() {
   const fetchSources = async () => {
     try {
       setError(null)
+      setLoadErrorDetail(null)
       const response = await fetch('/api/agent/sources')
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(`Failed to fetch sources: ${response.status}`)
+        const detail = data?.details ? ` ${data.details}` : data?.detail ? ` ${data.detail}` : ''
+        throw new Error(`${data?.error || `Failed to fetch sources: ${response.status}`}${detail}`.trim())
       }
 
-      const data = await response.json()
       setSources(data.sources || [])
       setAgentConnected(true)
       const activeResponse = await fetch('/api/agent/active-sources')
       const activeData = await activeResponse.json().catch(() => ({}))
+      if (!activeResponse.ok) {
+        const detail = activeData?.details ? ` ${activeData.details}` : activeData?.detail ? ` ${activeData.detail}` : ''
+        throw new Error(`${activeData?.error || `Failed to fetch active sources: ${activeResponse.status}`}${detail}`.trim())
+      }
       setActiveMode(activeData.mode || 'all')
       setActiveSourceIds(activeData.activeSourceIds || [])
       const writeResponse = await fetch('/api/agent/write-mode')
       const writeData = await writeResponse.json().catch(() => ({}))
+      if (!writeResponse.ok) {
+        const detail = writeData?.details ? ` ${writeData.details}` : writeData?.detail ? ` ${writeData.detail}` : ''
+        throw new Error(`${writeData?.error || `Failed to fetch write mode: ${writeResponse.status}`}${detail}`.trim())
+      }
       setWriteMode(writeData.writeMode || 'safeWrites')
     } catch (err) {
-      setError(String(err))
+      setLoadErrorDetail(String(err))
+      setError('Unable to load sources')
       setAgentConnected(false)
     } finally {
       setLoading(false)
@@ -134,6 +146,25 @@ export default function Dashboard() {
           <p className="text-gray-600 text-sm mb-6">
             Configured knowledge sources that are searched and read together through ChatGPT.
           </p>
+          {error ? (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded p-4 text-red-800">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold">Unable to load sources</p>
+                  <p className="text-sm">{error}</p>
+                  {loadErrorDetail ? <p className="text-xs mt-1 text-red-700">{loadErrorDetail}</p> : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchSources()}
+                  className="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                  disabled={mutationLoading}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <form onSubmit={handleAddSource} className="border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
             <div>
@@ -183,11 +214,6 @@ export default function Dashboard() {
 
           {loading ? (
             <div className="text-gray-500">Loading sources...</div>
-          ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded p-4 text-red-800">
-              <p className="font-semibold">Unable to load sources</p>
-              <p className="text-sm">{error}</p>
-            </div>
           ) : sources.length === 0 ? (
             <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center text-gray-500">
               No knowledge sources configured. Run: <code className="text-gray-700 font-mono">buildflow connect &lt;path&gt;</code>

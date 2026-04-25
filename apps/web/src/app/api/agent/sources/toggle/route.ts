@@ -5,11 +5,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const backendUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
 
-    const response = await fetch(`${backendUrl}/api/sources/toggle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
+    let response
+    try {
+      response = await fetch(`${backendUrl}/api/sources/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'BuildFlow agent is unavailable', detail: String(err) },
+        { status: 503 }
+      )
+    }
 
     if (!response.ok) {
       const errorBody = await response.text()

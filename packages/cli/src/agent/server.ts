@@ -457,7 +457,9 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       const sources = getSourcesSafe().map(source => ({
         id: source.id,
         label: source.label,
-        enabled: source.enabled
+        enabled: source.enabled,
+        active: getActiveSourceContext().activeSourceIds.includes(source.id),
+        type: (source as any).type || 'unknown'
       }))
 
       return reply.header('Cache-Control', 'no-store').send({ sources })

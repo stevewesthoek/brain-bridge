@@ -74,6 +74,51 @@ function persistConfig(config: AgentConfig): void {
   saveConfig(config)
 }
 
+function getAllConfiguredSources(config: AgentConfig): KnowledgeSource[] {
+  return ensureSources(config).map(source => ({
+    ...source,
+    path: expandTilde(source.path)
+  }))
+}
+
+export function reconcileActiveSources(config: AgentConfig): { mode: ActiveSourcesMode; activeSourceIds: string[]; sources: KnowledgeSource[] } {
+  const allSources = getAllConfiguredSources(config)
+  const enabledSources = allSources.filter(source => source.enabled)
+  const enabledIds = new Set(enabledSources.map(source => source.id))
+  const currentMode = config.activeSourcesMode || 'all'
+  const currentActiveIds = Array.from(new Set((config.activeSourceIds || []).filter(id => typeof id === 'string' && id.length > 0)))
+  const filteredActiveIds = currentActiveIds.filter(id => enabledIds.has(id))
+
+  let nextMode: ActiveSourcesMode = currentMode
+  let nextActiveIds: string[] = []
+
+  if (enabledSources.length === 0) {
+    nextMode = 'all'
+    nextActiveIds = []
+  } else if (currentMode === 'all') {
+    nextActiveIds = enabledSources.map(source => source.id)
+  } else if (currentMode === 'single') {
+    nextActiveIds = filteredActiveIds.slice(0, 1)
+    if (nextActiveIds.length === 0) {
+      nextActiveIds = [enabledSources[0].id]
+    }
+  } else {
+    nextActiveIds = filteredActiveIds.slice(0, 10)
+    if (nextActiveIds.length === 0) {
+      nextMode = 'all'
+      nextActiveIds = enabledSources.map(source => source.id)
+    }
+  }
+
+  config.activeSourcesMode = nextMode
+  config.activeSourceIds = nextActiveIds
+  persistConfig(config)
+
+  const activeIds = new Set(nextActiveIds)
+  const hydrated = allSources.map(source => ({ ...source, active: source.enabled && activeIds.has(source.id) } as KnowledgeSource & { active?: boolean }))
+  return { mode: nextMode, activeSourceIds: nextActiveIds, sources: hydrated }
+}
+
 export function generateSourceIdFromPath(sourcePath: string): string {
   return path.basename(sourcePath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
 }
@@ -107,22 +152,11 @@ export function getEnabledSources(): KnowledgeSource[] {
 
 export function getActiveSourceContext(): { mode: ActiveSourcesMode; activeSourceIds: string[]; sources: KnowledgeSource[] } {
   const config = loadConfig()
-  const sources = getSourcesSafe().filter(s => s.enabled)
-  const mode = config?.activeSourcesMode || 'all'
-  const configuredIds = config?.activeSourceIds || []
-  let activeSourceIds: string[] = []
-
-  if (mode === 'single') {
-    activeSourceIds = configuredIds.slice(0, 1)
-  } else if (mode === 'multi') {
-    activeSourceIds = configuredIds
-  } else {
-    activeSourceIds = sources.map(s => s.id)
+  if (!config) {
+    return { mode: 'all', activeSourceIds: [], sources: [] }
   }
 
-  const activeIds = new Set(activeSourceIds)
-  const hydrated = sources.map(source => ({ ...source, active: activeIds.has(source.id) } as KnowledgeSource & { active?: boolean }))
-  return { mode, activeSourceIds, sources: hydrated }
+  return reconcileActiveSources(config)
 }
 
 export function setActiveSourceContext(mode: ActiveSourcesMode, activeSourceIds: string[] = []): { mode: ActiveSourcesMode; activeSourceIds: string[]; sources: KnowledgeSource[] } {
@@ -140,7 +174,7 @@ export function setActiveSourceContext(mode: ActiveSourcesMode, activeSourceIds:
   config.activeSourcesMode = mode
   config.activeSourceIds = mode === 'all' ? sources.map(s => s.id) : uniqueIds.slice(0, 10)
   persistConfig(config)
-  return getActiveSourceContext()
+  return reconcileActiveSources(config)
 }
 
 export function getWriteMode(): WriteMode {
@@ -221,23 +255,20 @@ export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeS
   }
 
   const sources = ensureSources(config)
-  let changed = false
   const nextSources = sources.map(source => {
     if (source.id !== sourceId) {
       return source
     }
 
-    changed = source.enabled !== enabled
     return { ...source, enabled }
   })
 
-  if (!nextSources.some(source => source.id === sourceId)) {
+  if (!sources.some(source => source.id === sourceId)) {
     throw new Error(`Knowledge source not found: ${sourceId}`)
   }
 
   persistSources(config, nextSources)
-
-  return getSources()
+  return reconcileActiveSources(config).sources
 }
 
 export function getVaultPath(): string {
