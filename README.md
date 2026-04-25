@@ -185,8 +185,8 @@ For now, source setup is managed in the current local flow. The BuildFlow UX bui
 4. Set up your Custom GPT
 
 1. Create a new Custom GPT in ChatGPT
-2. Import the OpenAPI schemas from the per-action URLs in `docs/openapi.chatgpt/README.md`
-3. Set authentication to Bearer token, using your BUILDFLOW_ACTION_TOKEN
+2. Import the combined OpenAPI schema from `https://buildflow.prochat.tools/api/openapi`
+3. Set authentication to Bearer token, using your `BUILDFLOW_ACTION_TOKEN`
 4. Test with a simple prompt like:
     * “Search my local project context for notes about pricing”
     * “Help me turn this idea into a phased implementation plan”
@@ -216,6 +216,8 @@ Current security guarantees:
 * bearer token authentication
 * audit logging
 * user-controlled local runtime
+
+For Custom GPTs, use only the combined import URL above. The lower-level `/api/actions/*` endpoints remain available for internal/debug use, but they are not the recommended GPT import surface.
 
 Current limitations
 
