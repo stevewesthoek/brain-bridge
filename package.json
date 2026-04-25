@@ -12,6 +12,7 @@
     "build": "pnpm -r build",
     "type-check": "pnpm -r type-check",
     "lint": "pnpm -r lint",
+    "verify:dashboard": "node scripts/verify-dashboard.mjs",
     "verify:gpt-actions": "node scripts/verify-custom-gpt-actions.mjs",
     "restart:local": "bash scripts/restart-buildflow-local.sh"
   },
