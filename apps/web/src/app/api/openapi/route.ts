@@ -11,7 +11,7 @@ const components = {
 }
 
 const openapi = {
-  openapi: '3.0.3',
+  openapi: '3.1.0',
   info: {
     title: 'BuildFlow API',
     version: '2.0.0',
