@@ -17,7 +17,7 @@ export class Indexer {
     this.docs = []
 
     const sources = getEnabledSources()
-    const patterns = ['**/*.md', '**/*.txt']
+    const patterns = ['**/*']
     const ignorePatterns = ['.git/**', '.obsidian/**', 'node_modules/**', '.*/**']
 
     for (const source of sources) {

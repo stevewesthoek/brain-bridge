@@ -29,6 +29,7 @@ BuildFlow now provides **three read-only actions**:
 ### 2. `/api/actions/read` (read-only)
 - Read full content of a file
 - Only accepts relative paths from search results
+- Reads any file type present in a connected source
 - Does not modify any files
 - Absolute paths and `../` traversal blocked
 
@@ -53,6 +54,7 @@ You have access to BuildFlow, a local knowledge vault API. Use these actions to 
 3. **read**: To read a specific file by path (from search results).
 
 All actions are read-only. They do not modify or create files. Only relative paths from search results are valid; absolute paths and path traversal are blocked.
+`/api/actions/read` can return any file type from connected sources.
 
 When the user asks you to search their brain or find information, use search-and-read by default. Only split into separate search + read calls if you need to explore multiple search results.
 ```

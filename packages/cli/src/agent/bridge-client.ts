@@ -293,14 +293,6 @@ export class BridgeClient {
               break
             }
 
-            // Enforce safe file extensions
-            const safeExtensions = ['.md', '.txt', '.json', '.yaml', '.yml', '.ts', '.tsx', '.js', '.jsx', '.sh', '.env.example', '.csv']
-            const fileExt = path.toLowerCase().slice(path.lastIndexOf('.'))
-            if (!safeExtensions.includes(fileExt)) {
-              error = `Unsupported file type: ${fileExt}`
-              break
-            }
-
             const content = fs.readFileSync(fullPath, 'utf-8')
             result = { path, content, workspace, size: stat.size }
           } catch (err) {
@@ -352,12 +344,6 @@ export class BridgeClient {
             const maxSize = 1024 * 1024
             if (stat.size > maxSize) {
               error = `File too large (${stat.size} bytes, max ${maxSize})`
-              break
-            }
-            const safeExtensions = ['.md', '.txt', '.json', '.yaml', '.yml', '.ts', '.tsx', '.js', '.jsx', '.sh', '.env.example', '.csv']
-            const fileExt = path.toLowerCase().slice(path.lastIndexOf('.'))
-            if (!safeExtensions.includes(fileExt)) {
-              error = `Unsupported file type: ${fileExt}`
               break
             }
             const content = fs.readFileSync(fullPath, 'utf-8')

@@ -111,13 +111,6 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
           return reply.code(400).send({ error: `File too large (${stat.size} bytes, max ${maxSize})` })
         }
 
-        // Enforce safe file extensions for workspace reads
-        const safeExtensions = ['.md', '.txt', '.json', '.yaml', '.yml', '.ts', '.tsx', '.js', '.jsx', '.sh', '.env.example', '.csv']
-        const fileExt = path.toLowerCase().slice(path.lastIndexOf('.'))
-        if (!safeExtensions.includes(fileExt)) {
-          return reply.code(400).send({ error: `Unsupported file type: ${fileExt}` })
-        }
-
         const content = fs.readFileSync(fullPath, 'utf-8')
 
         logToFile({

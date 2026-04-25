@@ -1,4 +1,3 @@
-export declare const ALLOWED_EXTENSIONS: string[];
 export declare const IGNORE_PATTERNS: string[];
 export declare const DEFAULT_VAULT_FOLDER = "BuildFlow/Inbox/";
 export declare const TOOL_CALL_TIMEOUT = 20000;

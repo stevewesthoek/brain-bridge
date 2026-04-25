@@ -1,5 +1,3 @@
-export const ALLOWED_EXTENSIONS = ['.md', '.txt']
-
 export const IGNORE_PATTERNS = [
   '.git/**',
   '.obsidian/**',

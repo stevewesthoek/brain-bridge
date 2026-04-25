@@ -130,7 +130,7 @@ curl -X POST http://127.0.0.1:3054/api/actions/search \
 
 ### ✅ Security
 - **Path Traversal Protection** — No `..`, no `/`, no hidden files
-- **File Extension Restriction** — `.md` and `.txt` only
+- **Path Safety** — Read access stays inside registered sources
 - **Deletion Prevention** — Create/append only, no delete
 - **Audit Logging** — All operations logged to `~/.buildflow/audit.log`
 
@@ -251,7 +251,6 @@ GET /ready                # Readiness check
   "apiBaseUrl": "http://localhost:3000",
   "vaultPath": "/path/to/vault",
   "mode": "read_create_append",
-  "allowedExtensions": [".md", ".txt"],
   "ignorePatterns": [".git/**", ".obsidian/**", ...]
 }
 ```

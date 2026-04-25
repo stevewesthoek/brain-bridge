@@ -187,7 +187,6 @@ buildflow/
 Clear, user-friendly errors:
 - "No active BuildFlow device is online." → device offline
 - "Access denied. This file is outside the approved brain folder." → path traversal attempt
-- "Unsupported file type. MVP only supports .md and .txt files." → wrong extension
 - "File already exists. Use append-note or choose a new path." → create conflict
 
 ## Testing Checklist

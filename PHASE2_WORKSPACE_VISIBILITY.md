@@ -35,7 +35,6 @@ Add `workspaces` array to `~/.buildflow/config.json`:
   "vaultPath": "...",
   "localPort": 3052,
   "mode": "read_create_append",
-  "allowedExtensions": [".md", ".txt"],
   "ignorePatterns": [".git/**", "node_modules/**"],
   "workspaces": [
     {

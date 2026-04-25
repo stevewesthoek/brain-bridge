@@ -1,4 +1,4 @@
-import { ALLOWED_EXTENSIONS, IGNORE_PATTERNS } from '@buildflow/shared'
+import { IGNORE_PATTERNS } from '@buildflow/shared'
 
 export function isPathAllowed(relativePath: string): boolean {
   // Block path traversal attempts
@@ -23,10 +23,6 @@ export function isPathAllowed(relativePath: string): boolean {
   return true
 }
 
-export function isExtensionAllowed(filePath: string): boolean {
-  return ALLOWED_EXTENSIONS.some(ext => filePath.endsWith(ext))
-}
-
 export function validatePath(relativePath: string): { valid: boolean; error?: string } {
   if (!relativePath) {
     return { valid: false, error: 'Path cannot be empty' }
@@ -34,10 +30,6 @@ export function validatePath(relativePath: string): { valid: boolean; error?: st
 
   if (!isPathAllowed(relativePath)) {
     return { valid: false, error: 'Access denied. This file is outside the approved brain folder.' }
-  }
-
-  if (!isExtensionAllowed(relativePath)) {
-    return { valid: false, error: 'Unsupported file type. MVP only supports .md and .txt files.' }
   }
 
   return { valid: true }
