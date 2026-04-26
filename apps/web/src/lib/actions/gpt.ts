@@ -16,6 +16,14 @@ type NormalizedContextResult = {
   sources: NormalizedSource[]
 }
 
+type VerifiedWriteResult = {
+  verified: true
+  verifiedAt: string
+  bytesOnDisk: number
+  contentHash: string
+  contentPreview: string
+}
+
 export async function requireExplicitSourceId(body: Record<string, unknown>) {
   if (typeof body.sourceId === 'string' && body.sourceId.length > 0) {
     return null
@@ -47,13 +55,6 @@ function normalizeContextResult(
   const mode = (activePayload as { mode?: unknown }).mode
   const contextMode = mode === 'single' || mode === 'multi' || mode === 'all' ? mode : 'all'
   const activeIds = new Set(activeSourceIds)
-  const activeById = new Map<string, Record<string, unknown>>()
-
-  for (const source of listedSources) {
-    const id = typeof source.id === 'string' ? source.id : ''
-    if (!id) continue
-    activeById.set(id, source)
-  }
 
   const sources: NormalizedSource[] = listedSources.map(source => {
     const id = typeof source.id === 'string' ? source.id : ''
@@ -75,6 +76,36 @@ function normalizeContextResult(
     contextMode,
     activeSourceIds,
     sources
+  }
+}
+
+function assertVerifiedWriteResult(result: unknown, fallback: string): VerifiedWriteResult {
+  if (!result || typeof result !== 'object') {
+    throw new ActionTransportError(`${fallback}: write response missing`, 502)
+  }
+
+  const raw = result as Record<string, unknown>
+  const verified = raw.verified
+  if (verified !== true) {
+    throw new ActionTransportError(`${fallback}: write was not verified`, 502)
+  }
+
+  const verifiedAt = raw.verifiedAt
+  const bytesOnDisk = raw.bytesOnDisk
+  const contentHash = raw.contentHash
+  const contentPreview = raw.contentPreview
+
+  if (typeof verifiedAt !== 'string' || !verifiedAt) throw new ActionTransportError(`${fallback}: verifiedAt missing`, 502)
+  if (typeof bytesOnDisk !== 'number' || !Number.isFinite(bytesOnDisk) || bytesOnDisk <= 0) throw new ActionTransportError(`${fallback}: bytesOnDisk invalid`, 502)
+  if (typeof contentHash !== 'string' || !contentHash) throw new ActionTransportError(`${fallback}: contentHash missing`, 502)
+  if (typeof contentPreview !== 'string') throw new ActionTransportError(`${fallback}: contentPreview missing`, 502)
+
+  return {
+    verified: true,
+    verifiedAt,
+    bytesOnDisk,
+    contentHash,
+    contentPreview
   }
 }
 
@@ -246,7 +277,9 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
 export async function dispatchBuildFlowArtifact(body: Record<string, unknown>) {
   const sourceError = await requireExplicitSourceId(body)
   if (sourceError) return sourceError
-  return executeAction('/api/create-artifact', body)
+  const result = await executeAction('/api/create-artifact', body)
+  const verified = assertVerifiedWriteResult(result, 'writeBuildFlowArtifact')
+  return { ...result as Record<string, unknown>, ...verified }
 }
 
 export async function dispatchBuildFlowFileChange(body: Record<string, unknown>) {
@@ -263,26 +296,34 @@ export async function dispatchBuildFlowFileChange(body: Record<string, unknown>)
   if (changeType === 'append') {
     payload.content = body.content
     payload.separator = body.separator ?? '\n\n'
-    return executeAction('/api/append-file', payload)
+    const result = await executeAction('/api/append-file', payload)
+    const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange append')
+    return { ...(result as Record<string, unknown>), ...verified }
   }
 
   if (changeType === 'create') {
     payload.content = body.content
     payload.mode = 'createOnly'
-    return executeAction('/api/write-file', payload)
+    const result = await executeAction('/api/write-file', payload)
+    const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange create')
+    return { ...(result as Record<string, unknown>), ...verified }
   }
 
   if (changeType === 'overwrite') {
     payload.content = body.content
     payload.mode = 'overwrite'
-    return executeAction('/api/write-file', payload)
+    const result = await executeAction('/api/write-file', payload)
+    const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange overwrite')
+    return { ...(result as Record<string, unknown>), ...verified }
   }
 
   if (changeType === 'patch') {
     payload.find = body.find
     payload.replace = body.replace
     payload.allowMultiple = body.allowMultiple ?? false
-    return executeAction('/api/patch-file', payload)
+    const result = await executeAction('/api/patch-file', payload)
+    const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange patch')
+    return { ...(result as Record<string, unknown>), ...verified }
   }
 
   throw new Error('Invalid changeType')

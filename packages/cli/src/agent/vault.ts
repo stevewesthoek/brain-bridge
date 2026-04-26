@@ -3,6 +3,7 @@ import path from 'path'
 import { getVaultPath, getEnabledSources, getInboxSourceId } from './config'
 import { validatePath } from './permissions'
 import { logToFile } from '../utils/logger'
+import { verifyWrittenFile } from './write-verification'
 
 export async function resolveSafePath(relativePath: string, sourceId?: string): Promise<string> {
   const normalized = path.normalize(relativePath)
@@ -87,7 +88,7 @@ export async function readFile(relativePath: string, sourceId?: string): Promise
   }
 }
 
-export async function createFile(relativePath: string, content: string): Promise<{ path: string; created: boolean }> {
+export async function createFile(relativePath: string, content: string): Promise<{ path: string; created: boolean } & ReturnType<typeof verifyWrittenFile>> {
   const validation = validatePath(relativePath)
   if (!validation.valid) {
     throw new Error(validation.error)
@@ -115,7 +116,8 @@ export async function createFile(relativePath: string, content: string): Promise
       status: 'success'
     })
 
-    return { path: relativePath, created: true }
+    const verification = verifyWrittenFile({ fullPath, expectedContent: content })
+    return { path: relativePath, created: true, ...verification }
   } catch (err) {
     logToFile({
       timestamp: new Date().toISOString(),
@@ -128,7 +130,7 @@ export async function createFile(relativePath: string, content: string): Promise
   }
 }
 
-export async function createInboxNote(relativePath: string, content: string, sourceId?: string): Promise<{ path: string; created: boolean }> {
+export async function createInboxNote(relativePath: string, content: string, sourceId?: string): Promise<{ path: string; created: boolean } & ReturnType<typeof verifyWrittenFile>> {
   const validation = validatePath(relativePath)
   if (!validation.valid) {
     throw new Error(validation.error)
@@ -169,7 +171,8 @@ export async function createInboxNote(relativePath: string, content: string, sou
       status: 'success'
     })
 
-    return { path: relativePath, created: true }
+    const verification = verifyWrittenFile({ fullPath, expectedContent: content })
+    return { path: relativePath, created: true, ...verification }
   } catch (err) {
     logToFile({
       timestamp: new Date().toISOString(),
@@ -183,7 +186,7 @@ export async function createInboxNote(relativePath: string, content: string, sou
   }
 }
 
-export async function appendFile(relativePath: string, content: string): Promise<{ path: string; appended: boolean }> {
+export async function appendFile(relativePath: string, content: string): Promise<{ path: string; appended: boolean } & ReturnType<typeof verifyWrittenFile>> {
   const validation = validatePath(relativePath)
   if (!validation.valid) {
     throw new Error(validation.error)
@@ -207,7 +210,11 @@ export async function appendFile(relativePath: string, content: string): Promise
       status: 'success'
     })
 
-    return { path: relativePath, appended: true }
+    const verification = verifyWrittenFile({
+      fullPath,
+      expectedContains: [content]
+    })
+    return { path: relativePath, appended: true, ...verification }
   } catch (err) {
     logToFile({
       timestamp: new Date().toISOString(),

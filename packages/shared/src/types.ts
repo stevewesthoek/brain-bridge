@@ -22,12 +22,22 @@ export type FileCreated = {
   sourceId?: string
   path: string
   created: boolean
+  verified: boolean
+  verifiedAt: string
+  bytesOnDisk: number
+  contentHash: string
+  contentPreview: string
 }
 
 export type FileAppended = {
   sourceId?: string
   path: string
   appended: boolean
+  verified: boolean
+  verifiedAt: string
+  bytesOnDisk: number
+  contentHash: string
+  contentPreview: string
 }
 
 export type IndexedDoc = {

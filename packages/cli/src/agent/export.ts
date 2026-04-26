@@ -10,7 +10,7 @@ interface ExportPlanInput {
   acceptanceCriteria?: string[]
 }
 
-export async function createExportPlan(input: Record<string, unknown>): Promise<{ path: string; created: boolean }> {
+export async function createExportPlan(input: Record<string, unknown>): Promise<{ path: string; created: boolean; verified?: boolean; verifiedAt?: string; bytesOnDisk?: number; contentHash?: string; contentPreview?: string }> {
   const data = input as unknown as ExportPlanInput
 
   const tasks = (data.tasks || []).map((t: string) => `- ${t}`).join('\n')
@@ -61,7 +61,15 @@ The implementation is done when all acceptance criteria pass and the project can
 `
 
   const timestamp = new Date().toISOString().split('T')[0]
-  const slug = (data.title || 'plan').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const slug = (data.title || 'plan')
+    .trim()
+    .replace(/(\.md)+$/i, '')
+    .replace(/[.]+$/g, '')
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'plan'
   const path = `Handoffs/claude-code/${timestamp}-${slug}.md`
 
   return createFile(path, content)

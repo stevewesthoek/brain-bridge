@@ -366,7 +366,7 @@ const openapi = {
       post: {
         operationId: 'writeBuildFlowArtifact',
         summary: 'Write BuildFlow artifact',
-        description: 'Create repo-local planning and prompt artifacts.',
+        description: 'Create repo-local planning and prompt artifacts. Only treat the operation as successful when verified is true.',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -426,12 +426,18 @@ const openapi = {
                   type: 'object',
                   additionalProperties: false,
                   properties: {
-                    status: { type: 'string' },
+                    status: { type: 'string', enum: ['created', 'updated', 'ok'] },
                     sourceId: { type: 'string' },
                     path: { type: 'string' },
                     artifactType: { type: 'string' },
-                    created: { type: 'boolean' }
-                  }
+                    created: { type: 'boolean' },
+                    verified: { type: 'boolean' },
+                    verifiedAt: { type: 'string' },
+                    bytesOnDisk: { type: 'integer' },
+                    contentHash: { type: 'string' },
+                    contentPreview: { type: 'string' }
+                  },
+                  required: ['status', 'sourceId', 'path', 'artifactType', 'created', 'verified', 'verifiedAt', 'bytesOnDisk', 'contentHash', 'contentPreview']
                 }
               }
             }
@@ -448,7 +454,7 @@ const openapi = {
       post: {
         operationId: 'applyBuildFlowFileChange',
         summary: 'Apply BuildFlow file change',
-        description: 'Append, create, overwrite, or patch a safe repo file.',
+        description: 'Append, create, overwrite, or patch a safe repo file. Only treat the operation as successful when verified is true.',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -523,14 +529,20 @@ const openapi = {
                   type: 'object',
                   additionalProperties: false,
                   properties: {
-                    status: { type: 'string' },
+                    status: { type: 'string', enum: ['updated', 'ok'] },
                     sourceId: { type: 'string' },
                     path: { type: 'string' },
                     changeType: { type: 'string' },
                     bytesWritten: { type: 'integer' },
                     bytesAppended: { type: 'integer' },
-                    replacements: { type: 'integer' }
-                  }
+                    replacements: { type: 'integer' },
+                    verified: { type: 'boolean' },
+                    verifiedAt: { type: 'string' },
+                    bytesOnDisk: { type: 'integer' },
+                    contentHash: { type: 'string' },
+                    contentPreview: { type: 'string' }
+                  },
+                  required: ['status', 'sourceId', 'path', 'changeType', 'verified', 'verifiedAt', 'bytesOnDisk', 'contentHash', 'contentPreview']
                 }
               }
             }

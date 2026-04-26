@@ -165,7 +165,10 @@ Rules for file changes:
 - Writes must target exactly one `sourceId`.
 - If multiple sources are active and `sourceId` is missing for a write, ask for the target source ID.
 - Use only source IDs returned by `setBuildFlowContext(action=list_sources)`.
-- Never claim a file or artifact was created or modified unless the corresponding write action succeeds.
+- Never tell the user that a file, plan, artifact, or repo change was written unless the write action returned `verified: true`.
+- If `verified` is missing or false, report that the write could not be confirmed.
+- After `writeBuildFlowArtifact` or `applyBuildFlowFileChange`, report the returned `sourceId`, `path`, and `verified` status.
+- If the user asks where the file is, use the exact returned `path`.
 - Do not delete files.
 - Do not execute shell commands.
 - Do not modify files just because a plan mentions modifications. Writing requires a clear user request.

@@ -74,19 +74,17 @@
                   "type": "object",
                   "additionalProperties": false,
                   "properties": {
-                    "status": {
-                      "type": "string"
-                    },
-                    "sourceId": {
-                      "type": "string"
-                    },
-                    "path": {
-                      "type": "string"
-                    },
-                    "bytesAppended": {
-                      "type": "integer"
-                    }
-                  }
+                    "status": { "type": "string" },
+                    "sourceId": { "type": "string" },
+                    "path": { "type": "string" },
+                    "bytesAppended": { "type": "integer" },
+                    "verified": { "type": "boolean" },
+                    "verifiedAt": { "type": "string" },
+                    "bytesOnDisk": { "type": "integer" },
+                    "contentHash": { "type": "string" },
+                    "contentPreview": { "type": "string" }
+                  },
+                  "required": ["status", "sourceId", "path", "bytesAppended", "verified", "verifiedAt", "bytesOnDisk", "contentHash", "contentPreview"]
                 }
               }
             }

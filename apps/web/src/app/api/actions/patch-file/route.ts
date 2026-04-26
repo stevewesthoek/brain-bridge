@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
     const sourceError = await requireExplicitSourceId(body)
     if (sourceError) return sourceError
     const data = await executeAction('/api/patch-file', body)
+    if ((data as { verified?: unknown }).verified !== true) {
+      return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
+    }
     return NextResponse.json(data)
   } catch (err) {
     return unwrapActionError(err, 'Patch file error')

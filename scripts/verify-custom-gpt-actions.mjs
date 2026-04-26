@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs'
+import path from 'node:path'
+
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://buildflow.prochat.tools'
 const TOKEN = process.env.BUILDFLOW_ACTION_TOKEN
 
@@ -25,6 +28,8 @@ const expectedOperationIds = [
   'writeBuildFlowArtifact',
   'applyBuildFlowFileChange'
 ]
+
+const cleanupTargets = []
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, {
@@ -56,6 +61,27 @@ function logStep(name) {
   console.log(`\n== ${name} ==`)
 }
 
+function diskPath(relativePath) {
+  return path.resolve(process.cwd(), relativePath)
+}
+
+async function readActionFile(sourceId, filePath) {
+  return requestJson(`${PUBLIC_BASE_URL}/api/actions/read-context`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'read_paths', sourceId, paths: [filePath], maxBytesPerFile: 10000 })
+  })
+}
+
+function assertWriteVerification(result, label) {
+  assert(result && typeof result === 'object', `${label}: missing response object`)
+  assert((result).verified === true, `${label}: verified must be true`)
+  assert(typeof result.verifiedAt === 'string' && result.verifiedAt.length > 0, `${label}: verifiedAt missing`)
+  assert(typeof result.bytesOnDisk === 'number' && result.bytesOnDisk > 0, `${label}: bytesOnDisk invalid`)
+  assert(typeof result.contentHash === 'string' && result.contentHash.length > 0, `${label}: contentHash missing`)
+  assert(typeof result.contentPreview === 'string', `${label}: contentPreview missing`)
+}
+
 async function waitForSourceStatus(sourceId, expectedStatuses = ['ready'], timeoutMs = 60000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
@@ -80,6 +106,9 @@ async function main() {
   assert(openapi.openapi === '3.1.0', `Expected openapi 3.1.0, got ${openapi.openapi}`)
   assert(openapi.components && typeof openapi.components === 'object', 'components must be object')
   assert(openapi.components.schemas && typeof openapi.components.schemas === 'object' && !Array.isArray(openapi.components.schemas), 'components.schemas must be object')
+  assert(openapi.components.securitySchemes && typeof openapi.components.securitySchemes === 'object', 'components.securitySchemes must be object')
+  assert(openapi.components.securitySchemes.bearerAuth?.type === 'http', 'bearerAuth.type must be http')
+  assert(openapi.components.securitySchemes.bearerAuth?.scheme === 'bearer', 'bearerAuth.scheme must be bearer')
   assert(Object.keys(openapi.paths || {}).length === expectedPaths.length, `Expected ${expectedPaths.length} paths, got ${Object.keys(openapi.paths || {}).length}`)
   for (const path of expectedPaths) assert(openapi.paths?.[path], `Missing path ${path}`)
   const operationIds = []
@@ -91,6 +120,16 @@ async function main() {
     }
   }
   for (const opId of expectedOperationIds) assert(operationIds.includes(opId), `Missing operationId ${opId}`)
+  const writeArtifactSchema = openapi.paths['/api/actions/write-artifact']?.post?.responses?.['200']?.content?.['application/json']?.schema
+  const applyFileChangeSchema = openapi.paths['/api/actions/apply-file-change']?.post?.responses?.['200']?.content?.['application/json']?.schema
+  assert(writeArtifactSchema?.properties?.verified?.type === 'boolean', 'writeArtifact verified schema missing')
+  assert(Array.isArray(writeArtifactSchema?.required) && writeArtifactSchema.required.includes('verified'), 'writeArtifact verified required missing')
+  assert(applyFileChangeSchema?.properties?.verified?.type === 'boolean', 'applyFileChange verified schema missing')
+  assert(Array.isArray(applyFileChangeSchema?.required) && applyFileChangeSchema.required.includes('verified'), 'applyFileChange verified required missing')
+  const schemaText = JSON.stringify(openapi)
+  for (const term of ['appendInboxNote', 'append-inbox-note', 'inbox-note', 'legacy inbox']) {
+    assert(!schemaText.includes(term), `OpenAPI schema must not include ${term}`)
+  }
 
   logStep('Status')
   const status = await requestJson(`${PUBLIC_BASE_URL}/api/actions/status`, { method: 'GET' })
@@ -127,9 +166,11 @@ async function main() {
   assert(active.response.status === 200, 'get_active must be 200')
   assert(active.json.status === 'ok', 'get_active status must be ok')
 
-  const enabledSource = listSources.json.sources.find(source => source.enabled) || listSources.json.sources[0]
-  assert(enabledSource, 'No enabled source found')
-  const sourceId = enabledSource.id
+  const enabledSources = listSources.json.sources.filter(source => source.enabled)
+  assert(enabledSources.length >= 2, 'Need at least two enabled sources to prove multi-source write validation')
+  const sourceId = (enabledSources.find(source => source.id === 'buildflow') || enabledSources[0]).id
+  const secondarySourceId = enabledSources.find(source => source.id !== sourceId)?.id
+  assert(typeof secondarySourceId === 'string' && secondarySourceId.length > 0, 'Need a secondary enabled source')
 
   logStep('Context set_active single')
   const single = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
@@ -141,15 +182,27 @@ async function main() {
   assert(single.json.contextMode === 'single', 'set_active single contextMode mismatch')
   assert(Array.isArray(single.json.activeSourceIds) && single.json.activeSourceIds.length === 1 && single.json.activeSourceIds[0] === sourceId, 'single activeSourceIds mismatch')
 
-  logStep('Context reindex selected source')
-  const reindex = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
+  logStep('Negative write without sourceId while multiple active')
+  const multi = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'list_sources' })
+    body: JSON.stringify({ action: 'set_active', contextMode: 'multi', sourceIds: [sourceId, secondarySourceId] })
   })
-  assert(reindex.response.status === 200, 'reindex prep list_sources must be 200')
-  const reindexTarget = (reindex.json.sources || []).find(source => source.id === sourceId)
-  assert(reindexTarget, 'reindex target missing from list_sources')
+  assert(multi.response.status === 200, 'set_active multi must be 200')
+  assert(Array.isArray(multi.json.activeSourceIds) && multi.json.activeSourceIds.includes(sourceId) && multi.json.activeSourceIds.includes(secondarySourceId), 'multi activeSourceIds mismatch')
+  const missingSourceWrite = await requestJson(`${PUBLIC_BASE_URL}/api/actions/write-artifact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      artifactType: 'task_brief',
+      title: 'Missing source validation',
+      content: 'This must fail because sourceId is omitted while multiple sources are active.'
+    })
+  })
+  assert(missingSourceWrite.response.status >= 400, 'write without sourceId should fail')
+  assert(typeof missingSourceWrite.json.error === 'string', 'missing source write error missing')
+
+  logStep('Context reindex selected source')
   const reindexResponse = await requestJson(`${PUBLIC_BASE_URL}/api/agent/sources/reindex`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -159,6 +212,13 @@ async function main() {
   assert(['indexing', 'ready'].includes(reindexResponse.json.indexStatus), 'reindex request status must be indexing or ready')
   const readySource = await waitForSourceStatus(sourceId, ['ready'])
   assert(readySource.indexStatus === 'ready', 'selected source did not become ready after reindex')
+
+  const singleAgain = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'set_active', contextMode: 'single', sourceIds: [sourceId] })
+  })
+  assert(singleAgain.response.status === 200, 'set_active single reset must be 200')
 
   logStep('Inspect list_files')
   const listFiles = await requestJson(`${PUBLIC_BASE_URL}/api/actions/inspect`, {
@@ -228,21 +288,35 @@ async function main() {
   }
 
   logStep('Write artifact')
+  const artifactTitle = 'BuildFlow SaaS Master Plan.md'
+  const artifactContent = 'This file verifies that writeBuildFlowArtifact works from the public Custom GPT action surface.'
   const artifact = await requestJson(`${PUBLIC_BASE_URL}/api/actions/write-artifact`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       sourceId,
       artifactType: 'task_brief',
-      title: 'BuildFlow Custom GPT public smoke test',
-      content: 'This file verifies that writeBuildFlowArtifact works from the public Custom GPT action surface.'
+      title: artifactTitle,
+      content: artifactContent
     })
   })
   assert(artifact.response.status === 200, 'write-artifact must be 200')
   assert(typeof artifact.json.path === 'string' && artifact.json.path.length > 0, 'write-artifact path missing')
   assert(artifact.json.sourceId === sourceId, 'write-artifact sourceId mismatch')
+  assertWriteVerification(artifact.json, 'write-artifact')
+  assert(!artifact.json.path.includes('planmd.md'), 'slug bug still present in artifact path')
+  const artifactDiskPath = diskPath(artifact.json.path)
+  cleanupTargets.push(artifactDiskPath)
+  assert(fs.existsSync(artifactDiskPath), `artifact missing on disk: ${artifactDiskPath}`)
+  assert(fs.readFileSync(artifactDiskPath, 'utf8') === artifactContent, 'artifact disk content mismatch')
+  const artifactReadBack = await readActionFile(sourceId, artifact.json.path)
+  assert(artifactReadBack.response.status === 200, 'artifact readback must be 200')
+  const artifactReadFile = (artifactReadBack.json.files || []).find(file => file.path === artifact.json.path)
+  assert(artifactReadFile && typeof artifactReadFile.content === 'string', 'artifact readback missing file')
+  assert(artifactReadFile.content === artifactContent, 'artifact readback content mismatch')
 
   logStep('Apply file change append')
+  const appendMarker = '\n\nPublic apply-file-change smoke test append.'
   const append = await requestJson(`${PUBLIC_BASE_URL}/api/actions/apply-file-change`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -250,21 +324,29 @@ async function main() {
       changeType: 'append',
       sourceId,
       path: artifact.json.path,
-      content: '\n\nPublic apply-file-change smoke test append.',
+      content: appendMarker,
       reason: 'Verify applyBuildFlowFileChange works from public Custom GPT action surface.'
     })
   })
   assert(append.response.status === 200, 'apply-file-change must be 200')
   assert(append.json.sourceId === sourceId, 'apply-file-change sourceId mismatch')
+  assertWriteVerification(append.json, 'apply-file-change')
+  const appendedDiskContent = fs.readFileSync(artifactDiskPath, 'utf8')
+  assert(appendedDiskContent.includes(appendMarker), 'append did not land on disk')
+  const appendReadBack = await readActionFile(sourceId, artifact.json.path)
+  assert(appendReadBack.response.status === 200, 'append readback must be 200')
+  const appendReadFile = (appendReadBack.json.files || []).find(file => file.path === artifact.json.path)
+  assert(appendReadFile && typeof appendReadFile.content === 'string', 'append readback missing file')
+  assert(appendReadFile.content.includes(appendMarker), 'append readback missing appended content')
 
   logStep('Negative invalid source id')
-  const invalidSource = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
+  const invalidSource = await requestJson(`${PUBLIC_BASE_URL}/api/actions/write-artifact`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'set_active', contextMode: 'single', sourceIds: ['missing'] })
+    body: JSON.stringify({ sourceId: 'missing', artifactType: 'task_brief', title: 'Missing source', content: 'Should fail.' })
   })
-  assert(invalidSource.response.status === 400, 'invalid source should be 400')
-  assert(typeof invalidSource.json.error === 'string' && /unknown|disabled/i.test(invalidSource.json.error), 'invalid source error message mismatch')
+  assert(invalidSource.response.status >= 400, 'invalid source write should fail')
+  assert(typeof invalidSource.json.error === 'string', 'invalid source error missing')
 
   logStep('Negative blocked write')
   const blockedWrite = await requestJson(`${PUBLIC_BASE_URL}/api/actions/apply-file-change`, {
@@ -281,10 +363,24 @@ async function main() {
   assert([400, 403].includes(blockedWrite.response.status), 'blocked write should be 400 or 403')
   assert(typeof blockedWrite.json.error === 'string', 'blocked write error missing')
 
+  if (fs.existsSync(artifactDiskPath)) {
+    fs.unlinkSync(artifactDiskPath)
+  }
+  assert(!fs.existsSync(artifactDiskPath), 'temporary artifact cleanup failed')
+
   console.log('\nAll public GPT action checks passed.')
 }
 
 main().catch(error => {
+  for (const target of cleanupTargets) {
+    if (fs.existsSync(target)) {
+      try {
+        fs.unlinkSync(target)
+      } catch (_) {
+        // best-effort cleanup only
+      }
+    }
+  }
   console.error(error instanceof Error ? error.stack || error.message : String(error))
   process.exit(1)
 })

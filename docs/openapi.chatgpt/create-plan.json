@@ -45,7 +45,7 @@
                   "folder": {
                     "type": "string",
                     "description": "Approved folder",
-                    "default": "docs/plans"
+                    "default": "docs/buildflow/plans"
                   }
                 },
                 "required": [
@@ -65,20 +65,16 @@
                   "type": "object",
                   "additionalProperties": false,
                   "properties": {
-                    "status": {
-                      "type": "string"
-                    },
-                    "sourceId": {
-                      "type": "string"
-                    },
-                    "path": {
-                      "type": "string"
-                    }
+                    "status": { "type": "string" },
+                    "sourceId": { "type": "string" },
+                    "path": { "type": "string" },
+                    "verified": { "type": "boolean" },
+                    "verifiedAt": { "type": "string" },
+                    "bytesOnDisk": { "type": "integer" },
+                    "contentHash": { "type": "string" },
+                    "contentPreview": { "type": "string" }
                   },
-                  "required": [
-                    "status",
-                    "path"
-                  ]
+                  "required": ["status", "path", "verified", "verifiedAt", "bytesOnDisk", "contentHash", "contentPreview"]
                 }
               }
             }
