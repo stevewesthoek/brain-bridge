@@ -1,3 +1,4 @@
+# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/buildflow/roadmap.md` and `docs/buildflow/implementation-plan.md`.
 # BuildFlow MVP — Implementation Complete
 
 ## What's Built

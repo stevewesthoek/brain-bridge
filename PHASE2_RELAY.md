@@ -1,3 +1,4 @@
+# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/buildflow/roadmap.md` and `docs/buildflow/implementation-plan.md`.
 # BuildFlow Phase 2.0 — Minimal SaaS Relay
 
 **Status:** ✅ **MVP RELAY COMPLETE**

@@ -16,6 +16,12 @@ Think in ChatGPT. Build anywhere.
 
 BuildFlow is a local-first, open-source planning and handoff layer for AI-native builders.
 
+## Current status
+
+BuildFlow v1.0 is the stable Custom GPT Actions baseline.
+
+For canonical documentation, roadmap context, and implementation guidance, see [`docs/buildflow/README.md`](docs/buildflow/README.md).
+
 Why BuildFlow?
 
 Most AI workflows break between thinking and doing.
