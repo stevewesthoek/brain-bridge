@@ -172,15 +172,26 @@ pnpm install
 
 2. Start the local services
 
+**Option A: Using the production-grade orchestrator (recommended):**
+```bash
+./buildflow-orchestrator.sh start
+```
+
+**Option B: Manual dev mode (for development):**
+```bash
 export BUILDFLOW_ACTION_TOKEN=$(openssl rand -hex 32)
 export LOCAL_AGENT_URL="http://127.0.0.1:3052"
 pnpm dev
+```
 
-This starts:
+Either approach starts:
 
-* Agent on 3052
-* Relay on 3053
-* Web on 3054
+* Agent on http://localhost:3052 (local CLI server)
+* Relay on http://localhost:3053 (Docker bridge, requires OrbStack)
+* Web on http://localhost:3054 (Next.js dashboard)
+
+For orchestrator features like fact-checking, atomic operations, and graceful shutdown, use Option A.
+For comprehensive documentation, see `ORCHESTRATOR_GUIDE.md`.
 
 3. Connect your local source(s)
 

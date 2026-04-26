@@ -47,7 +47,40 @@ Now you can run `buildflow` from anywhere.
 
 ## Running Locally
 
-### Test 1: Local Agent Only (No Bridge)
+### Quick Start: All Services (Recommended)
+
+**Single command to start all three services (agent, relay, web):**
+
+```bash
+cd /Users/Office/Repos/stevewesthoek/buildflow
+./buildflow-orchestrator.sh start
+```
+
+This starts:
+- Agent on http://localhost:3052 (local CLI server)
+- Relay on http://localhost:3053 (Docker bridge server)
+- Web on http://localhost:3054 (Next.js dashboard)
+
+**Check status anytime:**
+```bash
+./buildflow-orchestrator.sh status
+```
+
+**Stop all services:**
+```bash
+./buildflow-orchestrator.sh stop
+```
+
+**Full restart (rebuild + restart):**
+```bash
+./buildflow-orchestrator.sh restart
+```
+
+For comprehensive orchestrator documentation, see `ORCHESTRATOR_GUIDE.md`.
+
+---
+
+### Manual Test: Local Agent Only (No Bridge)
 
 **Terminal 1:**
 ```bash

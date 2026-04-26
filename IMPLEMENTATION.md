@@ -100,14 +100,35 @@ ToolCallLog (id, userId, deviceId, toolName, status, inputJson, error)
      -d '{"query": "business goals", "limit": 5}'
    ```
 
-### ChatGPT Actions (Phase 3+)
+### Running All Services
+
+**Production-grade startup (recommended):**
+
+Use the orchestrator to start all three services with fact-checking and graceful shutdown:
+
+```bash
+./buildflow-orchestrator.sh start
+```
+
+This starts (in order):
+1. Agent on port 3052 (`buildflow serve`)
+2. Relay on port 3053 (`docker compose up`)
+3. Web app on port 3054 (Next.js dev server)
+
+For comprehensive orchestrator documentation, see `ORCHESTRATOR_GUIDE.md`.
+
+**Manual startup (development only):**
 
 1. **Start local agent** on port 3052: `buildflow serve`
-2. **Start relay** on port 3053: `docker compose up -d` (optional for device coordination)
+2. **Start relay** on port 3053: `docker compose up -d` (requires OrbStack; optional for device coordination)
 3. **Start web app** on port 3054: `cd apps/web && npm start` (requires BUILDFLOW_ACTION_TOKEN env var)
-4. **Configure ChatGPT** Custom GPT with action schema from web app's `/api/openapi` endpoint
-5. **ChatGPT calls** web app (/api/actions/*) → web app forwards to local agent (/api/search, /api/read, /api/create) → agent responds
-6. **Relay is NOT in the ChatGPT request path** (relay is WebSocket-only for device coordination)
+
+### ChatGPT Custom Actions (Phase 3+)
+
+1. **Start all services** via orchestrator (see above)
+2. **Configure ChatGPT** Custom GPT with action schema from web app's `/api/openapi` endpoint
+3. **ChatGPT calls** web app (/api/actions/*) → web app forwards to local agent (/api/search, /api/read, /api/create) → agent responds
+4. **Relay is NOT in the ChatGPT request path** (relay is WebSocket-only for device coordination)
 
 ## File Paths
 
