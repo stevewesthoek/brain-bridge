@@ -314,7 +314,7 @@ Avoid:
 
 ## Design source of truth
 
-Before implementation, create or choose a `DESIGN.md` for the BuildFlow dashboard.
+The canonical design system is `DESIGN.md` at the repository root. It defines the product direction, visual principles, and Huashu integration for the BuildFlow dashboard.
 
 Recommended Brain skills:
 
@@ -337,7 +337,9 @@ Use `design-system` first, then `web-design`, then `ui-ux-pro-max` for supportin
 7. Add execution flow preview.
 8. Add prompt handoff area.
 9. Add empty, loading, error, connected, paused, and verified states.
-10. Run visual review and dashboard verification.
+10. Run Huashu visual composition checkpoint and dashboard verification.
+
+**Note on step 10:** After implementation completes (Tasks 1–6), perform a Huashu visual composition checkpoint (Task 6.5 in `docs/product/tasks/v1.2-dashboard.md`) before adding handoff UI. This structured 5-dimension critique audits typography, color/contrast, layout/spacing, interaction/motion, and branding consistency. See `DESIGN.md` (canonical design system) for full Huashu integration details.
 
 ## Non-goals for first v1.2 dashboard pass
 
@@ -375,9 +377,10 @@ These questions remain open and should be answered before detailed implementatio
 The v1.2 dashboard design phase is ready for implementation when:
 
 - this brief is reviewed and accepted
-- a `DESIGN.md` exists or a design system is explicitly selected
+- `DESIGN.md` (canonical design system) is complete and includes Huashu integration
 - the first dashboard UI spec exists
 - the first implementation task is file-scoped and above-the-fold only
 - the task includes empty/loading/error states
 - the task includes verification commands
 - no lower-model task requires broad product reasoning
+- Task 6.5 (Huashu visual checkpoint) is planned after initial composition work

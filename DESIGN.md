@@ -539,6 +539,69 @@ Use the Brain design skills as supporting input:
 
 Use these skills to support BuildFlow's design direction, not to override the product strategy.
 
+## Huashu Visual Production and Critique Layer
+
+**Purpose:** BuildFlow uses Huashu (`brain/ai/skills/custom/huashu-design/`) for tangible visual production artifacts, side-by-side before/after comparisons, and structured 5-dimension design critique. Huashu is a supporting layer, not a replacement for this document.
+
+### What Huashu Is Used For
+
+- ✅ **HTML-native prototypes** — Clickable demos showing layout options, panel stacking, tab vs. drawer tradeoffs
+- ✅ **Visual variants and A/B comparison** — Side-by-side layouts showing current dashboard vs. proposed improvements
+- ✅ **5-dimension design critique** — Structured audit of typography, color/contrast, layout/spacing, interaction/motion, branding/consistency
+- ✅ **Browser verification** — Testing dashboard at common sizes (1440×900, 1366×768) and ensuring no-page-scroll rule is maintained
+- ✅ **Animations and motion** — Only when purposeful to the workflow (not decorative)
+
+### What Huashu Does NOT Replace
+
+- **`DESIGN.md` product strategy** — This document remains the canonical source of truth for brand direction, core dashboard rule, information hierarchy, non-goals
+- **Implementation task order** — Tasks 1–11 in `docs/product/tasks/v1.2-dashboard.md` define the sequence; Huashu is a verification checkpoint, not a bypass
+- **No-page-scroll rule** — The fixed-viewport constraint is non-negotiable; Huashu critique must confirm it is maintained
+- **API contracts or Custom GPT schema** — Huashu is dashboard UI and design only; never touches backend, routes, or schema
+
+### 5-Dimension Critique Framework
+
+When a dashboard task requires visual review, use Huashu to audit these dimensions:
+
+1. **Typography:** Hierarchy, readability, font choices, scanability
+2. **Color & Contrast:** Palette cohesion, WCAG AA accessibility, emotional tone, no generic AI purple
+3. **Layout & Spacing:** Alignment, breathing room, visual balance, consistent grid, generous whitespace
+4. **Interaction & Motion:** Hover/focus states, transition smoothness (200–300ms), clear feedback, purposeful motion only
+5. **Branding & Consistency:** Adherence to this `DESIGN.md`, no generic AI patterns, coherent across sections
+
+### Anti-Patterns to Avoid in Huashu Critique
+
+- Purple AI gradients or neon styling
+- Emoji-as-icons or fake SVG people/faces
+- Left-border accent card pattern overused
+- Chaotic alignment or missing whitespace
+- Decorative motion that doesn't serve the workflow
+- Generic shadcn defaults without product-level polish
+- Inconsistent typography, color, or spacing
+
+### Verification Workflow
+
+After major dashboard composition tasks (e.g., after Task 6, before Task 7):
+
+1. **Run Huashu visual critique** on current dashboard using the 5 dimensions
+2. **Identify layout issues** — Is the main content stack optimal? Should panels be tabs, drawers, or split-pane instead?
+3. **Verify no-page-scroll** — Test at 1440×900 and 1366×768 to ensure desktop/laptop users never see vertical page scroll
+4. **Document findings** in a checkpoint document (e.g., `docs/product/tasks/v1.2-dashboard-huashu-checkpoint.md`)
+5. **Do not implement code** during the checkpoint unless explicitly requested in a follow-up task
+6. **Restore local web health** after checkpoint verification (verify port 3054 is healthy)
+
+### Honesty and Verification
+
+- **Never claim export/screenshot success without generated files** — Huashu must produce actual HTML artifacts or report limitations
+- **Check for tool dependencies before export** — Playwright, ffmpeg, python-pptx require explicit verification
+- **Browser-verified only** — Designs shown must be tested in actual browser, not just claimed
+- **When tools are missing** — Provide export-ready HTML + exact CLI commands instead of claiming success
+
+### Integration with BuildFlow Tasks
+
+- **Task 6.5 (Huashu Visual Checkpoint):** Perform 5-dimension critique of current dashboard (Tasks 1–6 complete)
+- **Implementation tasks** (7, 8, 9, 10) can use Huashu critique findings as input
+- **Task 11 (Final Verification):** Include Huashu-informed visual review checklist
+
 ## Non-goals
 
 Do not design BuildFlow as:
