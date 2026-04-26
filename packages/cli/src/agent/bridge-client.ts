@@ -386,15 +386,15 @@ export class BridgeClient {
           const title = params.title
           const content = params.content
           const folderMap: Record<string, string> = {
-            implementation_plan: 'docs/buildflow/plans',
-            codex_prompt: 'docs/buildflow/prompts/codex',
-            claude_prompt: 'docs/buildflow/prompts/claude',
-            architecture_note: 'docs/buildflow/architecture',
-            research_summary: 'docs/buildflow/research',
-            test_plan: 'docs/buildflow/testing',
-            migration_plan: 'docs/buildflow/migrations',
-            task_brief: 'docs/buildflow/tasks',
-            general_doc: 'docs/buildflow/notes'
+            implementation_plan: 'docs/product/plans',
+            codex_prompt: 'docs/product/prompts/codex',
+            claude_prompt: 'docs/product/prompts/claude',
+            architecture_note: 'docs/product',
+            research_summary: 'docs/product',
+            test_plan: 'docs/product/testing',
+            migration_plan: 'docs/product',
+            task_brief: 'docs/product/tasks',
+            general_doc: 'docs/product/notes'
           }
           const targetFolder = params.folder || folderMap[artifactType]
           const sourceId = resolveTargetSourceId(params.sourceId)

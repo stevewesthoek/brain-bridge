@@ -393,7 +393,7 @@ async function runActionSuite(baseUrl, label) {
   const artifactDiskPath = path.resolve(ROOT, writeArtifact.json.path)
   assert(fs.existsSync(artifactDiskPath), `${label}: written artifact missing on disk`)
 
-  const applyPath = `docs/buildflow/tasks/gpt-contract-smoke-${label.toLowerCase()}-${Date.now()}.md`
+  const applyPath = `docs/product/tasks/gpt-contract-smoke-${label.toLowerCase()}-${Date.now()}.md`
   const applyChange = await runStep('applyBuildFlowFileChange create', () => requestJson(`${baseUrl}/api/actions/apply-file-change`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
