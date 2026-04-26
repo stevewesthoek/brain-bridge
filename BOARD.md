@@ -1,5 +1,5 @@
 # Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/product/roadmap.md` and `docs/product/implementation-plan.md`.
-# PlanKit Project Board
+# BuildFlow Project Board
 
 **Status:** ✅ **MILESTONE 1 COMPLETE** — Local MVP with fixed port 3052
 
@@ -28,9 +28,9 @@
 ## Upcoming Milestones
 
 ### 📋 Milestone 1.1: Reliability & Infrastructure (IN PROGRESS)
-**Goal:** Make local agent reliable, well-documented, and aligned with PlanKit conventions
+**Goal:** Make local agent reliable, well-documented, and aligned with BuildFlow conventions
 
-- [ ] **Task 1.1.1:** Project board in PlanKit repo *(this file)*
+- [ ] **Task 1.1.1:** Project board in BuildFlow repo *(this file)*
 - [ ] **Task 1.1.2:** Update documentation (port, lifecycle, health checks)
 - [ ] **Task 1.1.3:** CLI lifecycle commands (stop, health check)
 - [ ] **Task 1.1.4:** Configurable port (default 3052)
@@ -65,9 +65,9 @@
 | **Search** | ✅ | `packages/cli/src/agent/search.ts` | Fuse.js full-text index |
 | **File Operations** | ✅ | `packages/cli/src/agent/vault.ts` | Create, read, append (no delete) |
 | **Export** | ✅ | `packages/cli/src/agent/export.ts` | Claude Code plan export |
-| **Logging** | ✅ | `packages/cli/src/utils/logger.ts` | JSON audit trail to `~/.plankit/audit.log` |
+| **Logging** | ✅ | `packages/cli/src/utils/logger.ts` | JSON audit trail to `~/.buildflow/audit.log` |
 | **Security** | ✅ | `packages/cli/src/agent/permissions.ts` | Path traversal + extension restrictions |
-| **Config** | ✅ | `packages/cli/src/agent/config.ts` | Persistent `~/.plankit/config.json` |
+| **Config** | ✅ | `packages/cli/src/agent/config.ts` | Persistent `~/.buildflow/config.json` |
 | **Demo** | ✅ | `DEMO_QUICK.sh` | 30-second end-to-end demo, server stays running |
 
 ---
@@ -130,7 +130,7 @@
 ### 🔄 Milestone 1.1 Tests (In Progress)
 - [ ] `curl /health` — Health check returns JSON
 - [ ] Config has `localPort` — Port is configurable
-- [ ] `plankit status` shows port — Reflects configured port
+- [ ] `buildflow status` shows port — Reflects configured port
 - [ ] Infrastructure check passes — `http://localhost:3052/health` works
 - [ ] Full build with new changes — Zero errors
 - [ ] Demo still works — All 5 operations + health check
@@ -139,7 +139,7 @@
 
 ## Configuration
 
-### ~/.plankit/config.json
+### ~/.buildflow/config.json
 ```json
 {
   "userId": "",
@@ -172,7 +172,7 @@ All operations synchronous, no I/O bottlenecks.
 ## Architecture
 
 ```
-PlanKit Local Agent (Port 3052)
+BuildFlow Local Agent (Port 3052)
 ├── CLI Commands (init, login, connect, index, serve, status)
 ├── HTTP Server (Fastify)
 │   ├── /api/search
@@ -219,7 +219,7 @@ PlanKit Local Agent (Port 3052)
 
 ## Links
 
-- **Main Repo:** https://github.com/stevewesthoek/plankit
+- **Main Repo:** https://github.com/stevewesthoek/buildflow
 - **Demo Script:** `DEMO_QUICK.sh`
 - **Documentation:** `QUICKLINKS.md`, `MANIFEST.md`, `IMPLEMENTATION.md`
 - **Infrastructure:** `brain/operations/infrastructure/local-apps.json`
