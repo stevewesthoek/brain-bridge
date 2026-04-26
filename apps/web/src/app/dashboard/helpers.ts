@@ -1,4 +1,4 @@
-import type { KnowledgeSource } from '@buildflow/shared'
+import type { KnowledgeSource, ActiveSourcesMode, WriteMode } from '@buildflow/shared'
 
 export function getAgentHealthLabel(agentConnected: boolean): string {
   return agentConnected ? 'Agent connected' : 'Agent not connected'
@@ -37,4 +37,42 @@ export function getSourceIndexStatusLabel(source: KnowledgeSource): string {
 
 export function getSourceActiveClassName(isActive: boolean): string {
   return isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+}
+
+export function getDisabledSourceCount(sources: KnowledgeSource[]): number {
+  return sources.filter(s => !s.enabled).length
+}
+
+export function getReadySourceCount(sources: KnowledgeSource[]): number {
+  return sources.filter(s => s.enabled && s.indexStatus === 'ready').length
+}
+
+export function getIndexingSourceCount(sources: KnowledgeSource[]): number {
+  return sources.filter(s => s.enabled && s.indexStatus === 'indexing').length
+}
+
+export function getFailedSourceCount(sources: KnowledgeSource[]): number {
+  return sources.filter(s => s.enabled && s.indexStatus === 'failed').length
+}
+
+export function getActiveContextLabel(mode: ActiveSourcesMode): string {
+  switch (mode) {
+    case 'single':
+      return 'Single source'
+    case 'multi':
+      return 'Multiple sources'
+    case 'all':
+      return 'All enabled sources'
+  }
+}
+
+export function getWriteModeLabel(mode: WriteMode): string {
+  switch (mode) {
+    case 'readOnly':
+      return 'Read-only'
+    case 'artifactsOnly':
+      return 'Artifacts only'
+    case 'safeWrites':
+      return 'Safe writes'
+  }
 }

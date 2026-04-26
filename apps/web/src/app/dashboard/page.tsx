@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
 import {
@@ -9,7 +9,13 @@ import {
   getSourceEnabledClassName,
   getSourceIndexStatusClassName,
   getSourceIndexStatusLabel,
-  getSourceActiveClassName
+  getSourceActiveClassName,
+  getDisabledSourceCount,
+  getReadySourceCount,
+  getIndexingSourceCount,
+  getFailedSourceCount,
+  getActiveContextLabel,
+  getWriteModeLabel
 } from './helpers'
 
 const TERMINAL_INDEX_STATUSES = new Set(['ready', 'failed', 'disabled'])
@@ -29,6 +35,9 @@ export default function Dashboard() {
   const [activeMode, setActiveMode] = useState<ActiveSourcesMode>('all')
   const [activeSourceIds, setActiveSourceIds] = useState<string[]>([])
   const [writeMode, setWriteMode] = useState<WriteMode>('safeWrites')
+
+  const knowledgeSourcesRef = useRef<HTMLDivElement>(null)
+  const addSourceFormRef = useRef<HTMLFormElement>(null)
 
   const fetchSources = async () => {
     let fetchedSources: KnowledgeSource[] = sources
@@ -268,8 +277,105 @@ export default function Dashboard() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-8 space-y-8 max-w-none">
-            {/* Knowledge Sources Section */}
+            {/* Agent & Source Health Overview */}
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900 mb-6">Dashboard Overview</h2>
+
+              <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                {/* Agent Status Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Agent Status</div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
+                    <div className="text-sm font-semibold text-slate-900">
+                      {getAgentHealthLabel(agentConnected)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Total Sources</div>
+                  <div className="text-2xl font-bold text-slate-900">{sources.length}</div>
+                </div>
+
+                {/* Enabled Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Enabled</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {sources.filter(s => s.enabled).length}
+                  </div>
+                </div>
+
+                {/* Disabled Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Disabled</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {getDisabledSourceCount(sources)}
+                  </div>
+                </div>
+
+                {/* Ready Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Ready</div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {getReadySourceCount(sources)}
+                  </div>
+                </div>
+
+                {/* Indexing Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Indexing</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {getIndexingSourceCount(sources)}
+                  </div>
+                </div>
+
+                {/* Failed Sources Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Failed</div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {getFailedSourceCount(sources)}
+                  </div>
+                </div>
+
+                {/* Active Context Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Context Mode</div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {getActiveContextLabel(activeMode)}
+                  </div>
+                </div>
+
+                {/* Write Mode Card */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-xs font-medium text-slate-600 mb-2">Write Access</div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {getWriteModeLabel(writeMode)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+                >
+                  Manage Sources
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 transition-colors"
+                >
+                  Add Source
+                </button>
+              </div>
+            </div>
+
+            {/* Knowledge Sources Section */}
+            <div ref={knowledgeSourcesRef} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900 mb-1">Knowledge Sources</h2>
               <p className="text-slate-600 text-sm mb-6">
                 Configured knowledge sources that are searched and read together through ChatGPT.
@@ -294,7 +400,7 @@ export default function Dashboard() {
                 </div>
               ) : null}
 
-              <form onSubmit={handleAddSource} className="border border-slate-200 rounded-lg p-4 mb-6 space-y-4 bg-slate-50">
+              <form ref={addSourceFormRef} onSubmit={handleAddSource} className="border border-slate-200 rounded-lg p-4 mb-6 space-y-4 bg-slate-50">
                 <div>
                   <h3 className="font-semibold text-slate-900 mb-3 text-sm">Add Knowledge Source</h3>
                   <div className="grid gap-3 md:grid-cols-3">
