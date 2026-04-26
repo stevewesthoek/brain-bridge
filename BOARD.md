@@ -1,4 +1,4 @@
-# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/buildflow/roadmap.md` and `docs/buildflow/implementation-plan.md`.
+# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/product/roadmap.md` and `docs/product/implementation-plan.md`.
 # PlanKit Project Board
 
 **Status:** ✅ **MILESTONE 1 COMPLETE** — Local MVP with fixed port 3052

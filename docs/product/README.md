@@ -13,13 +13,18 @@ This directory is the canonical documentation path for BuildFlow planning, relea
 - [Custom GPT instructions](../CUSTOM_GPT_INSTRUCTIONS.md)
 - [Custom GPT OpenAPI import guide](../openapi.chatgpt/README.md)
 
+## Additional product docs
+
+- [Launch strategy](./launch-strategy.md)
+- [Dashboard design brief](./dashboard-design-brief.md)
+
 ## Source of truth hierarchy
 
 Use this order when resolving conflicts or deciding which document is canonical:
 
 1. Release notes define stable released baselines.
-2. [`docs/buildflow/roadmap.md`](./roadmap.md) defines current planning direction.
-3. [`docs/buildflow/implementation-plan.md`](./implementation-plan.md) defines execution method.
+2. [`docs/product/roadmap.md`](./roadmap.md) defines current planning direction.
+3. [`docs/product/implementation-plan.md`](./implementation-plan.md) defines execution method.
 4. Root [`README.md`](../../README.md) defines public product positioning.
 5. Older phase, MVP, transition, and board docs are historical/reference unless explicitly linked as canonical.
 

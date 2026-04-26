@@ -20,7 +20,7 @@ BuildFlow is a local-first, open-source planning and handoff layer for AI-native
 
 BuildFlow v1.0 is the stable Custom GPT Actions baseline.
 
-For canonical documentation, roadmap context, and implementation guidance, see [`docs/buildflow/README.md`](docs/buildflow/README.md).
+For canonical documentation, roadmap context, and implementation guidance, see [`docs/product/README.md`](docs/product/README.md).
 
 Why BuildFlow?
 

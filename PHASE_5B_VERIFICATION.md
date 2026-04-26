@@ -1,4 +1,4 @@
-# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/buildflow/roadmap.md` and `docs/buildflow/implementation-plan.md`.
+# Status note: This document is historical/reference material. For the current roadmap and implementation plan, see `docs/product/roadmap.md` and `docs/product/implementation-plan.md`.
 # Phase 5B Relay-Backed Execution — Verification Guide
 
 This document describes how to verify the Phase 5B relay-backed execution implementation.

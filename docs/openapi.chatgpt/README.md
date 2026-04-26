@@ -5,7 +5,7 @@ Import the canonical schema from:
 - `docs/openapi.chatgpt.json`
 - or `https://buildflow.prochat.tools/api/openapi`
 
-For the stable product baseline, see [`docs/buildflow/README.md`](../buildflow/README.md) and the v1.0 release note at [`docs/buildflow/releases/custom-gpt-actions-v1.0.md`](../buildflow/releases/custom-gpt-actions-v1.0.md).
+For the stable product baseline, see [`docs/product/README.md`](../product/README.md) and the v1.0 release note at [`docs/product/releases/custom-gpt-actions-v1.0.md`](../product/releases/custom-gpt-actions-v1.0.md).
 
 The Custom GPT surface is exactly these 8 operations:
 
