@@ -219,13 +219,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gray-50">
+    <div className="h-screen overflow-hidden flex flex-col bg-slate-50">
       {/* Top Bar */}
-      <div className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6">
-        <h1 className="text-lg font-bold text-gray-900">BuildFlow Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-          <span className="text-sm text-gray-700">
+      <div className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8">
+        <h1 className="text-base font-semibold text-slate-900">BuildFlow Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
+          <span className="text-xs font-medium text-slate-600">
             {getAgentHealthLabel(agentConnected)}
           </span>
         </div>
@@ -234,30 +234,30 @@ export default function Dashboard() {
       {/* Main layout: sidebar + content + right panel */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
-        <div className="w-80 border-r border-gray-200 bg-white overflow-y-auto">
-          <div className="p-6 space-y-6">
+        <div className="w-80 border-r border-slate-200 bg-slate-50 overflow-y-auto">
+          <div className="p-6 space-y-8">
             {/* Sidebar: Navigation placeholders */}
             <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Navigation</h2>
-              <div className="space-y-2">
-                <div className="px-3 py-2 text-sm text-gray-700 rounded hover:bg-gray-100 cursor-pointer">Overview</div>
-                <div className="px-3 py-2 text-sm text-gray-700 rounded hover:bg-gray-100 cursor-pointer">Sources</div>
-                <div className="px-3 py-2 text-sm text-gray-700 rounded hover:bg-gray-100 cursor-pointer">Settings</div>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Navigation</h2>
+              <div className="space-y-1">
+                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Overview</div>
+                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-200 bg-slate-100 cursor-pointer transition-colors font-medium">Sources</div>
+                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Settings</div>
               </div>
             </div>
 
             {/* Sidebar: Source summary */}
             {!loading && sources.length > 0 && (
-              <div>
-                <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Sources</h2>
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">{sources.length}</span>
-                    <span className="text-gray-500"> connected</span>
+              <div className="pt-4 border-t border-slate-200">
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Source Status</h2>
+                <div className="space-y-3">
+                  <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
+                    <div className="text-xs text-slate-500 font-medium">Connected</div>
+                    <div className="text-lg font-semibold text-slate-900 mt-1">{sources.length}</div>
                   </div>
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">{sources.filter(s => s.enabled).length}</span>
-                    <span className="text-gray-500"> enabled</span>
+                  <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
+                    <div className="text-xs text-slate-500 font-medium">Enabled</div>
+                    <div className="text-lg font-semibold text-slate-900 mt-1">{sources.filter(s => s.enabled).length}</div>
                   </div>
                 </div>
               </div>
@@ -267,25 +267,25 @@ export default function Dashboard() {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-6 max-w-none">
+          <div className="p-8 space-y-8 max-w-none">
             {/* Knowledge Sources Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Knowledge Sources</h2>
-              <p className="text-gray-600 text-sm mb-6">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900 mb-1">Knowledge Sources</h2>
+              <p className="text-slate-600 text-sm mb-6">
                 Configured knowledge sources that are searched and read together through ChatGPT.
               </p>
               {error ? (
-                <div className="mb-4 bg-red-50 border border-red-200 rounded p-4 text-red-800">
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 text-red-900">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="font-semibold">Unable to load sources</p>
-                      <p className="text-sm">{error}</p>
-                      {loadErrorDetail ? <p className="text-xs mt-1 text-red-700">{loadErrorDetail}</p> : null}
+                      <p className="font-medium text-sm">Unable to load sources</p>
+                      <p className="text-xs mt-1">{error}</p>
+                      {loadErrorDetail ? <p className="text-xs mt-1 opacity-75">{loadErrorDetail}</p> : null}
                     </div>
                     <button
                       type="button"
                       onClick={() => fetchSources()}
-                      className="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 shrink-0"
+                      className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors"
                       disabled={mutationLoading}
                     >
                       Retry
@@ -294,36 +294,36 @@ export default function Dashboard() {
                 </div>
               ) : null}
 
-              <form onSubmit={handleAddSource} className="border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
+              <form onSubmit={handleAddSource} className="border border-slate-200 rounded-lg p-4 mb-6 space-y-4 bg-slate-50">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Add Knowledge Source</h3>
+                  <h3 className="font-semibold text-slate-900 mb-3 text-sm">Add Knowledge Source</h3>
                   <div className="grid gap-3 md:grid-cols-3">
                     <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-1">Path *</span>
+                      <span className="block text-xs font-medium text-slate-700 mb-2">Path *</span>
                       <input
                         value={sourcePath}
                         onChange={e => setSourcePath(e.target.value)}
-                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
                         placeholder="~/notes"
                         disabled={mutationLoading}
                       />
                     </label>
                     <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-1">Label</span>
+                      <span className="block text-xs font-medium text-slate-700 mb-2">Label</span>
                       <input
                         value={sourceLabel}
                         onChange={e => setSourceLabel(e.target.value)}
-                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
                         placeholder="My Notes"
                         disabled={mutationLoading}
                       />
                     </label>
                     <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-1">ID</span>
+                      <span className="block text-xs font-medium text-slate-700 mb-2">ID</span>
                       <input
                         value={sourceId}
                         onChange={e => setSourceId(e.target.value)}
-                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
                         placeholder="my-notes"
                         disabled={mutationLoading}
                       />
@@ -333,45 +333,46 @@ export default function Dashboard() {
                 <button
                   type="submit"
                   disabled={mutationLoading}
-                  className="rounded bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-slate-800 transition-colors"
                 >
                   {mutationLoading ? 'Working...' : 'Add source'}
                 </button>
-                {mutationError ? <p className="text-sm text-red-700">{mutationError}</p> : null}
-                {mutationNotice ? <p className="text-sm text-emerald-700">{mutationNotice}</p> : null}
+                {mutationError ? <p className="text-xs text-red-700 font-medium">{mutationError}</p> : null}
+                {mutationNotice ? <p className="text-xs text-emerald-700 font-medium">{mutationNotice}</p> : null}
               </form>
 
               {loading ? (
-                <div className="text-gray-500">Loading sources...</div>
+                <div className="text-sm text-slate-500">Loading sources...</div>
               ) : sources.length === 0 ? (
-                <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center text-gray-500">
-                  No knowledge sources configured. Run: <code className="text-gray-700 font-mono">buildflow connect &lt;path&gt;</code>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center text-slate-500">
+                  <p className="text-sm">No knowledge sources configured.</p>
+                  <code className="text-slate-600 font-mono text-xs block mt-2">buildflow connect &lt;path&gt;</code>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {sources.map(source => (
-                    <div key={source.id} className="border border-gray-200 rounded p-4 flex items-start justify-between gap-4">
+                    <div key={source.id} className="border border-slate-200 rounded-lg p-4 flex items-start justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900">{source.label}</div>
-                        <div className="text-sm text-gray-600 font-mono truncate">{source.path}</div>
-                        <div className="text-xs text-gray-500 mt-1">ID: {source.id}</div>
+                        <div className="font-medium text-slate-900 text-sm">{source.label}</div>
+                        <div className="text-xs text-slate-600 font-mono truncate mt-1">{source.path}</div>
+                        <div className="text-xs text-slate-500 mt-2">ID: {source.id}</div>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getSourceEnabledClassName(source.enabled)}`}>
+                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceEnabledClassName(source.enabled)}`}>
                           {source.enabled ? 'Enabled' : 'Disabled'}
                         </div>
-                        <div className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getSourceIndexStatusClassName(source.indexStatus)}`}>
+                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceIndexStatusClassName(source.indexStatus)}`}>
                           {getSourceIndexStatusLabel(source)}
                         </div>
-                        <div className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getSourceActiveClassName(activeSourceIds.includes(source.id))}`}>
+                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceActiveClassName(activeSourceIds.includes(source.id))}`}>
                           {activeSourceIds.includes(source.id) ? 'Active' : 'Inactive'}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-wrap justify-end mt-1">
                           <button
                             type="button"
                             disabled={mutationLoading || !source.enabled}
                             onClick={() => toggleActiveSource(source.id)}
-                            className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 disabled:opacity-50"
+                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
                           >
                             Toggle Active
                           </button>
@@ -379,7 +380,7 @@ export default function Dashboard() {
                             type="button"
                             disabled={mutationLoading}
                             onClick={() => mutateSources('/api/agent/sources/toggle', { sourceId: source.id, enabled: !source.enabled })}
-                            className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:opacity-50"
+                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
                           >
                             {source.enabled ? 'Disable' : 'Enable'}
                           </button>
@@ -387,7 +388,7 @@ export default function Dashboard() {
                             type="button"
                             disabled={mutationLoading || !source.enabled || source.indexStatus === 'indexing'}
                             onClick={() => handleReindexSource(source)}
-                            className="rounded border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 disabled:opacity-50"
+                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
                           >
                             {source.indexStatus === 'indexing' ? 'Indexing...' : 'Reindex'}
                           </button>
@@ -399,7 +400,7 @@ export default function Dashboard() {
                                 mutateSources('/api/agent/sources/remove', { sourceId: source.id })
                               }
                             }}
-                            className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 disabled:opacity-50"
+                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
                           >
                             Remove
                           </button>
@@ -412,34 +413,34 @@ export default function Dashboard() {
             </div>
 
             {/* Active Context Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Active Context</h2>
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900 mb-4">Active Context</h2>
               <div className="flex flex-wrap gap-2 mb-4">
-                <button className={`px-3 py-1 rounded text-sm ${activeMode === 'single' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('single')} type="button">single</button>
-                <button className={`px-3 py-1 rounded text-sm ${activeMode === 'multi' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('multi')} type="button">multi</button>
-                <button className={`px-3 py-1 rounded text-sm ${activeMode === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('all')} type="button">all</button>
+                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'single' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('single')} type="button">single</button>
+                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'multi' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('multi')} type="button">multi</button>
+                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('all')} type="button">all</button>
               </div>
-              <div className="text-sm text-gray-600 mb-2">
+              <div className="text-xs text-slate-600 mb-2">
                 Enabled sources show their index status. Use Reindex after enabling a source before expecting search results.
               </div>
-              <div className="text-sm text-gray-600 mb-4">Active source ids: {activeSourceIds.length > 0 ? activeSourceIds.join(', ') : 'all enabled sources'}</div>
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Write Mode</h3>
+              <div className="text-xs text-slate-500 mb-4">Active source ids: {activeSourceIds.length > 0 ? activeSourceIds.join(', ') : 'all enabled sources'}</div>
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-xs font-semibold text-slate-900 mb-3 uppercase tracking-wide">Write Mode</h3>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className={`px-3 py-1 rounded text-sm ${writeMode === 'readOnly' ? 'bg-red-100 text-red-800' : 'bg-gray-100'}`} onClick={() => handleWriteMode('readOnly')}>readOnly</button>
-                  <button type="button" className={`px-3 py-1 rounded text-sm ${writeMode === 'artifactsOnly' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100'}`} onClick={() => handleWriteMode('artifactsOnly')}>artifactsOnly</button>
-                  <button type="button" className={`px-3 py-1 rounded text-sm ${writeMode === 'safeWrites' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`} onClick={() => handleWriteMode('safeWrites')}>safeWrites</button>
+                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'readOnly' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('readOnly')}>readOnly</button>
+                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'artifactsOnly' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('artifactsOnly')}>artifactsOnly</button>
+                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'safeWrites' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('safeWrites')}>safeWrites</button>
                 </div>
               </div>
             </div>
 
             {/* Execution Mode Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h2 className="text-lg font-bold text-blue-900 mb-2">Execution Modes</h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-blue-900 mb-2">Execution Modes</h2>
               <p className="text-blue-800 text-sm">
                 BuildFlow supports two execution modes for ChatGPT Actions:
               </p>
-              <ul className="text-blue-800 text-sm space-y-1 mt-3 ml-4">
+              <ul className="text-blue-800 text-xs space-y-1 mt-3 ml-4">
                 <li>• <strong>direct-agent (default):</strong> Web app calls local agent directly on port 3052</li>
                 <li>• <strong>relay-agent (Phase 5C+):</strong> Web app calls relay on port 3053, which routes to agent via WebSocket. Requires matching RELAY_PROXY_TOKEN on both sides.</li>
               </ul>
@@ -449,32 +450,32 @@ export default function Dashboard() {
             </div>
 
             {/* Getting Started */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Getting Started</h2>
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900 mb-4">Getting Started</h2>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">1. Install and Initialize</h3>
-                  <code className="bg-gray-100 p-3 rounded block text-sm mb-2">npm install -g buildflow</code>
-                  <code className="bg-gray-100 p-3 rounded block text-sm">buildflow init</code>
+                  <h3 className="font-medium text-slate-900 mb-2 text-sm">1. Install and Initialize</h3>
+                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs mb-2 text-slate-800">npm install -g buildflow</code>
+                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs text-slate-800">buildflow init</code>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">2. Add Knowledge Sources</h3>
-                  <p className="text-gray-600 text-sm mb-2">Connect local folders to search and read from:</p>
-                  <code className="bg-gray-100 p-3 rounded block text-sm mb-2">buildflow connect ~/my-vault</code>
-                  <p className="text-gray-600 text-xs">Repeat to add multiple sources (Brain, Mind, docs, etc.)</p>
+                  <h3 className="font-medium text-slate-900 mb-2 text-sm">2. Add Knowledge Sources</h3>
+                  <p className="text-slate-600 text-xs mb-2">Connect local folders to search and read from:</p>
+                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs mb-2 text-slate-800">buildflow connect ~/my-vault</code>
+                  <p className="text-slate-600 text-xs">Repeat to add multiple sources (Brain, Mind, docs, etc.)</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">3. Start the Agent</h3>
-                  <code className="bg-gray-100 p-3 rounded block text-sm">buildflow serve</code>
-                  <p className="text-gray-600 text-xs mt-2">Agent listens on http://127.0.0.1:3052</p>
+                  <h3 className="font-medium text-slate-900 mb-2 text-sm">3. Start the Agent</h3>
+                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs text-slate-800">buildflow serve</code>
+                  <p className="text-slate-600 text-xs mt-2">Agent listens on http://127.0.0.1:3052</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">4. Configure ChatGPT Custom Actions</h3>
-                  <p className="text-gray-600 text-sm">
+                  <h3 className="font-medium text-slate-900 mb-2 text-sm">4. Configure ChatGPT Custom Actions</h3>
+                  <p className="text-slate-600 text-xs">
                     Import the OpenAPI schema and set Bearer token authentication. All configured sources will be searched together.
                   </p>
                 </div>
@@ -484,37 +485,47 @@ export default function Dashboard() {
         </div>
 
         {/* Right Insight Panel */}
-        <div className="w-96 border-l border-gray-200 bg-white overflow-y-auto">
+        <div className="w-96 border-l border-slate-200 bg-slate-50 overflow-y-auto">
           <div className="p-6 space-y-6">
             <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Status</h2>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Dashboard Status</h2>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Agent</span>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-                    <span className="text-sm font-medium text-gray-900">{getAgentHealthLabel(agentConnected)}</span>
+                <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600 font-medium">Agent Status</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
+                      <span className="text-xs font-semibold text-slate-900">{getAgentHealthLabel(agentConnected)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sources</span>
-                  <span className="text-sm font-medium text-gray-900">{sources.length}</span>
+                <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600 font-medium">Total Sources</span>
+                    <span className="text-base font-semibold text-slate-900">{sources.length}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Enabled</span>
-                  <span className="text-sm font-medium text-gray-900">{sources.filter(s => s.enabled).length}</span>
+                <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600 font-medium">Enabled</span>
+                    <span className="text-base font-semibold text-slate-900">{sources.filter(s => s.enabled).length}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Active Mode</h2>
-              <div className="text-sm font-medium text-gray-900 capitalize">{activeMode}</div>
+            <div className="border-t border-slate-200 pt-6">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Context Mode</h2>
+              <div className="bg-white border border-slate-200 rounded-lg p-3">
+                <div className="text-xs font-semibold text-slate-900 capitalize">{activeMode}</div>
+              </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Write Mode</h2>
-              <div className="text-sm font-medium text-gray-900">{writeMode}</div>
+            <div className="border-t border-slate-200 pt-6">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Write Access</h2>
+              <div className="bg-white border border-slate-200 rounded-lg p-3">
+                <div className="text-xs font-semibold text-slate-900">{writeMode}</div>
+              </div>
             </div>
           </div>
         </div>
