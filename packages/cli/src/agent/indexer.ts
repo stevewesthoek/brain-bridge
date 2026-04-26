@@ -21,52 +21,84 @@ export class Indexer {
     const ignorePatterns = ['.git/**', '.obsidian/**', 'node_modules/**', '.*/**']
 
     for (const source of sources) {
-      try {
-        const sourceFiles = globSync(patterns, {
-          cwd: source.path,
-          ignore: ignorePatterns,
-          absolute: false
-        })
-
-        for (const filePath of sourceFiles) {
-          try {
-            const fullPath = path.join(source.path, filePath)
-            const stat = fs.statSync(fullPath)
-            const content = fs.readFileSync(fullPath, 'utf-8')
-
-            let title = path.basename(filePath, path.extname(filePath))
-            let tags: string[] = []
-
-            if (filePath.endsWith('.md')) {
-              const { data } = matter(content)
-              title = data.title || title
-              tags = data.tags || []
-            }
-
-            const doc: IndexedDoc = {
-              sourceId: source.id,
-              id: `${source.id}:${filePath}`,
-              path: filePath,
-              title,
-              extension: path.extname(filePath),
-              modifiedAt: stat.mtime.toISOString(),
-              size: stat.size,
-              tags,
-              contentPreview: content.slice(0, 200),
-              content
-            }
-
-            this.docs.push(doc)
-          } catch (err) {
-            console.warn(`Failed to index ${filePath} from ${source.id}:`, err)
-          }
-        }
-      } catch (err) {
-        console.warn(`Failed to index source ${source.id}:`, err)
-      }
+      await this.buildIndexForSource(source.id, source.path, patterns, ignorePatterns)
     }
 
     this.saveToDisk()
+  }
+
+  async buildIndexForSource(sourceId: string, sourcePath?: string, patterns: string[] = ['**/*'], ignorePatterns: string[] = ['.git/**', '.obsidian/**', 'node_modules/**', '.*/**']): Promise<number> {
+    const source = getEnabledSources().find(item => item.id === sourceId)
+    if (!source && !sourcePath) {
+      throw new Error(`Source not found or disabled: ${sourceId}`)
+    }
+
+    const rootPath = sourcePath || source?.path
+    if (!rootPath) {
+      throw new Error(`Source path missing for: ${sourceId}`)
+    }
+
+    const nextDocs = this.docs.filter(doc => doc.sourceId !== sourceId)
+
+    let indexedFiles = 0
+    try {
+      const sourceFiles = globSync(patterns, {
+        cwd: rootPath,
+        ignore: ignorePatterns,
+        absolute: false
+      })
+
+      for (const filePath of sourceFiles) {
+        try {
+          const fullPath = path.join(rootPath, filePath)
+          const stat = fs.statSync(fullPath)
+          if (!stat.isFile()) continue
+          const content = fs.readFileSync(fullPath, 'utf-8')
+
+          let title = path.basename(filePath, path.extname(filePath))
+          let tags: string[] = []
+
+          if (filePath.endsWith('.md')) {
+            const { data } = matter(content)
+            title = data.title || title
+            tags = data.tags || []
+          }
+
+          const doc: IndexedDoc = {
+            sourceId,
+            id: `${sourceId}:${filePath}`,
+            path: filePath,
+            title,
+            extension: path.extname(filePath),
+            modifiedAt: stat.mtime.toISOString(),
+            size: stat.size,
+            tags,
+            contentPreview: content.slice(0, 200),
+            content
+          }
+
+          nextDocs.push(doc)
+          indexedFiles++
+        } catch (err) {
+          console.warn(`Failed to index ${filePath} from ${sourceId}:`, err)
+        }
+      }
+    } catch (err) {
+      console.warn(`Failed to index source ${sourceId}:`, err)
+      throw err
+    }
+
+    this.docs = nextDocs
+    this.saveToDisk()
+    return indexedFiles
+  }
+
+  removeSourceDocs(sourceId: string): number {
+    const before = this.docs.length
+    this.docs = this.docs.filter(doc => doc.sourceId !== sourceId)
+    const removed = before - this.docs.length
+    this.saveToDisk()
+    return removed
   }
 
   private saveToDisk(): void {

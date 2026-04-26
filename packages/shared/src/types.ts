@@ -49,6 +49,12 @@ export type KnowledgeSource = {
   path: string
   enabled: boolean
   type?: string
+  active?: boolean
+  indexed?: boolean
+  indexStatus?: 'ready' | 'pending' | 'indexing' | 'failed' | 'disabled' | 'unknown'
+  indexedFileCount?: number
+  lastIndexedAt?: string
+  indexError?: string
 }
 
 export type ActiveSourcesMode = 'single' | 'multi' | 'all'

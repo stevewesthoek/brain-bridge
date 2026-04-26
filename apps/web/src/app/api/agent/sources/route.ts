@@ -7,7 +7,7 @@ export async function GET() {
   const backendUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
 
   try {
-    const response = await fetch(`${backendUrl}/api/sources`)
+    const response = await fetch(`${backendUrl}/api/sources`, { cache: 'no-store' })
     if (!response.ok) {
       return NextResponse.json(
         { error: 'Failed to fetch sources', status: response.status },

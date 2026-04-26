@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { getConfigPath, expandTilde } from '../utils/paths'
 import type { Workspace, KnowledgeSource, ActiveSourcesMode, WriteMode } from '@buildflow/shared'
+import { getIndexRecord, upsertIndexState, type SourceIndexStatus } from './index-state'
 
 export interface AgentConfig {
   userId: string
@@ -81,6 +82,49 @@ function getAllConfiguredSources(config: AgentConfig): KnowledgeSource[] {
   }))
 }
 
+function getSourceIndexStatus(source: KnowledgeSource): {
+  indexed?: boolean
+  indexStatus: SourceIndexStatus
+  indexedFileCount?: number
+  lastIndexedAt?: string
+  indexError?: string
+} {
+  const record = getIndexRecord(source.id)
+  if (source.enabled === false) {
+    return {
+      indexed: false,
+      indexStatus: 'disabled',
+      indexedFileCount: record?.indexedFileCount,
+      lastIndexedAt: record?.lastIndexedAt,
+      indexError: record?.indexError
+    }
+  }
+  if (record) {
+    return record
+  }
+  return {
+    indexed: false,
+    indexStatus: 'unknown'
+  }
+}
+
+export function withSourceIndexState(source: KnowledgeSource): KnowledgeSource & {
+  indexed?: boolean
+  indexStatus: SourceIndexStatus
+  indexedFileCount?: number
+  lastIndexedAt?: string
+  indexError?: string
+} {
+  return { ...source, ...getSourceIndexStatus(source) }
+}
+
+export function getSourceIndexState(sourceId: string): ReturnType<typeof getSourceIndexStatus> | null {
+  const sources = getAllConfiguredSources(loadConfig() ?? ({} as AgentConfig))
+  const source = sources.find(item => item.id === sourceId)
+  if (!source) return null
+  return getSourceIndexStatus(source)
+}
+
 export function reconcileActiveSources(config: AgentConfig): { mode: ActiveSourcesMode; activeSourceIds: string[]; sources: KnowledgeSource[] } {
   const allSources = getAllConfiguredSources(config)
   const enabledSources = allSources.filter(source => source.enabled)
@@ -115,7 +159,7 @@ export function reconcileActiveSources(config: AgentConfig): { mode: ActiveSourc
   persistConfig(config)
 
   const activeIds = new Set(nextActiveIds)
-  const hydrated = allSources.map(source => ({ ...source, active: source.enabled && activeIds.has(source.id) } as KnowledgeSource & { active?: boolean }))
+  const hydrated = allSources.map(source => ({ ...withSourceIndexState(source), active: source.enabled && activeIds.has(source.id) } as KnowledgeSource & { active?: boolean }))
   return { mode: nextMode, activeSourceIds: nextActiveIds, sources: hydrated }
 }
 
@@ -130,7 +174,7 @@ export function getSources(): KnowledgeSource[] {
     throw new Error('No knowledge sources configured. Run: buildflow connect <folder>')
   }
 
-  return sources.map(s => ({
+  return sources.map(s => withSourceIndexState({
     ...s,
     path: expandTilde(s.path)
   }))
@@ -140,7 +184,7 @@ export function getSourcesSafe(): KnowledgeSource[] {
   const config = loadConfig()
   const sources = ensureSources(config ?? ({} as AgentConfig))
 
-  return sources.map(s => ({
+  return sources.map(s => withSourceIndexState({
     ...s,
     path: expandTilde(s.path)
   }))
@@ -268,7 +312,43 @@ export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeS
   }
 
   persistSources(config, nextSources)
+  if (enabled) {
+    upsertIndexState(sourceId, {
+      indexed: false,
+      indexStatus: 'pending',
+      indexedFileCount: 0,
+      indexError: undefined
+    })
+  } else {
+    upsertIndexState(sourceId, {
+      indexed: false,
+      indexStatus: 'disabled',
+      indexError: undefined
+    })
+  }
   return reconcileActiveSources(config).sources
+}
+
+export function setSourceIndexStatus(
+  sourceId: string,
+  record: {
+    indexed?: boolean
+    indexStatus: SourceIndexStatus
+    indexedFileCount?: number
+    lastIndexedAt?: string
+    indexError?: string
+  }
+): void {
+  upsertIndexState(sourceId, record)
+}
+
+export function markSourceIndexPending(sourceId: string): void {
+  upsertIndexState(sourceId, {
+    indexed: false,
+    indexStatus: 'pending',
+    indexedFileCount: 0,
+    indexError: undefined
+  })
 }
 
 export function getVaultPath(): string {

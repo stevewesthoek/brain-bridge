@@ -56,6 +56,19 @@ function logStep(name) {
   console.log(`\n== ${name} ==`)
 }
 
+async function waitForSourceStatus(sourceId, expectedStatuses = ['ready'], timeoutMs = 60000) {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    const current = await requestJson(`${PUBLIC_BASE_URL}/api/agent/sources`)
+    assert(current.response.status === 200, 'source poll must be 200')
+    const source = (current.json.sources || []).find(item => item.id === sourceId)
+    if (!source) throw new Error(`Source not found while polling: ${sourceId}`)
+    if (expectedStatuses.includes(source.indexStatus)) return source
+    await new Promise(resolve => setTimeout(resolve, 1500))
+  }
+  throw new Error(`Timed out waiting for ${sourceId} to reach ${expectedStatuses.join(', ')}`)
+}
+
 async function main() {
   logStep('OpenAPI')
   const openapiUrl = `${PUBLIC_BASE_URL}/api/openapi`
@@ -127,6 +140,25 @@ async function main() {
   assert(single.response.status === 200, 'set_active single must be 200')
   assert(single.json.contextMode === 'single', 'set_active single contextMode mismatch')
   assert(Array.isArray(single.json.activeSourceIds) && single.json.activeSourceIds.length === 1 && single.json.activeSourceIds[0] === sourceId, 'single activeSourceIds mismatch')
+
+  logStep('Context reindex selected source')
+  const reindex = await requestJson(`${PUBLIC_BASE_URL}/api/actions/context`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'list_sources' })
+  })
+  assert(reindex.response.status === 200, 'reindex prep list_sources must be 200')
+  const reindexTarget = (reindex.json.sources || []).find(source => source.id === sourceId)
+  assert(reindexTarget, 'reindex target missing from list_sources')
+  const reindexResponse = await requestJson(`${PUBLIC_BASE_URL}/api/agent/sources/reindex`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceId })
+  })
+  assert([200, 202].includes(reindexResponse.response.status), 'reindex request must be 200 or 202')
+  assert(['indexing', 'ready'].includes(reindexResponse.json.indexStatus), 'reindex request status must be indexing or ready')
+  const readySource = await waitForSourceStatus(sourceId, ['ready'])
+  assert(readySource.indexStatus === 'ready', 'selected source did not become ready after reindex')
 
   logStep('Inspect list_files')
   const listFiles = await requestJson(`${PUBLIC_BASE_URL}/api/actions/inspect`, {

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
 
+const TERMINAL_INDEX_STATUSES = new Set(['ready', 'failed', 'disabled'])
+
 export default function Dashboard() {
   const [sources, setSources] = useState<KnowledgeSource[]>([])
   const [loading, setLoading] = useState(true)
@@ -14,6 +16,7 @@ export default function Dashboard() {
   const [sourceId, setSourceId] = useState('')
   const [mutationLoading, setMutationLoading] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
+  const [mutationNotice, setMutationNotice] = useState<string | null>(null)
   const [loadErrorDetail, setLoadErrorDetail] = useState<string | null>(null)
   const [activeMode, setActiveMode] = useState<ActiveSourcesMode>('all')
   const [activeSourceIds, setActiveSourceIds] = useState<string[]>([])
@@ -27,7 +30,7 @@ export default function Dashboard() {
     try {
       setError(null)
       setLoadErrorDetail(null)
-      const response = await fetch('/api/agent/sources')
+      const response = await fetch('/api/agent/sources', { cache: 'no-store' })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
         const detail = data?.details ? ` ${data.details}` : data?.detail ? ` ${data.detail}` : ''
@@ -37,7 +40,7 @@ export default function Dashboard() {
       fetchedSources = data.sources || []
       setSources(fetchedSources)
       setAgentConnected(true)
-      const activeResponse = await fetch('/api/agent/active-sources')
+      const activeResponse = await fetch('/api/agent/active-sources', { cache: 'no-store' })
       const activeData = await activeResponse.json().catch(() => ({}))
       if (!activeResponse.ok) {
         const detail = activeData?.details ? ` ${activeData.details}` : activeData?.detail ? ` ${activeData.detail}` : ''
@@ -50,7 +53,7 @@ export default function Dashboard() {
         setActiveMode(fetchedActiveMode)
         setActiveSourceIds(fetchedActiveIds)
       }
-      const writeResponse = await fetch('/api/agent/write-mode')
+      const writeResponse = await fetch('/api/agent/write-mode', { cache: 'no-store' })
       const writeData = await writeResponse.json().catch(() => ({}))
       if (!writeResponse.ok) {
         const detail = writeData?.details ? ` ${writeData.details}` : writeData?.detail ? ` ${writeData.detail}` : ''
@@ -91,9 +94,11 @@ export default function Dashboard() {
   const mutateSources = async (url: string, payload: Record<string, unknown>) => {
     setMutationLoading(true)
     setMutationError(null)
+    setMutationNotice(null)
 
     try {
       const response = await fetch(url, {
+        cache: 'no-store',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -110,12 +115,64 @@ export default function Dashboard() {
       return true
     } catch (err) {
       setMutationError(String(err))
-      if (url === '/api/agent/sources/toggle' || url === '/api/agent/sources/add' || url === '/api/agent/sources/remove' || url === '/api/agent/active-sources' || url === '/api/agent/write-mode') {
+      if (url === '/api/agent/sources/toggle' || url === '/api/agent/sources/reindex' || url === '/api/agent/sources/add' || url === '/api/agent/sources/remove' || url === '/api/agent/active-sources' || url === '/api/agent/write-mode') {
         await fetchSources().catch(() => {})
       }
       return false
     } finally {
       setMutationLoading(false)
+    }
+  }
+
+  const waitForTerminalIndexStatus = async (sourceId: string, timeoutMs = 60000) => {
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < timeoutMs) {
+      const response = await fetch('/api/agent/sources', { cache: 'no-store' })
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(`${data?.error || `Failed to refresh sources: ${response.status}`}`)
+      }
+
+      const nextSources: KnowledgeSource[] = data.sources || []
+      setSources(nextSources)
+
+      const current = nextSources.find(source => source.id === sourceId)
+      if (!current) {
+        throw new Error(`Source not found after reindex: ${sourceId}`)
+      }
+
+      if (TERMINAL_INDEX_STATUSES.has(current.indexStatus || 'unknown')) {
+        if (typeof data.activeMode === 'string') {
+          setActiveMode(data.activeMode as ActiveSourcesMode)
+        }
+        if (Array.isArray(data.activeSourceIds)) {
+          setActiveSourceIds(data.activeSourceIds)
+        }
+        return current
+      }
+
+      setMutationNotice(`Reindexing ${current.label || sourceId}... (${current.indexStatus || 'unknown'})`)
+      await new Promise(resolve => window.setTimeout(resolve, 1500))
+    }
+
+    throw new Error(`Reindex timed out after ${Math.round(timeoutMs / 1000)}s for source ${sourceId}`)
+  }
+
+  const handleReindexSource = async (source: KnowledgeSource) => {
+    setMutationError(null)
+    setMutationNotice(null)
+
+    const success = await mutateSources('/api/agent/sources/reindex', { sourceId: source.id })
+    if (!success) return
+
+    try {
+      await waitForTerminalIndexStatus(source.id)
+      setMutationNotice(`Reindex complete for ${source.label}`)
+    } catch (err) {
+      setMutationError(null)
+      setMutationNotice(String(err))
     }
   }
 
@@ -239,6 +296,7 @@ export default function Dashboard() {
               {mutationLoading ? 'Working...' : 'Add source'}
             </button>
             {mutationError ? <p className="text-sm text-red-700">{mutationError}</p> : null}
+            {mutationNotice ? <p className="text-sm text-emerald-700">{mutationNotice}</p> : null}
           </form>
 
           {loading ? (
@@ -260,6 +318,22 @@ export default function Dashboard() {
                     <div className={`px-3 py-1 rounded text-xs font-semibold ${source.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                       {source.enabled ? 'Enabled' : 'Disabled'}
                     </div>
+                    <div className={`px-3 py-1 rounded text-xs font-semibold ${
+                      source.indexStatus === 'ready'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : source.indexStatus === 'indexing'
+                          ? 'bg-blue-100 text-blue-800'
+                          : source.indexStatus === 'pending'
+                            ? 'bg-amber-100 text-amber-800'
+                            : source.indexStatus === 'failed'
+                              ? 'bg-red-100 text-red-800'
+                              : source.indexStatus === 'disabled'
+                                ? 'bg-gray-100 text-gray-600'
+                                : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {source.indexStatus || 'unknown'}
+                      {typeof source.indexedFileCount === 'number' ? ` · ${source.indexedFileCount} files` : ''}
+                    </div>
                     <div className={`px-3 py-1 rounded text-xs font-semibold ${activeSourceIds.includes(source.id) ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
                       {activeSourceIds.includes(source.id) ? 'Active' : 'Inactive'}
                     </div>
@@ -279,6 +353,14 @@ export default function Dashboard() {
                         className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:opacity-50"
                       >
                         {source.enabled ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={mutationLoading || !source.enabled || source.indexStatus === 'indexing'}
+                        onClick={() => handleReindexSource(source)}
+                        className="rounded border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 disabled:opacity-50"
+                      >
+                        {source.indexStatus === 'indexing' ? 'Indexing...' : 'Reindex'}
                       </button>
                       <button
                         type="button"
@@ -321,6 +403,9 @@ export default function Dashboard() {
             <button className={`px-3 py-1 rounded text-sm ${activeMode === 'single' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('single')} type="button">single</button>
             <button className={`px-3 py-1 rounded text-sm ${activeMode === 'multi' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('multi')} type="button">multi</button>
             <button className={`px-3 py-1 rounded text-sm ${activeMode === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100'}`} onClick={() => handleSetMode('all')} type="button">all</button>
+          </div>
+          <div className="text-sm text-gray-600 mb-2">
+            Enabled sources show their index status. Use Reindex after enabling a source before expecting search results.
           </div>
           <div className="text-sm text-gray-600">Active source ids: {activeSourceIds.length > 0 ? activeSourceIds.join(', ') : 'all enabled sources'}</div>
           <div className="mt-4 flex flex-wrap gap-2">

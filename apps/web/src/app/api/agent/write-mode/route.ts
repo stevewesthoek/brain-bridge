@@ -6,7 +6,7 @@ export const revalidate = 0
 async function proxy(url: string, options?: RequestInit) {
   const backendUrl = process.env.LOCAL_AGENT_URL || 'http://127.0.0.1:3052'
   try {
-    const response = await fetch(backendUrl + url, options)
+    const response = await fetch(backendUrl + url, { cache: 'no-store', ...options })
     const data = await response.json().catch(() => ({}))
     return NextResponse.json(data, { status: response.status })
   } catch (err) {

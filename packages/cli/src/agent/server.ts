@@ -3,10 +3,11 @@ import fs from 'fs'
 import path from 'path'
 import { Indexer } from './indexer'
 import { VaultSearcher } from './search'
-import { readFile, createFile, appendFile, createInboxNote, listFolder } from './vault'
+import { readFile, createFile, appendFile, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode } from './config'
+import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode, getSourceIndexState, setSourceIndexStatus } from './config'
+import { reconcileIndexStateFromDocs } from './index-state'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import { getResolvedActiveSources, isAllowedArtifactRoot, isAllowedSafeWriteRoot, isBlockedWritePath, redactSecrets, resolveTargetSourceId, resolveWithinSource, shouldIncludeEntry, truncateContent } from './safe-access'
 import type { Workspace } from '@buildflow/shared'
@@ -22,9 +23,11 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
     await indexer.buildIndex()
     console.log(`[Indexer] Built index with ${indexer.getDocs().length} files`)
   }
+  reconcileIndexStateFromDocs(indexer.getDocs(), getSourcesSafe())
 
   let searcher = new VaultSearcher(indexer.getDocs())
   const config = loadConfig()
+  const indexingSources = new Set<string>()
 
   const assertWriteMode = (isArtifact = false, relPath?: string): void => {
     const mode = getWriteMode()
@@ -48,7 +51,27 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
 
   const rebuildIndexAndSearcher = async (): Promise<void> => {
     await indexer.buildIndex()
+    reconcileIndexStateFromDocs(indexer.getDocs(), getSourcesSafe())
     searcher = new VaultSearcher(indexer.getDocs())
+  }
+
+  const rejectUnindexedSources = (sourceIds: string[], reply: any) => {
+    const blocked = sourceIds
+      .map(sourceId => ({ sourceId, state: getSourceIndexState(sourceId) }))
+      .filter(({ state }) => !!state && state.indexStatus !== 'ready')
+
+    if (blocked.length > 0) {
+      return reply.code(409).send({
+        error: `Source(s) not ready for search: ${blocked.map(item => item.sourceId).join(', ')}`,
+        details: blocked.map(item => ({
+          sourceId: item.sourceId,
+          indexStatus: item.state?.indexStatus || 'unknown',
+          indexError: item.state?.indexError
+        }))
+      })
+    }
+
+    return null
   }
 
   // Health endpoint
@@ -90,17 +113,23 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
 
   // Search endpoint
   fastify.post<{ Body: { query: string; limit?: number; sourceId?: string; sourceIds?: string[] } }>('/api/search', async (request, reply) => {
-    const { query, limit = 10, sourceId, sourceIds } = request.body
-    const resolvedSourceIds = sourceIds && sourceIds.length > 0 ? sourceIds : sourceId ? [sourceId] : getActiveSourceContext().activeSourceIds
-    const results = searcher.search(query, limit, resolvedSourceIds)
+    try {
+      const { query, limit = 10, sourceId, sourceIds } = request.body
+      const resolvedSourceIds = sourceIds && sourceIds.length > 0 ? sourceIds : sourceId ? [sourceId] : getActiveSourceContext().activeSourceIds
+      const rejection = rejectUnindexedSources(resolvedSourceIds, reply)
+      if (rejection) return rejection
+      const results = searcher.search(query, limit, resolvedSourceIds)
 
-    logToFile({
-      timestamp: new Date().toISOString(),
-      tool: 'search',
-      status: 'success'
-    })
+      logToFile({
+        timestamp: new Date().toISOString(),
+        tool: 'search',
+        status: 'success'
+      })
 
-    return { results }
+      return { results }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
   })
 
   // Read endpoint (multi-source aware with guardrails)
@@ -454,12 +483,18 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
 
   fastify.get('/api/sources/list', async (request, reply) => {
     try {
+      const active = getActiveSourceContext()
       const sources = getSourcesSafe().map(source => ({
         id: source.id,
         label: source.label,
         enabled: source.enabled,
-        active: getActiveSourceContext().activeSourceIds.includes(source.id),
-        type: (source as any).type || 'unknown'
+        active: active.activeSourceIds.includes(source.id),
+        type: (source as any).type || 'unknown',
+        indexed: source.indexStatus === 'ready',
+        indexStatus: source.indexStatus || 'unknown',
+        indexedFileCount: source.indexedFileCount,
+        lastIndexedAt: source.lastIndexedAt,
+        indexError: source.indexError
       }))
 
       return reply.header('Cache-Control', 'no-store').send({ sources })
@@ -519,6 +554,95 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       const sources = setSourceEnabled(sourceId, enabled)
       return { sources }
     } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.post<{ Body: { sourceId?: string } }>('/api/sources/reindex', async (request, reply) => {
+    try {
+      const { sourceId } = request.body || {}
+      if (typeof sourceId !== 'string' || !sourceId.trim()) {
+        return reply.code(400).send({ error: 'Missing or invalid sourceId' })
+      }
+
+      const source = getSourcesSafe().find(item => item.id === sourceId)
+      if (!source) {
+        return reply.code(404).send({ error: `Source not found: ${sourceId}` })
+      }
+      if (!source.enabled) {
+        return reply.code(400).send({ error: `Source is disabled: ${sourceId}` })
+      }
+      if (!fs.existsSync(source.path)) {
+        setSourceIndexStatus(sourceId, {
+          indexed: false,
+          indexStatus: 'failed',
+          indexError: `Source path not found: ${source.path}`
+        })
+        return reply.code(404).send({ error: `Source path not found: ${source.path}` })
+      }
+      if (!fs.statSync(source.path).isDirectory()) {
+        setSourceIndexStatus(sourceId, {
+          indexed: false,
+          indexStatus: 'failed',
+          indexError: `Source path is not a directory: ${source.path}`
+        })
+        return reply.code(400).send({ error: `Source path is not a directory: ${source.path}` })
+      }
+      fs.accessSync(source.path, fs.constants.R_OK)
+
+      if (indexingSources.has(sourceId)) {
+        return reply.code(202).send({
+          status: 'indexing',
+          sourceId,
+          indexStatus: 'indexing'
+        })
+      }
+
+      setSourceIndexStatus(sourceId, {
+        indexed: false,
+        indexStatus: 'indexing',
+        indexError: undefined
+      })
+
+      indexingSources.add(sourceId)
+      void (async () => {
+        try {
+          const indexedFileCount = await indexer.buildIndexForSource(sourceId, source.path)
+          searcher = new VaultSearcher(indexer.getDocs())
+          setSourceIndexStatus(sourceId, {
+            indexed: true,
+            indexStatus: 'ready',
+            indexedFileCount,
+            lastIndexedAt: new Date().toISOString(),
+            indexError: undefined
+          })
+        } catch (err) {
+          setSourceIndexStatus(sourceId, {
+            indexed: false,
+            indexStatus: 'failed',
+            indexError: String(err)
+          })
+        } finally {
+          indexingSources.delete(sourceId)
+        }
+      })().catch(err => {
+        console.error(`Background reindex failed for ${sourceId}:`, err)
+      })
+
+      return reply.code(202).send({
+        status: 'indexing',
+        sourceId,
+        indexStatus: 'indexing'
+      })
+    } catch (err) {
+      const bodySourceId = request.body?.sourceId
+      if (typeof bodySourceId === 'string' && bodySourceId.trim()) {
+        setSourceIndexStatus(bodySourceId, {
+          indexed: false,
+          indexStatus: 'failed',
+          indexError: String(err)
+        })
+      }
       return reply.code(400).send({ error: String(err) })
     }
   })

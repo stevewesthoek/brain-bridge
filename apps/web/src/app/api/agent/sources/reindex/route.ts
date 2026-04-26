@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
     let response
     try {
-      response = await fetch(`${backendUrl}/api/sources/toggle`, {
+      response = await fetch(`${backendUrl}/api/sources/reindex`, {
         cache: 'no-store',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -20,16 +20,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!response.ok) {
-      const errorBody = await response.text()
-      return NextResponse.json(
-        { error: `Agent toggle source failed: ${response.status}`, details: errorBody },
-        { status: response.status }
-      )
-    }
+    const contentType = response.headers.get('content-type') || ''
+    const payload = contentType.includes('application/json')
+      ? await response.json().catch(() => ({}))
+      : { error: await response.text() }
 
-    return NextResponse.json(await response.json())
+    return NextResponse.json(payload, { status: response.status })
   } catch (err) {
-    return NextResponse.json({ error: `Failed to toggle knowledge source: ${String(err)}` }, { status: 500 })
+    return NextResponse.json({ error: `Failed to reindex knowledge source: ${String(err)}` }, { status: 500 })
   }
 }
