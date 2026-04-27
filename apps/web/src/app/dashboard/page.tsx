@@ -332,61 +332,62 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'overview' && (
-                <div className="flex-1 overflow-hidden p-6 flex flex-col gap-5">
-                  <DashboardOverview
-                    loading={loading}
-                    sources={sources}
-                    activeMode={activeMode}
-                    writeMode={writeMode}
-                    onManageSources={() => setActiveDashboardSection('sources')}
-                    onAddSource={() => setActiveDashboardSection('sources')}
-                  />
-                  <div className="shrink-0">
+                <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                  <div className="space-y-4">
+                    <DashboardOverview
+                      loading={loading}
+                      sources={sources}
+                      activeMode={activeMode}
+                      writeMode={writeMode}
+                      onManageSources={() => setActiveDashboardSection('sources')}
+                      onAddSource={() => setActiveDashboardSection('sources')}
+                    />
                     <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} variant="compact" />
+                    <ExecutionFlowPreview />
                   </div>
                 </div>
               )}
 
               {activeDashboardSection === 'sources' && (
-                <div className="flex-1 overflow-hidden flex flex-col p-6">
-                  <div className="flex-1 min-h-0 border border-slate-200 rounded-lg bg-white dark:border-slate-800 dark:bg-slate-900/70 flex flex-col">
-                    <KnowledgeSourcesPanel
-                      sources={sources}
-                      loading={loading}
-                      mutationLoading={mutationLoading}
-                      mutationError={mutationError}
-                      mutationNotice={mutationNotice}
-                      sourcePath={sourcePath}
-                      sourceLabel={sourceLabel}
-                      sourceId={sourceId}
-                      activeSourceIds={activeSourceIds}
-                      onAddSourceSubmit={handleAddSource}
-                      onSourcePathChange={setSourcePath}
-                      onSourceLabelChange={setSourceLabel}
-                      onSourceIdChange={setSourceId}
-                      onToggleActiveSource={toggleActiveSource}
-                      onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
-                      onReindexSource={handleReindexSource}
-                      onRemoveSource={(source) => {
-                        if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
-                          mutateSources('/api/agent/sources/remove', { sourceId: source.id })
-                        }
-                      }}
-                      addSourceFormRef={addSourceFormRef}
-                    />
-                  </div>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <KnowledgeSourcesPanel
+                    sources={sources}
+                    loading={loading}
+                    mutationLoading={mutationLoading}
+                    mutationError={mutationError}
+                    mutationNotice={mutationNotice}
+                    sourcePath={sourcePath}
+                    sourceLabel={sourceLabel}
+                    sourceId={sourceId}
+                    activeSourceIds={activeSourceIds}
+                    onAddSourceSubmit={handleAddSource}
+                    onSourcePathChange={setSourcePath}
+                    onSourceLabelChange={setSourceLabel}
+                    onSourceIdChange={setSourceId}
+                    onToggleActiveSource={toggleActiveSource}
+                    onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
+                    onReindexSource={handleReindexSource}
+                    onRemoveSource={(source) => {
+                      if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
+                        mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+                      }
+                    }}
+                    addSourceFormRef={addSourceFormRef}
+                  />
                 </div>
               )}
 
               {activeDashboardSection === 'plan' && (
-                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-                  <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
-                  <ExecutionFlowPreview />
+                <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                  <div className="space-y-4">
+                    <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
+                    <ExecutionFlowPreview />
+                  </div>
                 </div>
               )}
 
               {activeDashboardSection === 'handoff' && (
-                <div className="flex-1 overflow-hidden p-6">
+                <div className="flex-1 overflow-hidden p-6 flex flex-col">
                   <ExecutionHandoffPanel
                     codexPrompt={codexPrompt}
                     claudeCodePrompt={claudeCodePrompt}
@@ -398,9 +399,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'settings' && (
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
-                  <InfoPanels />
+                <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                  <div className="space-y-4">
+                    <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
+                    <InfoPanels />
+                  </div>
                 </div>
               )}
             </div>
