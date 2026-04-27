@@ -4,13 +4,13 @@ import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 import { requireExplicitSourceId, unwrapActionError } from '@/lib/actions/source-guard'
 
 export async function POST(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
   try {
     const body = await request.json()
     const sourceError = await requireExplicitSourceId(body)
     if (sourceError) return sourceError
-    const data = await executeAction('/api/write-file', body)
+    const data = await executeAction('/api/write-file', body, auth.bearerToken)
     if ((data as { verified?: unknown }).verified !== true) {
       return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
     }

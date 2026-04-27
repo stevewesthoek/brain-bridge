@@ -1,5 +1,5 @@
-import { executeAction, ActionTransportError } from './transport'
-import { getBackendUrl } from './config'
+import { executeAction, ActionTransportError, executeActionGET } from './transport'
+import { getBackendUrl, getBackendMode } from './config'
 
 type NormalizedSource = {
   id: string
@@ -24,12 +24,12 @@ type VerifiedWriteResult = {
   contentPreview: string
 }
 
-export async function requireExplicitSourceId(body: Record<string, unknown>) {
+export async function requireExplicitSourceId(body: Record<string, unknown>, userToken?: string) {
   if (typeof body.sourceId === 'string' && body.sourceId.length > 0) {
     return null
   }
 
-  const active = await executeAction('/api/get-active-sources', {})
+  const active = await executeAction('/api/get-active-sources', {}, userToken)
   const activeIds = Array.isArray((active as { activeSourceIds?: unknown }).activeSourceIds)
     ? ((active as { activeSourceIds: string[] }).activeSourceIds || [])
     : []
@@ -170,15 +170,20 @@ function validateContextSelection(body: Record<string, unknown>) {
   }
 }
 
-async function loadSourceMap() {
-  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET' })
+async function loadSourceMap(userToken?: string) {
+  const mode = getBackendMode()
+  const headers: Record<string, string> = { method: 'GET' }
+  if (mode === 'relay-agent' && userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`
+  }
+  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET', headers })
   const sources = normalizeSourcesList(sourcesPayload)
   const map = new Map(sources.map(source => [source.id, source]))
   return { sourcesPayload, sources, map }
 }
 
-async function ensureContextSourcesAllowed(sourceIds: string[]) {
-  const { map } = await loadSourceMap()
+async function ensureContextSourcesAllowed(sourceIds: string[], userToken?: string) {
+  const { map } = await loadSourceMap(userToken)
   for (const id of sourceIds) {
     const source = map.get(id)
     if (!source) {
@@ -190,8 +195,13 @@ async function ensureContextSourcesAllowed(sourceIds: string[]) {
   }
 }
 
-export async function listBuildFlowSources() {
-  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET' })
+export async function listBuildFlowSources(userToken?: string) {
+  const mode = getBackendMode()
+  const headers: Record<string, string> = { method: 'GET' }
+  if (mode === 'relay-agent' && userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`
+  }
+  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET', headers })
   return {
     status: 'ok' as const,
     sources: normalizeSourcesList(sourcesPayload).map(source => ({
@@ -205,37 +215,42 @@ export async function listBuildFlowSources() {
   }
 }
 
-export async function getBuildFlowActiveContext() {
-  const activePayload = await executeAction('/api/get-active-sources', {})
+export async function getBuildFlowActiveContext(userToken?: string) {
+  const activePayload = await executeAction('/api/get-active-sources', {}, userToken)
   return normalizeActiveContext(activePayload)
 }
 
-export async function setBuildFlowActiveContext(body: Record<string, unknown>) {
+export async function setBuildFlowActiveContext(body: Record<string, unknown>, userToken?: string) {
   validateContextSelection(body)
-  await ensureContextSourcesAllowed(body.sourceIds as string[])
+  await ensureContextSourcesAllowed(body.sourceIds as string[], userToken)
   const result = await executeAction('/api/set-active-sources', {
     mode: body.contextMode,
     activeSourceIds: body.sourceIds
-  })
-  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET' })
+  }, userToken)
+  const mode = getBackendMode()
+  const headers: Record<string, string> = { method: 'GET' }
+  if (mode === 'relay-agent' && userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`
+  }
+  const sourcesPayload = await fetchJson('/api/sources/list', { method: 'GET', headers })
   return normalizeContextResult(sourcesPayload, result)
 }
 
-export async function dispatchBuildFlowContext(body: Record<string, unknown>) {
+export async function dispatchBuildFlowContext(body: Record<string, unknown>, userToken?: string) {
   const action = body.action
   if (action === 'list_sources') {
-    return listBuildFlowSources()
+    return listBuildFlowSources(userToken)
   }
   if (action === 'get_active') {
-    return getBuildFlowActiveContext()
+    return getBuildFlowActiveContext(userToken)
   }
   if (action === 'set_active') {
-    return setBuildFlowActiveContext(body)
+    return setBuildFlowActiveContext(body, userToken)
   }
   throw new Error('Invalid action')
 }
 
-export async function dispatchBuildFlowInspect(body: Record<string, unknown>) {
+export async function dispatchBuildFlowInspect(body: Record<string, unknown>, userToken?: string) {
   const mode = body.mode
   if (mode === 'list_files') {
     const payload: Record<string, unknown> = {
@@ -245,7 +260,7 @@ export async function dispatchBuildFlowInspect(body: Record<string, unknown>) {
     }
     if (Array.isArray(body.sourceIds)) payload.sourceIds = body.sourceIds
     if (typeof body.sourceId === 'string') payload.sourceId = body.sourceId
-    return executeAction('/api/list-files', payload)
+    return executeAction('/api/list-files', payload, userToken)
   }
   if (mode === 'search') {
     if (typeof body.query !== 'string' || !body.query) throw new Error('Missing query parameter')
@@ -255,12 +270,12 @@ export async function dispatchBuildFlowInspect(body: Record<string, unknown>) {
     }
     if (Array.isArray(body.sourceIds)) payload.sourceIds = body.sourceIds
     if (typeof body.sourceId === 'string') payload.sourceId = body.sourceId
-    return executeAction('/api/search', payload)
+    return executeAction('/api/search', payload, userToken)
   }
   throw new Error('Invalid mode')
 }
 
-export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
+export async function dispatchBuildFlowRead(body: Record<string, unknown>, userToken?: string) {
   const mode = body.mode
   if (mode === 'read_paths') {
     if (!Array.isArray(body.paths) || body.paths.length === 0) throw new Error('Missing paths parameter')
@@ -270,7 +285,7 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
     }
     if (Array.isArray(body.sourceIds)) payload.sourceIds = body.sourceIds
     if (typeof body.sourceId === 'string') payload.sourceId = body.sourceId
-    const result = await executeAction('/api/read-files', payload)
+    const result = await executeAction('/api/read-files', payload, userToken)
     return {
       mode: 'read_paths',
       files: Array.isArray((result as { files?: unknown }).files) ? (result as { files: unknown[] }).files : []
@@ -285,7 +300,7 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
     if (Array.isArray(body.sourceIds)) searchPayload.sourceIds = body.sourceIds
     if (typeof body.sourceId === 'string') searchPayload.sourceId = body.sourceId
 
-    const searchResult = await executeAction('/api/search', searchPayload)
+    const searchResult = await executeAction('/api/search', searchPayload, userToken)
     const results = Array.isArray((searchResult as { results?: unknown }).results)
       ? ((searchResult as { results: Array<Record<string, unknown>> }).results || [])
       : []
@@ -314,7 +329,7 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
       readPayload.sourceId = body.sourceId
     }
 
-    const readResult = await executeAction('/api/read-files', readPayload)
+    const readResult = await executeAction('/api/read-files', readPayload, userToken)
     const files = Array.isArray((readResult as { files?: unknown }).files)
       ? ((readResult as { files: Array<Record<string, unknown>> }).files || [])
       : []
@@ -353,16 +368,16 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>) {
   throw new Error('Invalid mode')
 }
 
-export async function dispatchBuildFlowArtifact(body: Record<string, unknown>) {
-  const sourceError = await requireExplicitSourceId(body)
+export async function dispatchBuildFlowArtifact(body: Record<string, unknown>, userToken?: string) {
+  const sourceError = await requireExplicitSourceId(body, userToken)
   if (sourceError) return sourceError
-  const result = await executeAction('/api/create-artifact', body)
+  const result = await executeAction('/api/create-artifact', body, userToken)
   const verified = assertVerifiedWriteResult(result, 'writeBuildFlowArtifact')
   return { ...result as Record<string, unknown>, ...verified }
 }
 
-export async function dispatchBuildFlowFileChange(body: Record<string, unknown>) {
-  const sourceError = await requireExplicitSourceId(body)
+export async function dispatchBuildFlowFileChange(body: Record<string, unknown>, userToken?: string) {
+  const sourceError = await requireExplicitSourceId(body, userToken)
   if (sourceError) return sourceError
 
   const changeType = body.changeType
@@ -375,7 +390,7 @@ export async function dispatchBuildFlowFileChange(body: Record<string, unknown>)
   if (changeType === 'append') {
     payload.content = body.content
     payload.separator = body.separator ?? '\n\n'
-    const result = await executeAction('/api/append-file', payload)
+    const result = await executeAction('/api/append-file', payload, userToken)
     const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange append')
     return { ...(result as Record<string, unknown>), ...verified }
   }
@@ -383,7 +398,7 @@ export async function dispatchBuildFlowFileChange(body: Record<string, unknown>)
   if (changeType === 'create') {
     payload.content = body.content
     payload.mode = 'createOnly'
-    const result = await executeAction('/api/write-file', payload)
+    const result = await executeAction('/api/write-file', payload, userToken)
     const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange create')
     return { ...(result as Record<string, unknown>), ...verified }
   }
@@ -391,7 +406,7 @@ export async function dispatchBuildFlowFileChange(body: Record<string, unknown>)
   if (changeType === 'overwrite') {
     payload.content = body.content
     payload.mode = 'overwrite'
-    const result = await executeAction('/api/write-file', payload)
+    const result = await executeAction('/api/write-file', payload, userToken)
     const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange overwrite')
     return { ...(result as Record<string, unknown>), ...verified }
   }
@@ -400,7 +415,7 @@ export async function dispatchBuildFlowFileChange(body: Record<string, unknown>)
     payload.find = body.find
     payload.replace = body.replace
     payload.allowMultiple = body.allowMultiple ?? false
-    const result = await executeAction('/api/patch-file', payload)
+    const result = await executeAction('/api/patch-file', payload, userToken)
     const verified = assertVerifiedWriteResult(result, 'applyBuildFlowFileChange patch')
     return { ...(result as Record<string, unknown>), ...verified }
   }

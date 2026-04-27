@@ -3,8 +3,8 @@ import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 export async function POST(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
 
   try {
     const body = await request.json()
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (sourceId) payload.sourceId = sourceId
     if (sourceIds) payload.sourceIds = sourceIds
     if (glob) payload.glob = glob
-    const data = await executeAction('/api/search', payload)
+    const data = await executeAction('/api/search', payload, auth.bearerToken)
     return NextResponse.json(data)
   } catch (err) {
     if (err instanceof ActionTransportError) {

@@ -3,11 +3,11 @@ import { checkActionAuth } from '@/lib/actionAuth'
 import { dispatchBuildFlowContext, unwrapActionError } from '@/lib/actions/gpt'
 
 export async function GET(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
 
   try {
-    const data = await dispatchBuildFlowContext({ action: 'get_active' })
+    const data = await dispatchBuildFlowContext({ action: 'get_active' }, auth.bearerToken)
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'context error')
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
 
   try {
     const body = await request.json()
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!action) {
       return NextResponse.json({ error: 'Missing action parameter' }, { status: 400 })
     }
-    const data = await dispatchBuildFlowContext(body)
+    const data = await dispatchBuildFlowContext(body, auth.bearerToken)
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'context error')

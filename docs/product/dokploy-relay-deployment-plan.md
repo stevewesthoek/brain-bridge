@@ -4,6 +4,8 @@
 
 **Audience:** DevOps/infrastructure owner deploying BuildFlow relay on Dokploy for v1.2.0-beta.
 
+**Key change (2026-04-27):** apps/web now uses request-token passthrough in relay-agent mode. The web layer forwards incoming bearer tokens from ChatGPT requests directly to the bridge instead of validating against a global token. This enables secure multi-user isolation without token sharing.
+
 **See also:**
 - `docs/product/custom-gpt-connection-architecture.md` — Architecture decisions
 - `docs/product/custom-gpt-self-hosting-model.md` — User setup paths and endpoint model
@@ -99,9 +101,9 @@ Dokploy must run **TWO services** behind one public domain:
 
 **Build and start:**
 ```bash
-# apps/web
+# apps/web (relay-aware token passthrough)
 Build: pnpm install && pnpm --dir apps/web build
-Start: pnpm --dir apps/web start
+Start: BUILDFLOW_BACKEND_MODE=relay-agent pnpm --dir apps/web start
 
 # packages/bridge
 Build: pnpm install && pnpm --dir packages/bridge build
@@ -113,6 +115,8 @@ Start: pnpm --dir packages/bridge start
 - `/api/register`, `/api/bridge/ws`, `/health`, `/ready`, `/api/admin/*` → bridge:3053
 
 **Data volume:** `/relay-data` (persistent storage for bridge device registry and audit logs)
+
+**Key architecture point:** In relay-agent mode, apps/web acts as a **token passthrough proxy**. It accepts the incoming bearer token from ChatGPT requests and forwards that exact same token to the bridge (no global `BUILDFLOW_ACTION_TOKEN` required for routing). This enables multi-user isolation — each user's token maps to their registered device, and requests are routed correctly even with multiple simultaneous users.
 
 ---
 
@@ -159,8 +163,14 @@ Public Paths:
 
 Set these in Dokploy secrets/environment:
 
+**For apps/web (relay mode):**
 ```bash
-# Required
+NODE_ENV=production
+BUILDFLOW_BACKEND_MODE=relay-agent   # Enable relay-agent mode (forward tokens to bridge)
+```
+
+**For packages/bridge:**
+```bash
 NODE_ENV=production
 
 # Bridge configuration
@@ -185,7 +195,12 @@ echo "RELAY_ADMIN_TOKEN=$RELAY_ADMIN_TOKEN"
 # 1. Create secret named: RELAY_ADMIN_TOKEN → <value>
 ```
 
-**Note:** User-facing action routing (`/api/actions/proxy/*`) uses each user's own bearer token, not a shared `RELAY_PROXY_TOKEN`. This ensures request isolation and prevents the relay from accidentally routing one user's request to another user's device. Each user's token is registered independently and maps to their local device.
+**Multi-user token routing:**
+- apps/web in relay-agent mode is a **token passthrough proxy**: it accepts incoming Bearer tokens from ChatGPT and forwards them unchanged to the bridge
+- User-facing action routing (`/api/actions/proxy/*`) uses each user's own bearer token, not a shared token
+- Each user's token is registered independently with the bridge and maps to their local device
+- This ensures complete request isolation and prevents cross-user routing errors
+- **No global `BUILDFLOW_ACTION_TOKEN` is needed for relay-agent mode hosted routing**
 
 ### Persistent Volume
 
@@ -439,24 +454,29 @@ Before marking v1.2.0-beta relay ready, complete these tests:
 
 ### Custom GPT Action Proxy Test (per-device token routing)
 
-- [ ] Test search action with user token:
+- [ ] Test search action with user token via web:
   ```bash
-  curl -s -X POST https://buildflow.prochat.tools/api/actions/proxy/api/search \
+  curl -s -X POST https://buildflow.prochat.tools/api/actions/search \
     -H 'Authorization: Bearer <user-device-token>' \
     -H 'Content-Type: application/json' \
     -d '{"query":"test","limit":2}' | jq .
   ```
-- [ ] Should return search results from that user's device (200 OK)
+- [ ] Should return search results from that user's device (200 OK or 503 if device offline)
 - [ ] With invalid/unregistered token: should return 401 Unauthorized
 
-- [ ] Test read action:
+- [ ] Test status action:
   ```bash
-  curl -s -X POST https://buildflow.prochat.tools/api/actions/proxy/api/read \
-    -H 'Authorization: Bearer <user-device-token>' \
-    -H 'Content-Type: application/json' \
-    -d '{"path":"README.md"}' | jq .
+  curl -s -X GET https://buildflow.prochat.tools/api/actions/status \
+    -H 'Authorization: Bearer <user-device-token>' | jq .
   ```
-- [ ] Should return file content or error from that user's device (200 OK or 400+ if file not found)
+- [ ] Should return device status from that user's device (200 OK or 503 if offline)
+
+- [ ] Test list-sources action:
+  ```bash
+  curl -s -X GET https://buildflow.prochat.tools/api/actions/sources \
+    -H 'Authorization: Bearer <user-device-token>' | jq .
+  ```
+- [ ] Should return source list from that user's device (200 OK or 503 if offline)
 
 ### Multi-User Routing Test
 

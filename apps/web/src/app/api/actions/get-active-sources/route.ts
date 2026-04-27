@@ -3,11 +3,11 @@ import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 export async function POST(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
   try {
     const body = await request.json()
-    const data = await executeAction('/api/get-active-sources', body)
+    const data = await executeAction('/api/get-active-sources', body, auth.bearerToken)
     return NextResponse.json(data)
   } catch (err) {
     if (err instanceof ActionTransportError) return NextResponse.json({ error: err.message }, { status: err.statusCode })

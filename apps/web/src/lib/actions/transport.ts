@@ -1,4 +1,4 @@
-import { getBackendUrl, getBackendMode, getRelayProxyToken } from './config'
+import { getBackendUrl, getBackendMode } from './config'
 
 export class ActionTransportError extends Error {
   constructor(message: string, public statusCode: number) {
@@ -7,9 +7,13 @@ export class ActionTransportError extends Error {
   }
 }
 
+// Post request with optional token passthrough
+// In relay-agent mode: forwards user token unchanged to bridge for multi-user routing
+// In direct-agent mode: no auth token needed (validates at route level)
 export async function executeAction(
   endpoint: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  userToken?: string
 ): Promise<unknown> {
   const backendUrl = getBackendUrl()
   const mode = getBackendMode()
@@ -18,12 +22,8 @@ export async function executeAction(
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
 
-    // Add proxy token for relay-agent mode
-    if (mode === 'relay-agent') {
-      const proxyToken = getRelayProxyToken()
-      if (proxyToken) {
-        headers['Authorization'] = `Bearer ${proxyToken}`
-      }
+    if (mode === 'relay-agent' && userToken) {
+      headers['Authorization'] = `Bearer ${userToken}`
     }
 
     const response = await fetch(url, {
@@ -46,5 +46,34 @@ export async function executeAction(
       throw err
     }
     throw new ActionTransportError(String(err), 500)
+  }
+}
+
+export async function executeActionGET(
+  endpoint: string,
+  userToken?: string
+): Promise<{ data: unknown; status: number }> {
+  const backendUrl = getBackendUrl()
+  const mode = getBackendMode()
+  const url = `${backendUrl}${endpoint}`
+
+  try {
+    const headers: Record<string, string> = { 'Cache-Control': 'no-store' }
+
+    // In relay-agent mode, forward the user's bearer token to the bridge
+    if (mode === 'relay-agent' && userToken) {
+      headers['Authorization'] = `Bearer ${userToken}`
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+      cache: 'no-store'
+    })
+
+    const data = await response.json().catch(() => ({}))
+    return { data, status: response.status }
+  } catch (err) {
+    throw new ActionTransportError(String(err), 503)
   }
 }

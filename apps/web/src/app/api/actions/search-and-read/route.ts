@@ -3,8 +3,8 @@ import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 
 export async function POST(request: NextRequest) {
-  const authError = checkActionAuth(request)
-  if (authError) return authError
+  const auth = checkActionAuth(request)
+  if (!auth.valid) return auth.error
 
   try {
     const body = await request.json()
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const searchPayload: Record<string, unknown> = { query, limit: cappedLimit }
     if (sourceId) searchPayload.sourceId = sourceId
     if (sourceIds) searchPayload.sourceIds = sourceIds
-    const searchData = await executeAction('/api/search', searchPayload)
+    const searchData = await executeAction('/api/search', searchPayload, auth.bearerToken)
     const searchResults = (searchData as Record<string, unknown>).results as unknown[] || []
 
     // Read each result (up to capped limit)
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           readPayload.maxBytes = maxBytesPerFile
         }
 
-        const readData = await executeAction('/api/read', readPayload)
+        const readData = await executeAction('/api/read', readPayload, auth.bearerToken)
         const readDataObj = readData as Record<string, unknown>
         results.push({
           sourceId: resultObj.sourceId,
