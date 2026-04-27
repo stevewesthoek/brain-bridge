@@ -3,20 +3,16 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
-import {
-  getAgentHealthLabel,
-  getAgentHealthClassName,
-  getSourceEnabledClassName,
-  getSourceIndexStatusClassName,
-  getSourceIndexStatusLabel,
-  getSourceActiveClassName,
-  getDisabledSourceCount,
-  getReadySourceCount,
-  getIndexingSourceCount,
-  getFailedSourceCount,
-  getActiveContextLabel,
-  getWriteModeLabel
-} from './helpers'
+import { DashboardTopBar } from './components/DashboardTopBar'
+import { DashboardShell } from './components/DashboardShell'
+import { DashboardOverview } from './components/DashboardOverview'
+import { PlanPlaceholderPanel } from './components/PlanPlaceholderPanel'
+import { ExecutionFlowPreview } from './components/ExecutionFlowPreview'
+import { ExecutionHandoffPanel } from './components/ExecutionHandoffPanel'
+import { KnowledgeSourcesPanel } from './components/KnowledgeSourcesPanel'
+import { ActiveContextPanel } from './components/ActiveContextPanel'
+import { InfoPanels } from './components/InfoPanels'
+import { InsightPanel } from './components/InsightPanel'
 
 const TERMINAL_INDEX_STATUSES = new Set(['ready', 'failed', 'disabled'])
 
@@ -255,697 +251,108 @@ Keep all services healthy on ports 3052, 3053, 3054.`
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-slate-50">
-      {/* Top Bar */}
-      <div className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8">
-        <h1 className="text-base font-semibold text-slate-900">BuildFlow Dashboard</h1>
-        <div className="flex items-center gap-3">
-          {mutationError && (
-            <div className="text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-lg border border-red-200">
-              Error: {mutationError.split(':')[0]}
-            </div>
-          )}
-          {mutationNotice && !error && (
-            <div className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
-              {mutationNotice}
-            </div>
-          )}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${
-            agentConnected
-              ? 'bg-emerald-50 border-emerald-200'
-              : 'bg-slate-100 border-slate-300'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-            <span className={`text-xs font-medium ${agentConnected ? 'text-emerald-700' : 'text-slate-600'}`}>
-              {getAgentHealthLabel(agentConnected)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main layout: sidebar + content + right panel */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <div className="w-80 border-r border-slate-200 bg-slate-50 overflow-y-auto">
-          <div className="p-6 space-y-8">
-            {/* Sidebar: Navigation placeholders */}
-            <div>
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Navigation</h2>
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Overview</div>
-                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-200 bg-slate-100 cursor-pointer transition-colors font-medium">Sources</div>
-                <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Settings</div>
-              </div>
-            </div>
-
-            {/* Sidebar: Source summary */}
-            {!loading && sources.length > 0 && (
-              <div className="pt-4 border-t border-slate-200">
-                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Source Status</h2>
-                <div className="space-y-3">
-                  <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
-                    <div className="text-xs text-slate-500 font-medium">Connected</div>
-                    <div className="text-lg font-semibold text-slate-900 mt-1">{sources.length}</div>
-                  </div>
-                  <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
-                    <div className="text-xs text-slate-500 font-medium">Enabled</div>
-                    <div className="text-lg font-semibold text-slate-900 mt-1">{sources.filter(s => s.enabled).length}</div>
-                  </div>
+      <DashboardTopBar agentConnected={agentConnected} mutationError={mutationError} mutationNotice={mutationNotice} error={error} />
+      <DashboardShell
+        leftRail={
+          <div className="w-80 border-r border-slate-200 bg-slate-50 overflow-y-auto">
+            <div className="p-6 space-y-8">
+              <div>
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Navigation</h2>
+                <div className="space-y-1">
+                  <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Overview</div>
+                  <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-200 bg-slate-100 cursor-pointer transition-colors font-medium">Sources</div>
+                  <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">Settings</div>
                 </div>
               </div>
-            )}
+              {!loading && sources.length > 0 && (
+                <div className="pt-4 border-t border-slate-200">
+                  <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Source Status</h2>
+                  <div className="space-y-3">
+                    <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
+                      <div className="text-xs text-slate-500 font-medium">Connected</div>
+                      <div className="text-lg font-semibold text-slate-900 mt-1">{sources.length}</div>
+                    </div>
+                    <div className="px-3 py-2 rounded-md bg-white border border-slate-200">
+                      <div className="text-xs text-slate-500 font-medium">Enabled</div>
+                      <div className="text-lg font-semibold text-slate-900 mt-1">{sources.filter(s => s.enabled).length}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-8 space-y-8 max-w-none">
-            {/* Global Error Banner */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="font-semibold text-red-900 text-sm">Unable to Load Sources</h3>
-                    <p className="text-red-700 text-sm mt-1">{error}</p>
-                    {loadErrorDetail && (
-                      <p className="text-red-600 text-xs mt-2 font-mono bg-red-100 px-2 py-1 rounded">
-                        {loadErrorDetail}
+        }
+        mainContent={
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-8 space-y-8 max-w-none">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-red-900 text-sm">Unable to Load Sources</h3>
+                      <p className="text-red-700 text-sm mt-1">{error}</p>
+                      {loadErrorDetail && (
+                        <p className="text-red-600 text-xs mt-2 font-mono bg-red-100 px-2 py-1 rounded">{loadErrorDetail}</p>
+                      )}
+                      <p className="text-red-700 text-xs mt-3">
+                        Check that the BuildFlow agent is running: <code className="bg-red-100 px-1 rounded font-mono">buildflow serve</code>
                       </p>
-                    )}
-                    <p className="text-red-700 text-xs mt-3">
-                      Check that the BuildFlow agent is running: <code className="bg-red-100 px-1 rounded font-mono">buildflow serve</code>
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fetchSources()}
-                    disabled={mutationLoading}
-                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors"
-                  >
-                    Retry
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Agent & Source Health Overview */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-6">Dashboard Overview</h2>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="inline-block mb-3">
-                      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
                     </div>
-                    <p className="text-sm text-slate-600 font-medium">Loading sources...</p>
-                    <p className="text-xs text-slate-500 mt-1">Connecting to agent on port 3052</p>
+                    <button type="button" onClick={() => fetchSources()} disabled={mutationLoading} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors">
+                      Retry
+                    </button>
                   </div>
-                </div>
-              ) : (
-                <>
-                <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                {/* Agent Status Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Agent Status</div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-                    <div className="text-sm font-semibold text-slate-900">
-                      {getAgentHealthLabel(agentConnected)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Total Sources</div>
-                  <div className="text-2xl font-bold text-slate-900">{sources.length}</div>
-                </div>
-
-                {/* Enabled Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Enabled</div>
-                  <div className="text-2xl font-bold text-slate-900">
-                    {sources.filter(s => s.enabled).length}
-                  </div>
-                </div>
-
-                {/* Disabled Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Disabled</div>
-                  <div className="text-2xl font-bold text-slate-900">
-                    {getDisabledSourceCount(sources)}
-                  </div>
-                </div>
-
-                {/* Ready Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Ready</div>
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {getReadySourceCount(sources)}
-                  </div>
-                </div>
-
-                {/* Indexing Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Indexing</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {getIndexingSourceCount(sources)}
-                  </div>
-                </div>
-
-                {/* Failed Sources Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Failed</div>
-                  <div className="text-2xl font-bold text-red-600">
-                    {getFailedSourceCount(sources)}
-                  </div>
-                </div>
-
-                {/* Active Context Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Context Mode</div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {getActiveContextLabel(activeMode)}
-                  </div>
-                </div>
-
-                {/* Write Mode Card */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-xs font-medium text-slate-600 mb-2">Write Access</div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {getWriteModeLabel(writeMode)}
-                  </div>
-                </div>
-                </div>
-
-                <div className="mt-6 flex gap-3 pt-4 border-t border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-                  >
-                    Manage Sources
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 transition-colors"
-                  >
-                    Add Source
-                  </button>
-                </div>
-                </>
-              )}
-            </div>
-
-            {/* Current Plan & Next Action Panel */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <div className="grid grid-cols-2 gap-8">
-                {/* Current Plan */}
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4">Current Plan</h3>
-                  <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                    <p className="text-sm text-slate-600">No plan loaded yet.</p>
-                    <p className="text-xs text-slate-500 mt-3">
-                      Create a plan in the Custom GPT, then use BuildFlow to track and continue it here.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Next Action */}
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4">Next Action</h3>
-                  <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                    <p className="text-sm text-slate-600">
-                      {sources.length === 0
-                        ? 'Connect a source to get started.'
-                        : !agentConnected
-                          ? 'Start the local agent to continue.'
-                          : 'Create or load a plan from ChatGPT.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Plan Structure (future)</h3>
-                <div className="space-y-2 text-xs text-slate-500">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-4 h-4 rounded border border-slate-300 bg-white" />
-                    <span>Plan title</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-4 h-4 rounded border border-slate-300 bg-white" />
-                    <span>Plan status</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-4 h-4 rounded border border-slate-300 bg-white" />
-                    <span>Task checklist</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-4 h-4 rounded border border-slate-300 bg-white" />
-                    <span>Resume / continue action</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Execution Flow Preview Panel */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-2">Execution Flow</h2>
-              <p className="text-slate-600 text-sm mb-6">
-                Preview how BuildFlow will track plan progress once a plan is loaded.
-              </p>
-
-              {/* State Legend */}
-              <div className="mb-6">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Task States</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {/* Pending */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-slate-400 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">pending</div>
-                      <div className="text-xs text-slate-500">Queued to start</div>
-                    </div>
-                  </div>
-
-                  {/* Active */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">active</div>
-                      <div className="text-xs text-slate-500">In progress</div>
-                    </div>
-                  </div>
-
-                  {/* Done */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">done</div>
-                      <div className="text-xs text-slate-500">Completed</div>
-                    </div>
-                  </div>
-
-                  {/* Blocked */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">blocked</div>
-                      <div className="text-xs text-slate-500">Needs attention</div>
-                    </div>
-                  </div>
-
-                  {/* Failed */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">failed</div>
-                      <div className="text-xs text-slate-500">Error occurred</div>
-                    </div>
-                  </div>
-
-                  {/* Verified */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-emerald-600 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">verified</div>
-                      <div className="text-xs text-slate-500">Confirmed good</div>
-                    </div>
-                  </div>
-
-                  {/* Paused */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200">
-                    <div className="w-2 h-2 rounded-full bg-slate-500 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-900">paused</div>
-                      <div className="text-xs text-slate-500">Waiting</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline Placeholder */}
-              <div className="border-t border-slate-200 pt-6">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Execution Timeline</h3>
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                  <p className="text-sm text-slate-600">No execution flow yet.</p>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Load a plan to preview tasks, status, and progress here.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Handoff Panel */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-2">Execution Handoff</h2>
-              <p className="text-slate-600 text-sm mb-6">
-                Copy-ready prompts for Codex CLI or Claude Code. Paste into your local terminal or IDE extension.
-              </p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
-                {/* Codex Card */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">Codex CLI</h3>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3 mb-3 max-h-40 overflow-y-auto">
-                    <p className="text-xs text-slate-700 leading-relaxed font-mono whitespace-pre-wrap">
-                      {codexPrompt}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(codexPrompt, 'codex-copied')}
-                    className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
-                  >
-                    {handoffCopyStatus === 'codex-copied' ? 'Copied!' : 'Copy prompt'}
-                  </button>
-                </div>
-
-                {/* Claude Code Card */}
-                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">Claude Code</h3>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3 mb-3 max-h-40 overflow-y-auto">
-                    <p className="text-xs text-slate-700 leading-relaxed font-mono whitespace-pre-wrap">
-                      {claudeCodePrompt}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
-                    className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
-                  >
-                    {handoffCopyStatus === 'claude-copied' ? 'Copied!' : 'Copy prompt'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Copy Feedback Message */}
-              {handoffCopyStatus !== 'idle' && (
-                <div aria-live="polite" className="mb-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                  {handoffCopyStatus === 'codex-copied' && (
-                    <p className="text-xs font-medium text-emerald-700">Codex prompt copied to clipboard.</p>
-                  )}
-                  {handoffCopyStatus === 'claude-copied' && (
-                    <p className="text-xs font-medium text-emerald-700">Claude Code prompt copied to clipboard.</p>
-                  )}
-                  {handoffCopyStatus === 'error' && (
-                    <p className="text-xs font-medium text-amber-700">Unable to copy prompt. Select the text manually.</p>
-                  )}
                 </div>
               )}
-
-              <div className="pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-600">
-                  For free GitHub use, copy the prompt and run in your terminal: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono">codex [pasted prompt]</code> or use Claude Code extension.
-                </p>
-              </div>
-            </div>
-
-            {/* Knowledge Sources Section */}
-            <div ref={knowledgeSourcesRef} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-1">Knowledge Sources</h2>
-              <p className="text-slate-600 text-sm mb-6">
-                Configured knowledge sources that are searched and read together through ChatGPT.
-              </p>
-
-              <form ref={addSourceFormRef} onSubmit={handleAddSource} className="border border-slate-200 rounded-lg p-4 mb-6 space-y-4 bg-slate-50">
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-3 text-sm">Add Knowledge Source</h3>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <label className="block">
-                      <span className="block text-xs font-medium text-slate-700 mb-2">Path *</span>
-                      <input
-                        value={sourcePath}
-                        onChange={e => setSourcePath(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                        placeholder="~/notes"
-                        disabled={mutationLoading}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="block text-xs font-medium text-slate-700 mb-2">Label</span>
-                      <input
-                        value={sourceLabel}
-                        onChange={e => setSourceLabel(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                        placeholder="My Notes"
-                        disabled={mutationLoading}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="block text-xs font-medium text-slate-700 mb-2">ID</span>
-                      <input
-                        value={sourceId}
-                        onChange={e => setSourceId(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                        placeholder="my-notes"
-                        disabled={mutationLoading}
-                      />
-                    </label>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={mutationLoading}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-slate-800 transition-colors"
-                >
-                  {mutationLoading ? 'Working...' : 'Add source'}
-                </button>
-                {mutationError ? (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                    <p className="text-xs text-red-700 font-medium">Error: {mutationError}</p>
-                  </div>
-                ) : null}
-                {mutationNotice ? (
-                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                    <p className="text-xs text-emerald-700 font-medium">{mutationNotice}</p>
-                  </div>
-                ) : null}
-              </form>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="inline-block mb-3">
-                      <div className="w-6 h-6 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">Loading sources...</p>
-                  </div>
-                </div>
-              ) : sources.length === 0 ? (
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-slate-900">No knowledge sources connected yet</p>
-                    <p className="text-sm text-slate-600 mt-2">Connect a local folder to get started with BuildFlow.</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-4 my-4 border border-slate-200">
-                    <p className="text-xs text-slate-700 font-mono">buildflow connect &lt;path&gt;</p>
-                    <p className="text-xs text-slate-600 mt-2">Example: <code className="bg-slate-100 px-1 rounded">buildflow connect ~/my-vault</code></p>
-                  </div>
-                  <p className="text-xs text-slate-600">
-                    After connecting, sources will appear here and can be searched through ChatGPT.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {sources.map(source => (
-                    <div key={source.id} className="border border-slate-200 rounded-lg p-4 flex items-start justify-between gap-4 hover:bg-slate-50 transition-colors bg-white">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-slate-900 text-sm">{source.label}</div>
-                        <div className="text-xs text-slate-600 font-mono truncate mt-1">{source.path}</div>
-                        <div className="text-xs text-slate-500 mt-2">ID: {source.id}</div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceEnabledClassName(source.enabled)}`}>
-                          {source.enabled ? 'Enabled' : 'Disabled'}
-                        </div>
-                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceIndexStatusClassName(source.indexStatus)}`}>
-                          {getSourceIndexStatusLabel(source)}
-                        </div>
-                        <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getSourceActiveClassName(activeSourceIds.includes(source.id))}`}>
-                          {activeSourceIds.includes(source.id) ? 'Active' : 'Inactive'}
-                        </div>
-                        <div className="flex gap-1 flex-wrap justify-end mt-1">
-                          <button
-                            type="button"
-                            disabled={mutationLoading || !source.enabled}
-                            onClick={() => toggleActiveSource(source.id)}
-                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
-                              mutationLoading || !source.enabled
-                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            Toggle Active
-                          </button>
-                          <button
-                            type="button"
-                            disabled={mutationLoading}
-                            onClick={() => mutateSources('/api/agent/sources/toggle', { sourceId: source.id, enabled: !source.enabled })}
-                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
-                              mutationLoading
-                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            {source.enabled ? 'Disable' : 'Enable'}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={mutationLoading || !source.enabled || source.indexStatus === 'indexing'}
-                            onClick={() => handleReindexSource(source)}
-                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
-                              mutationLoading || !source.enabled || source.indexStatus === 'indexing'
-                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            {source.indexStatus === 'indexing' ? 'Indexing...' : 'Reindex'}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={mutationLoading}
-                            onClick={() => {
-                              if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
-                                mutateSources('/api/agent/sources/remove', { sourceId: source.id })
-                              }
-                            }}
-                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
-                              mutationLoading
-                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                            }`}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Active Context Section */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-4">Active Context</h2>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'single' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('single')} type="button">single</button>
-                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'multi' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('multi')} type="button">multi</button>
-                <button className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeMode === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleSetMode('all')} type="button">all</button>
-              </div>
-              <div className="text-xs text-slate-600 mb-2">
-                Enabled sources show their index status. Use Reindex after enabling a source before expecting search results.
-              </div>
-              <div className="text-xs text-slate-500 mb-4">Active source ids: {activeSourceIds.length > 0 ? activeSourceIds.join(', ') : 'all enabled sources'}</div>
-              <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-xs font-semibold text-slate-900 mb-3 uppercase tracking-wide">Write Mode</h3>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'readOnly' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('readOnly')}>readOnly</button>
-                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'artifactsOnly' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('artifactsOnly')}>artifactsOnly</button>
-                  <button type="button" className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${writeMode === 'safeWrites' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} onClick={() => handleWriteMode('safeWrites')}>safeWrites</button>
-                </div>
-              </div>
-            </div>
-
-            {/* Execution Mode Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-blue-900 mb-2">Execution Modes</h2>
-              <p className="text-blue-800 text-sm">
-                BuildFlow supports two execution modes for ChatGPT Actions:
-              </p>
-              <ul className="text-blue-800 text-xs space-y-1 mt-3 ml-4">
-                <li>• <strong>direct-agent (default):</strong> Web app calls local agent directly on port 3052</li>
-                <li>• <strong>relay-agent (Phase 5C+):</strong> Web app calls relay on port 3053, which routes to agent via WebSocket. Requires matching RELAY_PROXY_TOKEN on both sides.</li>
-              </ul>
-              <p className="text-blue-700 text-xs mt-3">
-                Set mode via <code className="bg-blue-100 px-1 rounded">BUILDFLOW_BACKEND_MODE</code> environment variable.
-              </p>
-            </div>
-
-            {/* Getting Started */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900 mb-4">Getting Started</h2>
-
-              <div className="space-y-5">
-                <div>
-                  <h3 className="font-medium text-slate-900 mb-2 text-sm">1. Install and Initialize</h3>
-                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs mb-2 text-slate-800">npm install -g buildflow</code>
-                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs text-slate-800">buildflow init</code>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-slate-900 mb-2 text-sm">2. Add Knowledge Sources</h3>
-                  <p className="text-slate-600 text-xs mb-2">Connect local folders to search and read from:</p>
-                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs mb-2 text-slate-800">buildflow connect ~/my-vault</code>
-                  <p className="text-slate-600 text-xs">Repeat to add multiple sources (Brain, Mind, docs, etc.)</p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-slate-900 mb-2 text-sm">3. Start the Agent</h3>
-                  <code className="bg-slate-100 p-2.5 rounded-lg block text-xs text-slate-800">buildflow serve</code>
-                  <p className="text-slate-600 text-xs mt-2">Agent listens on http://127.0.0.1:3052</p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-slate-900 mb-2 text-sm">4. Configure ChatGPT Custom Actions</h3>
-                  <p className="text-slate-600 text-xs">
-                    Import the OpenAPI schema and set Bearer token authentication. All configured sources will be searched together.
-                  </p>
-                </div>
-              </div>
+              <DashboardOverview
+                loading={loading}
+                sources={sources}
+                agentConnected={agentConnected}
+                activeMode={activeMode}
+                writeMode={writeMode}
+                onManageSources={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onAddSource={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              />
+              <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
+              <ExecutionFlowPreview />
+              <ExecutionHandoffPanel
+                codexPrompt={codexPrompt}
+                claudeCodePrompt={claudeCodePrompt}
+                handoffCopyStatus={handoffCopyStatus}
+                onCopyCodex={() => copyToClipboard(codexPrompt, 'codex-copied')}
+                onCopyClaude={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
+              />
+              <KnowledgeSourcesPanel
+                sources={sources}
+                loading={loading}
+                mutationLoading={mutationLoading}
+                mutationError={mutationError}
+                mutationNotice={mutationNotice}
+                sourcePath={sourcePath}
+                sourceLabel={sourceLabel}
+                sourceId={sourceId}
+                activeSourceIds={activeSourceIds}
+                onAddSourceSubmit={handleAddSource}
+                onSourcePathChange={setSourcePath}
+                onSourceLabelChange={setSourceLabel}
+                onSourceIdChange={setSourceId}
+                onToggleActiveSource={toggleActiveSource}
+                onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
+                onReindexSource={handleReindexSource}
+                onRemoveSource={(source) => {
+                  if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
+                    mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+                  }
+                }}
+                addSourceFormRef={addSourceFormRef}
+              />
+              <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
+              <InfoPanels />
             </div>
           </div>
-        </div>
-
-        {/* Right Insight Panel */}
-        <div className="w-96 border-l border-slate-200 bg-slate-50 overflow-y-auto">
-          <div className="p-6 space-y-6">
-            <div>
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Dashboard Status</h2>
-              <div className="space-y-3">
-                <div className="bg-white border border-slate-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 font-medium">Agent Status</span>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-                      <span className="text-xs font-semibold text-slate-900">{getAgentHealthLabel(agentConnected)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 font-medium">Total Sources</span>
-                    <span className="text-base font-semibold text-slate-900">{sources.length}</span>
-                  </div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 font-medium">Enabled</span>
-                    <span className="text-base font-semibold text-slate-900">{sources.filter(s => s.enabled).length}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 pt-6">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Context Mode</h2>
-              <div className="bg-white border border-slate-200 rounded-lg p-3">
-                <div className="text-xs font-semibold text-slate-900 capitalize">{activeMode}</div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 pt-6">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Write Access</h2>
-              <div className="bg-white border border-slate-200 rounded-lg p-3">
-                <div className="text-xs font-semibold text-slate-900">{writeMode}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        }
+        rightPanel={<InsightPanel agentConnected={agentConnected} sources={sources} activeMode={activeMode} writeMode={writeMode} />}
+      />
     </div>
   )
 }

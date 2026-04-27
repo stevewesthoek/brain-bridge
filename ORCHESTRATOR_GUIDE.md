@@ -100,6 +100,23 @@ SERVICE STATUS:
 5. Run `./buildflow-orchestrator.sh start` (verify all healthy)
 6. Report success or detailed failure
 
+### `scripts/buildflow-local-stack.sh`
+
+This repo-local helper codifies the safer web rebuild workflow and public verification checks:
+
+```bash
+pnpm local:status
+pnpm local:start
+pnpm local:stop
+pnpm local:rebuild-web
+pnpm local:verify
+pnpm local:restart
+```
+
+Rule: for dashboard work, prefer `pnpm local:rebuild-web` when web may already be running.
+Never run `pnpm --dir apps/web build` while `pnpm --dir apps/web dev` is already running on port `3054`.
+If building manually, stop web on `3054` first, clear `apps/web/.next` only if stale, rebuild, restart web, then run `pnpm local:verify`.
+
 ## Fact-Checking Model
 
 The orchestrator **never assumes**. It verifies facts through multiple channels:

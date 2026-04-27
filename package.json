@@ -16,7 +16,13 @@
     "verify:dashboard": "node scripts/verify-dashboard.mjs",
     "verify:gpt-actions": "node scripts/verify-custom-gpt-actions.mjs",
     "verify:gpt-contract": "node scripts/verify-custom-gpt-actions.mjs",
-    "restart:local": "bash scripts/restart-buildflow-local.sh"
+    "restart:local": "bash scripts/restart-buildflow-local.sh",
+    "local:status": "bash scripts/buildflow-local-stack.sh status",
+    "local:start": "bash scripts/buildflow-local-stack.sh start",
+    "local:stop": "bash scripts/buildflow-local-stack.sh stop",
+    "local:restart": "bash scripts/buildflow-local-stack.sh restart",
+    "local:rebuild-web": "bash scripts/buildflow-local-stack.sh rebuild-web",
+    "local:verify": "bash scripts/buildflow-local-stack.sh verify"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

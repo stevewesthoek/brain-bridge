@@ -177,6 +177,11 @@ pnpm install
 ./buildflow-orchestrator.sh start
 ```
 
+**Option A2: Reliability-safe local stack helper:**
+```bash
+pnpm local:restart
+```
+
 **Option B: Manual dev mode (for development):**
 ```bash
 export BUILDFLOW_ACTION_TOKEN=$(openssl rand -hex 32)
@@ -189,6 +194,19 @@ Either approach starts:
 * Agent on http://localhost:3052 (local CLI server)
 * Relay on http://localhost:3053 (Docker bridge, requires OrbStack)
 * Web on http://localhost:3054 (Next.js dashboard)
+
+Reliability rule for the web service:
+
+* For dashboard work, use `pnpm local:rebuild-web` when the local web server may already be running.
+* Never run `pnpm --dir apps/web build` while `pnpm --dir apps/web dev` is already running on port `3054`.
+* If you build manually, stop web on `3054` first, clear `apps/web/.next` only if stale, rebuild, restart web, then run `pnpm local:verify`.
+* Verify in this order before handing off:
+  * `http://127.0.0.1:3052/health`
+  * `http://127.0.0.1:3053/health`
+  * `http://127.0.0.1:3054/api/openapi`
+  * `http://127.0.0.1:3054/api/actions/status`
+  * `https://buildflow.prochat.tools/api/openapi`
+  * `https://buildflow.prochat.tools/api/actions/status`
 
 For orchestrator features like fact-checking, atomic operations, and graceful shutdown, use Option A.
 For comprehensive documentation, see `ORCHESTRATOR_GUIDE.md`.
