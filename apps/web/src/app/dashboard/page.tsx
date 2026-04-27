@@ -332,7 +332,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'overview' && (
-                <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
                   <div className="space-y-4">
                     <DashboardOverview
                       loading={loading}
@@ -349,7 +349,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'sources' && (
-                <div className="flex-1 overflow-hidden flex flex-col">
+                <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
                   <KnowledgeSourcesPanel
                     sources={sources}
                     loading={loading}
@@ -378,7 +378,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'plan' && (
-                <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
                   <div className="space-y-4">
                     <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
                     <ExecutionFlowPreview />
@@ -399,8 +399,8 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               )}
 
               {activeDashboardSection === 'settings' && (
-                <div className="flex-1 overflow-hidden p-6 flex flex-col">
-                  <div className="space-y-4">
+                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
+                  <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2">
                     <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
                     <InfoPanels />
                   </div>
