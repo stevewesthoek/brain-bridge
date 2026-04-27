@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
+
+type DashboardSection = 'overview' | 'sources' | 'plan' | 'handoff' | 'settings'
 import { DashboardTopBar } from './components/DashboardTopBar'
 import { DashboardShell } from './components/DashboardShell'
 import { DashboardOverview } from './components/DashboardOverview'
@@ -33,8 +35,8 @@ export default function Dashboard() {
   const [activeSourceIds, setActiveSourceIds] = useState<string[]>([])
   const [writeMode, setWriteMode] = useState<WriteMode>('safeWrites')
   const [handoffCopyStatus, setHandoffCopyStatus] = useState<'idle' | 'codex-copied' | 'claude-copied' | 'error'>('idle')
+  const [activeDashboardSection, setActiveDashboardSection] = useState<DashboardSection>('overview')
 
-  const knowledgeSourcesRef = useRef<HTMLDivElement>(null)
   const addSourceFormRef = useRef<HTMLFormElement>(null)
   const themeInitializedRef = useRef(false)
 
@@ -285,18 +287,30 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                 <div>
                   <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4 dark:text-slate-400">Navigation</h2>
                   <div className="space-y-1">
-                    <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors dark:text-slate-300 dark:hover:bg-slate-900">Overview</div>
-                    <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-200 bg-slate-100 cursor-pointer transition-colors font-medium dark:bg-slate-900 dark:text-slate-50 dark:hover:bg-slate-800">Sources</div>
-                    <div className="px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100 cursor-pointer transition-colors dark:text-slate-300 dark:hover:bg-slate-900">Settings</div>
+                    {(['overview', 'sources', 'plan', 'handoff', 'settings'] as const).map(section => (
+                      <button
+                        key={section}
+                        type="button"
+                        onClick={() => setActiveDashboardSection(section)}
+                        aria-current={activeDashboardSection === section ? 'page' : undefined}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          activeDashboardSection === section
+                            ? 'bg-slate-100 text-slate-900 font-medium dark:bg-slate-900 dark:text-slate-50'
+                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900'
+                        }`}
+                      >
+                        {section.charAt(0).toUpperCase() + section.slice(1)}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
           }
           mainContent={
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-8 space-y-8 max-w-none">
-                {error && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {error && (
+                <div className="px-8 pt-6 shrink-0">
                   <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -314,51 +328,81 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                       </button>
                     </div>
                   </div>
-                )}
-                <DashboardOverview
-                  loading={loading}
-                  sources={sources}
-                  activeMode={activeMode}
-                  writeMode={writeMode}
-                  onManageSources={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  onAddSource={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                />
-                <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
-                <ExecutionFlowPreview />
-                <ExecutionHandoffPanel
-                  codexPrompt={codexPrompt}
-                  claudeCodePrompt={claudeCodePrompt}
-                  handoffCopyStatus={handoffCopyStatus}
-                  onCopyCodex={() => copyToClipboard(codexPrompt, 'codex-copied')}
-                  onCopyClaude={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
-                />
-                <KnowledgeSourcesPanel
-                  sources={sources}
-                  loading={loading}
-                  mutationLoading={mutationLoading}
-                  mutationError={mutationError}
-                  mutationNotice={mutationNotice}
-                  sourcePath={sourcePath}
-                  sourceLabel={sourceLabel}
-                  sourceId={sourceId}
-                  activeSourceIds={activeSourceIds}
-                  onAddSourceSubmit={handleAddSource}
-                  onSourcePathChange={setSourcePath}
-                  onSourceLabelChange={setSourceLabel}
-                  onSourceIdChange={setSourceId}
-                  onToggleActiveSource={toggleActiveSource}
-                  onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
-                  onReindexSource={handleReindexSource}
-                  onRemoveSource={(source) => {
-                    if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
-                      mutateSources('/api/agent/sources/remove', { sourceId: source.id })
-                    }
-                  }}
-                  addSourceFormRef={addSourceFormRef}
-                />
-                <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
-                <InfoPanels />
-              </div>
+                </div>
+              )}
+
+              {activeDashboardSection === 'overview' && (
+                <div className="flex-1 overflow-hidden p-6 flex flex-col gap-5">
+                  <DashboardOverview
+                    loading={loading}
+                    sources={sources}
+                    activeMode={activeMode}
+                    writeMode={writeMode}
+                    onManageSources={() => setActiveDashboardSection('sources')}
+                    onAddSource={() => setActiveDashboardSection('sources')}
+                  />
+                  <div className="shrink-0">
+                    <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} variant="compact" />
+                  </div>
+                </div>
+              )}
+
+              {activeDashboardSection === 'sources' && (
+                <div className="flex-1 overflow-hidden flex flex-col p-6">
+                  <div className="flex-1 min-h-0 border border-slate-200 rounded-lg bg-white dark:border-slate-800 dark:bg-slate-900/70 flex flex-col">
+                    <KnowledgeSourcesPanel
+                      sources={sources}
+                      loading={loading}
+                      mutationLoading={mutationLoading}
+                      mutationError={mutationError}
+                      mutationNotice={mutationNotice}
+                      sourcePath={sourcePath}
+                      sourceLabel={sourceLabel}
+                      sourceId={sourceId}
+                      activeSourceIds={activeSourceIds}
+                      onAddSourceSubmit={handleAddSource}
+                      onSourcePathChange={setSourcePath}
+                      onSourceLabelChange={setSourceLabel}
+                      onSourceIdChange={setSourceId}
+                      onToggleActiveSource={toggleActiveSource}
+                      onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
+                      onReindexSource={handleReindexSource}
+                      onRemoveSource={(source) => {
+                        if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
+                          mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+                        }
+                      }}
+                      addSourceFormRef={addSourceFormRef}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeDashboardSection === 'plan' && (
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+                  <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
+                  <ExecutionFlowPreview />
+                </div>
+              )}
+
+              {activeDashboardSection === 'handoff' && (
+                <div className="flex-1 overflow-hidden p-6">
+                  <ExecutionHandoffPanel
+                    codexPrompt={codexPrompt}
+                    claudeCodePrompt={claudeCodePrompt}
+                    handoffCopyStatus={handoffCopyStatus}
+                    onCopyCodex={() => copyToClipboard(codexPrompt, 'codex-copied')}
+                    onCopyClaude={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
+                  />
+                </div>
+              )}
+
+              {activeDashboardSection === 'settings' && (
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
+                  <InfoPanels />
+                </div>
+              )}
             </div>
           }
           rightPanel={
@@ -366,6 +410,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               loading={loading}
               error={error}
               sourceCount={sources.length}
+              section={activeDashboardSection}
             />
           }
         />

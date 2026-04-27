@@ -41,42 +41,26 @@ export function DashboardOverview({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Total Sources</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{sources.length}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="border border-slate-200 rounded-lg p-3 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="text-xs font-medium text-slate-600 mb-1 dark:text-slate-400">Total</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-slate-50">{sources.length}</div>
             </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Enabled</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{sources.filter(s => s.enabled).length}</div>
+            <div className="border border-slate-200 rounded-lg p-3 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="text-xs font-medium text-slate-600 mb-1 dark:text-slate-400">Enabled</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-slate-50">{sources.filter(s => s.enabled).length}</div>
             </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Disabled</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{getDisabledSourceCount(sources)}</div>
+            <div className="border border-slate-200 rounded-lg p-3 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="text-xs font-medium text-slate-600 mb-1 dark:text-slate-400">Ready</div>
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-300">{getReadySourceCount(sources)}</div>
             </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Ready</div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{getReadySourceCount(sources)}</div>
-            </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Indexing</div>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">{getIndexingSourceCount(sources)}</div>
-            </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Failed</div>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-300">{getFailedSourceCount(sources)}</div>
-            </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Context Mode</div>
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">{getActiveContextLabel(activeMode)}</div>
-            </div>
-            <div className="border border-slate-200 rounded-lg p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="text-xs font-medium text-slate-600 mb-2 dark:text-slate-400">Write Access</div>
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">{getWriteModeLabel(writeMode)}</div>
+            <div className="border border-slate-200 rounded-lg p-3 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="text-xs font-medium text-slate-600 mb-1 dark:text-slate-400">Context</div>
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-50">{getActiveContextLabel(activeMode)}</div>
             </div>
           </div>
 
-          <div className="mt-6 flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="mt-4 flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={onManageSources}
