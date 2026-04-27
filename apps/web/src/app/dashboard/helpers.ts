@@ -1,11 +1,11 @@
 import type { KnowledgeSource, ActiveSourcesMode, WriteMode } from '@buildflow/shared'
 
 export function getAgentHealthLabel(agentConnected: boolean): string {
-  return agentConnected ? 'Agent connected' : 'Agent not connected'
+  return agentConnected ? 'Agent connected' : 'Agent disconnected'
 }
 
 export function getAgentHealthClassName(agentConnected: boolean): string {
-  return agentConnected ? 'bg-green-500' : 'bg-red-500'
+  return agentConnected ? 'bg-emerald-500' : 'bg-slate-400'
 }
 
 export function getSourceEnabledClassName(enabled: boolean): string {

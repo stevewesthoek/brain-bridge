@@ -258,11 +258,27 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       {/* Top Bar */}
       <div className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8">
         <h1 className="text-base font-semibold text-slate-900">BuildFlow Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
-          <span className="text-xs font-medium text-slate-600">
-            {getAgentHealthLabel(agentConnected)}
-          </span>
+        <div className="flex items-center gap-3">
+          {mutationError && (
+            <div className="text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-lg border border-red-200">
+              Error: {mutationError.split(':')[0]}
+            </div>
+          )}
+          {mutationNotice && !error && (
+            <div className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+              {mutationNotice}
+            </div>
+          )}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${
+            agentConnected
+              ? 'bg-emerald-50 border-emerald-200'
+              : 'bg-slate-100 border-slate-300'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
+            <span className={`text-xs font-medium ${agentConnected ? 'text-emerald-700' : 'text-slate-600'}`}>
+              {getAgentHealthLabel(agentConnected)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -303,11 +319,51 @@ Keep all services healthy on ports 3052, 3053, 3054.`
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-8 space-y-8 max-w-none">
+            {/* Global Error Banner */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-red-900 text-sm">Unable to Load Sources</h3>
+                    <p className="text-red-700 text-sm mt-1">{error}</p>
+                    {loadErrorDetail && (
+                      <p className="text-red-600 text-xs mt-2 font-mono bg-red-100 px-2 py-1 rounded">
+                        {loadErrorDetail}
+                      </p>
+                    )}
+                    <p className="text-red-700 text-xs mt-3">
+                      Check that the BuildFlow agent is running: <code className="bg-red-100 px-1 rounded font-mono">buildflow serve</code>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchSources()}
+                    disabled={mutationLoading}
+                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Agent & Source Health Overview */}
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900 mb-6">Dashboard Overview</h2>
 
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="inline-block mb-3">
+                      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+                    </div>
+                    <p className="text-sm text-slate-600 font-medium">Loading sources...</p>
+                    <p className="text-xs text-slate-500 mt-1">Connecting to agent on port 3052</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
                 {/* Agent Status Card */}
                 <div className="border border-slate-200 rounded-lg p-4">
                   <div className="text-xs font-medium text-slate-600 mb-2">Agent Status</div>
@@ -380,24 +436,26 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                     {getWriteModeLabel(writeMode)}
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <div className="mt-6 flex gap-3 pt-4 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-                >
-                  Manage Sources
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 transition-colors"
-                >
-                  Add Source
-                </button>
-              </div>
+                <div className="mt-6 flex gap-3 pt-4 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => knowledgeSourcesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Manage Sources
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addSourceFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-300 transition-colors"
+                  >
+                    Add Source
+                  </button>
+                </div>
+                </>
+              )}
             </div>
 
             {/* Current Plan & Next Action Panel */}
@@ -611,25 +669,6 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               <p className="text-slate-600 text-sm mb-6">
                 Configured knowledge sources that are searched and read together through ChatGPT.
               </p>
-              {error ? (
-                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 text-red-900">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-sm">Unable to load sources</p>
-                      <p className="text-xs mt-1">{error}</p>
-                      {loadErrorDetail ? <p className="text-xs mt-1 opacity-75">{loadErrorDetail}</p> : null}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => fetchSources()}
-                      className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors"
-                      disabled={mutationLoading}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                </div>
-              ) : null}
 
               <form ref={addSourceFormRef} onSubmit={handleAddSource} className="border border-slate-200 rounded-lg p-4 mb-6 space-y-4 bg-slate-50">
                 <div>
@@ -674,16 +713,40 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                 >
                   {mutationLoading ? 'Working...' : 'Add source'}
                 </button>
-                {mutationError ? <p className="text-xs text-red-700 font-medium">{mutationError}</p> : null}
-                {mutationNotice ? <p className="text-xs text-emerald-700 font-medium">{mutationNotice}</p> : null}
+                {mutationError ? (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                    <p className="text-xs text-red-700 font-medium">Error: {mutationError}</p>
+                  </div>
+                ) : null}
+                {mutationNotice ? (
+                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <p className="text-xs text-emerald-700 font-medium">{mutationNotice}</p>
+                  </div>
+                ) : null}
               </form>
 
               {loading ? (
-                <div className="text-sm text-slate-500">Loading sources...</div>
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="inline-block mb-3">
+                      <div className="w-6 h-6 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+                    </div>
+                    <p className="text-sm text-slate-600 font-medium">Loading sources...</p>
+                  </div>
+                </div>
               ) : sources.length === 0 ? (
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center text-slate-500">
-                  <p className="text-sm">No knowledge sources configured.</p>
-                  <code className="text-slate-600 font-mono text-xs block mt-2">buildflow connect &lt;path&gt;</code>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-slate-900">No knowledge sources connected yet</p>
+                    <p className="text-sm text-slate-600 mt-2">Connect a local folder to get started with BuildFlow.</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-4 my-4 border border-slate-200">
+                    <p className="text-xs text-slate-700 font-mono">buildflow connect &lt;path&gt;</p>
+                    <p className="text-xs text-slate-600 mt-2">Example: <code className="bg-slate-100 px-1 rounded">buildflow connect ~/my-vault</code></p>
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    After connecting, sources will appear here and can be searched through ChatGPT.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -709,7 +772,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                             type="button"
                             disabled={mutationLoading || !source.enabled}
                             onClick={() => toggleActiveSource(source.id)}
-                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
+                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
+                              mutationLoading || !source.enabled
+                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
                           >
                             Toggle Active
                           </button>
@@ -717,7 +784,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                             type="button"
                             disabled={mutationLoading}
                             onClick={() => mutateSources('/api/agent/sources/toggle', { sourceId: source.id, enabled: !source.enabled })}
-                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
+                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
+                              mutationLoading
+                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
                           >
                             {source.enabled ? 'Disable' : 'Enable'}
                           </button>
@@ -725,7 +796,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                             type="button"
                             disabled={mutationLoading || !source.enabled || source.indexStatus === 'indexing'}
                             onClick={() => handleReindexSource(source)}
-                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
+                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
+                              mutationLoading || !source.enabled || source.indexStatus === 'indexing'
+                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
                           >
                             {source.indexStatus === 'indexing' ? 'Indexing...' : 'Reindex'}
                           </button>
@@ -737,7 +812,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                                 mutateSources('/api/agent/sources/remove', { sourceId: source.id })
                               }
                             }}
-                            className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 hover:bg-slate-100 transition-colors"
+                            className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
+                              mutationLoading
+                                ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
                           >
                             Remove
                           </button>
