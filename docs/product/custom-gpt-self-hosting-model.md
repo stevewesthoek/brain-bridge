@@ -412,8 +412,8 @@ curl https://buildflow.prochat.tools/api/actions/status
 
 ## Next steps
 
-1. **For local testing:** Follow the "Local testing only" setup above
-2. **For Custom GPT use:** Pick a tunnel (Cloudflare/ngrok/Tailscale) and follow the tunnel setup steps
+1. **For managed relay (recommended):** Follow the "Recommended setup: Use the managed relay" section above
+2. **For self-hosted tunnel:** Pick a tunnel (Cloudflare/ngrok/Tailscale) and follow the "Alternative setup: Use your own tunnel" section
 3. **For contributions:** Test the endpoint model and report any gaps in the docs or setup
 4. **For Pro/team features:** Watch the roadmap; relay support for multi-user scenarios is planned post-v1.2
 
