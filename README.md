@@ -189,6 +189,14 @@ If you are a new GitHub user trying BuildFlow Local for the public beta, use thi
 
 This is the default free/local path. BuildFlow Managed and `buildflow.prochat.tools` are separate, later SaaS paths and are not required for the public GitHub beta.
 
+When the dashboard opens, focus on:
+
+- Overview: local health and current mode
+- Sources: add and manage local repositories or folders
+- Plan: inspect the current blueprint or execution packet
+- Handoff: copy the prompt for Codex or Claude Code
+- Settings: adjust local behavior and preferences
+
 1. Clone & install
 
 git clone https://github.com/stevewesthoek/buildflow
