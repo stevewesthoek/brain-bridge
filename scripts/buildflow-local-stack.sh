@@ -2,9 +2,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-AGENT_PORT=3052
-RELAY_PORT=3053
-WEB_PORT=3054
+AGENT_PORT="${AGENT_PORT:-3052}"
+RELAY_PORT="${RELAY_PORT:-3053}"
+WEB_PORT="${WEB_PORT:-3054}"
 AGENT_HEALTH_URL="http://127.0.0.1:${AGENT_PORT}/health"
 RELAY_HEALTH_URL="http://127.0.0.1:${RELAY_PORT}/health"
 WEB_HEALTH_URL="http://127.0.0.1:${WEB_PORT}/api/openapi"
@@ -116,9 +116,9 @@ start_agent_if_needed() {
   fi
   log "Starting agent on ${AGENT_PORT}."
   if command -v setsid >/dev/null 2>&1; then
-    setsid pnpm --dir "$REPO_ROOT/packages/cli" dev >"$AGENT_LOG" 2>"$AGENT_ERR_LOG" </dev/null &
+    AGENT_PORT="$AGENT_PORT" setsid pnpm --dir "$REPO_ROOT/packages/cli" dev >"$AGENT_LOG" 2>"$AGENT_ERR_LOG" </dev/null &
   else
-    nohup pnpm --dir "$REPO_ROOT/packages/cli" dev >"$AGENT_LOG" 2>"$AGENT_ERR_LOG" </dev/null &
+    AGENT_PORT="$AGENT_PORT" nohup pnpm --dir "$REPO_ROOT/packages/cli" dev >"$AGENT_LOG" 2>"$AGENT_ERR_LOG" </dev/null &
   fi
 }
 
@@ -135,9 +135,9 @@ start_web_if_needed() {
   fi
   log "Starting web on ${WEB_PORT}."
   if command -v setsid >/dev/null 2>&1; then
-    setsid pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
+    PORT="$WEB_PORT" setsid pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
   else
-    nohup pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
+    PORT="$WEB_PORT" nohup pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
   fi
 }
 

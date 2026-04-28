@@ -144,6 +144,13 @@ This is a documentation gate, not a requirement to mutate the current developer 
 
 Fresh-clone runtime verification is blocked while the current BuildFlow Local web runtime occupies port 3054, unless an alternate-port mode is added and documented for the free beta path.
 
+If the alternate-port mode is enabled later, use it only in a throwaway clone and keep the default public beta path on `3052/3053/3054` unchanged. Example:
+
+```bash
+AGENT_PORT=3152 RELAY_PORT=3153 WEB_PORT=3154 pnpm local:restart
+LOCAL_DASHBOARD_BASE_URL=http://127.0.0.1:3154 LOCAL_AGENT_URL=http://127.0.0.1:3152 pnpm local:verify
+```
+
 ## Gate 6: GitHub and community readiness
 
 - [ ] GitHub repo description is clear and star-worthy.
