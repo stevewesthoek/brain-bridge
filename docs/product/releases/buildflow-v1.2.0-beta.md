@@ -35,6 +35,9 @@ BuildFlow Local is the public GitHub beta target. BuildFlow Managed is later and
 - Fresh-clone verification guidance is documented to keep the current runtime untouched.
 - GitHub issue templates and a Local-first contributing guide are in place.
 
+## Demo
+- Dashboard screenshot: [`docs/product/assets/buildflow-local-beta-dashboard.png`](../assets/buildflow-local-beta-dashboard.png)
+
 ## Known limitations
 - The beta still depends on the user following the documented Local setup.
 - Managed/SaaS is a future path, not part of the free GitHub release.
