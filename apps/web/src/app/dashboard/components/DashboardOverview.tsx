@@ -1,6 +1,7 @@
 import {
   getActiveContextLabel,
-  getDisabledSourceCount,
+  getAgentHealthClassName,
+  getAgentHealthLabel,
   getFailedSourceCount,
   getIndexingSourceCount,
   getReadySourceCount,
@@ -10,30 +11,44 @@ import type { ActiveSourcesMode, KnowledgeSource, WriteMode } from '@buildflow/s
 
 type DashboardOverviewProps = {
   loading: boolean
+  agentConnected: boolean
   sources: KnowledgeSource[]
   activeMode: ActiveSourcesMode
   writeMode: WriteMode
   onManageSources: () => void
   onAddSource: () => void
+  onOpenHandoff: () => void
 }
 
 export function DashboardOverview({
   loading,
+  agentConnected,
   sources,
   activeMode,
   writeMode,
   onManageSources,
-  onAddSource
+  onAddSource,
+  onOpenHandoff
 }: DashboardOverviewProps) {
   const enabledCount = sources.filter(s => s.enabled).length
   const readyCount = getReadySourceCount(sources)
   const failedCount = getFailedSourceCount(sources)
   const indexingCount = getIndexingSourceCount(sources)
+  const sourceCountLabel = sources.length === 1 ? '1 source' : `${sources.length} sources`
+  const enabledCountLabel = enabledCount === 1 ? '1 enabled' : `${enabledCount} enabled`
+  const activeModeLabel = getActiveContextLabel(activeMode)
+  const writeModeLabel = getWriteModeLabel(writeMode)
+  const nextAction =
+    sources.length === 0
+      ? 'Add your first source'
+      : readyCount > 0
+        ? 'Open Handoff'
+        : 'Review readiness'
 
   return (
     <div className="space-y-4">
       {loading ? (
-        <div className="bg-white rounded-lg border border-slate-200 dark:border-slate-800 dark:bg-slate-900/70 p-12">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
           <div className="flex items-center justify-center">
             <div className="text-center">
               <div className="inline-block mb-3">
@@ -45,100 +60,95 @@ export function DashboardOverview({
           </div>
         </div>
       ) : (
-        <>
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-5 py-5 text-white shadow-sm dark:border-slate-800">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">
-                <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5">BuildFlow Local</span>
-                <span className="text-slate-400">Public GitHub beta</span>
-              </div>
-              <div className="max-w-3xl space-y-2">
-                <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                  Turn local notes, repos, and prompts into a structured execution packet.
-                </h2>
-                <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-[15px]">
-                  Add a source, review the dashboard, and copy a handoff prompt for Codex or Claude Code.
-                  This local-first flow stays on the user&apos;s machine and is the default free GitHub path.
+        <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white shadow-sm dark:border-slate-800">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">
+            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5">BuildFlow Local</span>
+            <span className="text-slate-400">Public GitHub beta</span>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <h2 className="max-w-3xl text-[1.8rem] font-semibold tracking-tight text-white sm:text-[2rem] leading-[1.08]">
+              Turn local notes into a ready-to-run execution packet.
+            </h2>
+            <p className="max-w-3xl text-sm leading-6 text-slate-300 sm:text-[15px]">
+              BuildFlow Local stays on the user&apos;s machine. Connect sources, check readiness, and move directly into plan or handoff when the workspace is ready.
+            </p>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-200">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5">
+              <span className={`h-2 w-2 rounded-full ${getAgentHealthClassName(agentConnected)}`} />
+              {getAgentHealthLabel(agentConnected)}
+            </span>
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">{readyCount} ready sources</span>
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">
+              {sources.length} total / {enabledCount} enabled
+            </span>
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">{activeModeLabel}</span>
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">{writeModeLabel}</span>
+            {(indexingCount > 0 || failedCount > 0) && (
+              <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 text-amber-100">
+                {indexingCount > 0 ? `${indexingCount} indexing` : `${failedCount} failed`}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-slate-100 font-medium">
+                  {sources.length === 0
+                    ? 'Add your first source to make the dashboard actionable.'
+                    : readyCount > 0
+                      ? 'Ready sources are indexed and available to ChatGPT.'
+                      : 'Enable and index a source to make it ready.'}
+                </p>
+                <p className="mt-1 text-slate-300">
+                  {sourceCountLabel} · {enabledCountLabel} · {indexingCount > 0 ? `${indexingCount} indexing` : 'No indexing'} · {failedCount > 0 ? `${failedCount} failed` : 'No failures'}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">1. Connect a source</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">2. Review readiness</span>
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">3. Copy a handoff prompt</span>
-              </div>
+              <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200">
+                {readyCount} ready
+              </span>
             </div>
           </div>
 
-          {/* Status Row: At-a-glance stack health */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <div className="flex items-center justify-between gap-6">
-              <div className="flex-1">
-                <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-2 dark:text-slate-400">Stack status</h3>
-                <div className="flex items-baseline gap-4">
-                  <div>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{readyCount}</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400">ready sources</div>
-                  </div>
-                  {indexingCount > 0 && (
-                    <div>
-                      <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">{indexingCount}</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">indexing</div>
-                    </div>
-                  )}
-                  {failedCount > 0 && (
-                    <div>
-                      <div className="text-lg font-semibold text-red-600 dark:text-red-400">{failedCount}</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">failed</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="border-l border-slate-200 dark:border-slate-800 pl-6 text-right">
-                <div className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-1 dark:text-slate-400">Mode</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">{getActiveContextLabel(activeMode)}</div>
-                <div className="text-xs text-slate-600 mt-1 dark:text-slate-400">{getWriteModeLabel(writeMode)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Source Summary: Compact table */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-3 dark:text-slate-400">Sources</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                <span className="text-slate-600 dark:text-slate-400">Total</span>
-                <span className="font-semibold text-slate-900 dark:text-slate-50">{sources.length}</span>
-              </div>
-              <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                <span className="text-slate-600 dark:text-slate-400">Enabled</span>
-                <span className="font-semibold text-slate-900 dark:text-slate-50">{enabledCount}</span>
-              </div>
-              {enabledCount === 0 && sources.length > 0 && (
-                <div className="mt-3 p-2 rounded bg-amber-50 border border-amber-200 dark:border-amber-900 dark:bg-amber-950/20">
-                  <p className="text-xs text-amber-800 dark:text-amber-200">No sources enabled. Enable sources to search.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex gap-2">
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={onManageSources}
-              className="flex-1 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+              className="flex-1 rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-white"
             >
               Manage Sources
             </button>
             <button
               type="button"
               onClick={onAddSource}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+              className="flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
             >
               Add Source
             </button>
+            <button
+              type="button"
+              onClick={onOpenHandoff}
+              className="flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
+            >
+              Open Handoff
+            </button>
           </div>
-        </>
+
+          <div className="mt-4 rounded-xl border border-slate-700/70 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
+            <span className="font-medium text-slate-100">Next:</span> {nextAction}. Keep BuildFlow Local on the machine for the free GitHub beta path.
+          </div>
+
+          {(indexingCount > 0 || failedCount > 0) && (
+            <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-50">
+              {indexingCount > 0 && <span>{indexingCount} source{indexingCount === 1 ? '' : 's'} indexing. </span>}
+              {failedCount > 0 && <span>{failedCount} source{failedCount === 1 ? '' : 's'} failed. </span>}
+              Review sources before presenting the dashboard in screenshots or handoffs.
+            </div>
+          )}
+        </section>
       )}
     </div>
   )

@@ -333,18 +333,16 @@ Keep all services healthy on ports 3052, 3053, 3054.`
 
               {activeDashboardSection === 'overview' && (
                 <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
-                  <div className="space-y-4">
-                    <DashboardOverview
-                      loading={loading}
-                      sources={sources}
-                      activeMode={activeMode}
-                      writeMode={writeMode}
-                      onManageSources={() => setActiveDashboardSection('sources')}
-                      onAddSource={() => setActiveDashboardSection('sources')}
-                    />
-                    <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} variant="compact" />
-                    <ExecutionFlowPreview />
-                  </div>
+                  <DashboardOverview
+                    loading={loading}
+                    agentConnected={agentConnected}
+                    sources={sources}
+                    activeMode={activeMode}
+                    writeMode={writeMode}
+                    onManageSources={() => setActiveDashboardSection('sources')}
+                    onAddSource={() => setActiveDashboardSection('sources')}
+                    onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                  />
                 </div>
               )}
 

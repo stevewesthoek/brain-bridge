@@ -12,14 +12,30 @@ export function InsightPanel({ loading, error, sourceCount, section }: InsightPa
   let items: { label: string; value: string; color?: string }[] = []
 
   if (section === 'overview') {
-    title = 'Stack Status'
+    title = 'Local beta path'
     items = error
-      ? [{ label: 'Issue', value: 'Agent connection failed', color: 'text-red-600 dark:text-red-400' }]
+      ? [
+          { label: '1. Sources', value: 'Reconnect the agent', color: 'text-red-600 dark:text-red-400' },
+          { label: '2. Plan', value: 'Retry after sources are available' },
+          { label: '3. Handoff', value: 'Keep the free GitHub path local-first' }
+        ]
       : loading
-        ? [{ label: 'State', value: 'Loading...', color: 'text-blue-600 dark:text-blue-400' }]
+        ? [
+            { label: '1. Sources', value: 'Loading workspace...', color: 'text-blue-600 dark:text-blue-400' },
+            { label: '2. Plan', value: 'Open when the agent connects' },
+            { label: '3. Handoff', value: 'Copy the prompt when ready' }
+        ]
         : sourceCount === 0
-          ? [{ label: 'Action', value: 'Add your first source', color: 'text-amber-600 dark:text-amber-400' }]
-          : [{ label: 'State', value: 'Ready', color: 'text-emerald-600 dark:text-emerald-400' }]
+          ? [
+              { label: '1. Sources', value: 'Add your first source', color: 'text-amber-600 dark:text-amber-400' },
+              { label: '2. Plan', value: 'Review readiness after indexing' },
+              { label: '3. Handoff', value: 'BuildFlow Local stays on your machine' }
+            ]
+          : [
+              { label: '1. Sources', value: 'Manage sources' },
+              { label: '2. Plan', value: 'Review plan or open Handoff' },
+              { label: '3. Handoff', value: 'Local-first and free for GitHub users' }
+            ]
   } else if (section === 'sources') {
     title = 'Status Meanings'
     items = [
@@ -51,14 +67,14 @@ export function InsightPanel({ loading, error, sourceCount, section }: InsightPa
 
   return (
     <div className="w-96 border-l border-slate-200 bg-slate-50 overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
-      <div className="p-6 space-y-4">
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">{title}</h2>
-        <div className="space-y-3">
+      <div className="p-5 space-y-3">
+        <h2 className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.22em] dark:text-slate-400">{title}</h2>
+        <div className="space-y-2">
           {items.map((item, idx) => (
-            <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-white border border-slate-200 dark:border-slate-800 dark:bg-slate-900/70">
+            <div key={idx} className="rounded-xl border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">{item.label}</div>
-                <div className={`text-sm font-medium ${item.color || 'text-slate-900 dark:text-slate-50'}`}>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{item.label}</div>
+                <div className={`mt-1 text-sm font-medium leading-6 ${item.color || 'text-slate-900 dark:text-slate-50'}`}>
                   {item.value}
                 </div>
               </div>
