@@ -126,6 +126,21 @@ Required docs before public beta:
 - [ ] Failure messages guide the user to `pnpm local:status` or `pnpm local:verify`.
 - [ ] Fresh clone test is performed in a clean folder.
 
+### Fresh clone verification plan
+
+Use a separate throwaway clone for the public beta verification path so the current working BuildFlow Local runtime stays untouched.
+
+Recommended sequence:
+
+1. clone the repo into a new empty folder
+2. run `pnpm install`
+3. run the documented Local start command from the README
+4. open `http://127.0.0.1:3054/dashboard`
+5. confirm the dashboard loads, sources can be added, and the local health surfaces are visible
+6. run the documented verification commands after the first start
+
+This is a documentation gate, not a requirement to mutate the current developer runtime.
+
 ## Gate 6: GitHub and community readiness
 
 - [ ] GitHub repo description is clear and star-worthy.
