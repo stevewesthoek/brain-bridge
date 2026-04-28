@@ -46,6 +46,29 @@ export function DashboardOverview({
         </div>
       ) : (
         <>
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-5 py-5 text-white shadow-sm dark:border-slate-800">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">
+                <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5">BuildFlow Local</span>
+                <span className="text-slate-400">Public GitHub beta</span>
+              </div>
+              <div className="max-w-3xl space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                  Turn local notes, repos, and prompts into a structured execution packet.
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-[15px]">
+                  Add a source, review the dashboard, and copy a handoff prompt for Codex or Claude Code.
+                  This local-first flow stays on the user&apos;s machine and is the default free GitHub path.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">1. Connect a source</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">2. Review readiness</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">3. Copy a handoff prompt</span>
+              </div>
+            </div>
+          </div>
+
           {/* Status Row: At-a-glance stack health */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
             <div className="flex items-center justify-between gap-6">
