@@ -1,139 +1,122 @@
 BuildFlow
 
-Turn ideas into execution packets tailored to your actual local toolchain.
+BuildFlow is a local-first planning and handoff layer for AI-native builders.
+It connects a Custom GPT to your real repositories and notes so it can inspect, read, plan, and safely write back to connected local sources.
 
-BuildFlow helps solo developers and indie hackers go from a rough idea to a structured, execution-ready plan they can use with Codex CLI, Claude Code, or any IDE workflow.
+If you already think in ChatGPT and build in Codex CLI, Claude Code, or your IDE, BuildFlow is the bridge that keeps the work grounded in your actual repo state.
 
-It starts with your real local context — your repositories, notes, docs, methods, and project files — then helps you:
+## Who it is for
 
-* clarify the idea
-* scan your actual local toolchain
-* generate a blueprint and phased plan
-* produce execution packets and prompts
-* hand everything off into the coding tool you already use
+BuildFlow is for solo developers, indie hackers, founder-operators, and small teams that want AI help without giving up local control.
 
-Think in ChatGPT. Build anywhere.
+It is most useful when you want to:
 
-BuildFlow is a local-first, open-source planning and handoff layer for AI-native builders.
+- inspect the files that actually exist in a repo
+- read exact local source files or search then read
+- turn a rough idea into a structured execution packet
+- safely write repo-local changes when policy allows
+- preflight a write before changing anything
 
-For the public GitHub beta, start with the Local path and the beta release note:
+## Public beta path
 
-- Local quickstart: `pnpm install` -> `pnpm local:restart` -> `http://127.0.0.1:3054/dashboard`
-- Beta release note: [`docs/product/releases/buildflow-v1.2.1-beta.md`](docs/product/releases/buildflow-v1.2.1-beta.md)
-- Beta gate: [`docs/product/beta-release-gate.md`](docs/product/beta-release-gate.md)
-- Managed/SaaS is later and out of scope unless it directly blocks Local beta readiness.
+For the public GitHub beta, use the Local path:
 
-## Current status
+1. `pnpm install`
+2. `pnpm local:restart`
+3. Open `http://127.0.0.1:3054/dashboard`
 
-BuildFlow v1.0 is the stable Custom GPT Actions baseline.
+The beta release note is here:
 
-### Product modes
+- [`docs/product/releases/buildflow-v1.2.11-beta.md`](docs/product/releases/buildflow-v1.2.11-beta.md)
 
-BuildFlow now has two product modes:
+## What v1.2.11-beta adds
 
-1. **BuildFlow Local** - the free GitHub version. It is fully self-hosted and runs on the user's own machine.
-2. **BuildFlow Managed** - the paid/future SaaS path. It uses BuildFlow-operated managed relay infrastructure.
+BuildFlow v1.2.11-beta expands safe repo-local writing beyond docs-only workflows.
 
-BuildFlow Local is the default for free GitHub users. It should be documented as a true self-hosted setup: the user owns the local agent, web app, relay, and any endpoint, tunnel, or domain they choose to expose.
+It adds:
 
-BuildFlow Managed is the convenience path for managed relay and hosted workflows. Dokploy staging exists for validating that managed path, but it is not a universal replacement for local/self-hosted BuildFlow.
+- a repo-agnostic `repo_app_write` policy
+- normal app-code roots such as `src/**`, `app/**`, `components/**`, `lib/**`, `prisma/**`, `scripts/**`, `tests/**`, and related paths
+- `dryRun` / `preflight` checks before writing
+- structured write errors for blocked or confirmation-required paths
+- writable source metadata, including `writeProfile` and `writePolicy`
+- verified writes that only count as complete after `verified:true`
+- continued blocking for secrets, traversal, generated output, and other risky paths
 
-Do not change, stop, clean up, or reconfigure Steve's local BuildFlow runtime during managed relay work. Steve's current local configuration remains protected and should not be cleaned up unless an explicit later decision says so.
+## Safety model
 
-`apps/web/.env.local` and Steve's current local `BUILDFLOW_ACTION_TOKEN` are protected local configuration. Do not edit, reuse, regenerate, replace, or copy the local token into Dokploy.
+BuildFlow is designed to be useful without being permissive.
 
-The managed staging URL `https://buildflow-staging.prochat.tools` is used to validate BuildFlow Managed. The public `https://buildflow.prochat.tools` endpoint should be described as part of the managed path, not as the default replacement for BuildFlow Local.
+The current write policy still blocks:
 
-For canonical documentation, roadmap context, and implementation guidance, see [`docs/product/README.md`](docs/product/README.md).
+- `.env` and `.env.*`
+- private keys and credential-like files
+- path traversal and absolute paths outside the repo
+- `.git/**`
+- `node_modules/**`
+- `.next/**`
+- `dist/**`
+- `build/**`
+- `coverage/**`
 
-Why BuildFlow?
+Some paths still require explicit confirmation, including lockfiles, GitHub workflows, `LICENSE`, Prisma migrations, and package dependency changes.
 
-Most AI workflows break between thinking and doing.
+BuildFlow only treats a write as successful when the response includes `verified:true`.
 
-You can reason through an idea in ChatGPT, but the moment you move into implementation, the workflow usually falls apart. You still have to rebuild context in your coding tool, turn rough thinking into structured tasks, figure out what your local machine can actually do, and keep everything aligned across chats, files, repos, and terminals.
+## How to use with a Custom GPT
 
-BuildFlow fixes that handoff.
+When the OpenAPI action schema changes:
 
-It turns a planning session into a reusable local execution packet tailored to the repo, machine, and tools you actually have.
+1. Reimport or paste the updated schema in the GPT editor.
+2. Save and update the GPT action definition.
+3. Start a new chat if the old action definition was cached.
+4. Restart BuildFlow only when the runtime code changed.
 
-What makes BuildFlow different?
+The canonical schema lives in:
 
-* Local-first context — Your files stay on your machine. BuildFlow works with your local repos, notes, and markdown knowledge sources.
-* Toolchain-aware planning — BuildFlow detects the tools and environment you actually have installed and adapts the plan accordingly.
-* Execution packets — It turns ideas into structured local artifacts: phases, tasks, prompts, decisions, and status files.
-* Works with your existing tools — Use Codex CLI, Claude Code, Cursor, VS Code, or any workflow you already prefer.
-* Open-source and inspectable — The packet format is file-based, transparent, and easy to understand.
-* Free to try — The local workflow is the core product, not a teaser.
+- [`docs/openapi.chatgpt.json`](docs/openapi.chatgpt.json)
+- [`https://buildflow.prochat.tools/api/openapi`](https://buildflow.prochat.tools/api/openapi)
 
-Who is it for?
+The GPT instructions live in:
 
-BuildFlow is built for:
+- [`docs/CUSTOM_GPT_INSTRUCTIONS.md`](docs/CUSTOM_GPT_INSTRUCTIONS.md)
 
-* solo developers who want more structure from AI planning
-* indie hackers moving from idea to implementation quickly
-* founder-operators who think in ChatGPT but build with local tools
-* AI-native builders who want better handoff between reasoning and execution
+## What this beta can and cannot do
 
-If you already use ChatGPT to think and Codex / Claude / your IDE to build, BuildFlow is designed for you.
+It can:
 
-What BuildFlow does
+- inspect connected sources
+- read exact files
+- search then read
+- write allowed repo-local files
+- preflight a write with `dryRun` / `preflight`
+- return structured policy errors when a path is blocked
 
-✅ Loads local context — Search and read across connected local knowledge sources
-✅ Guides planning — Capture the idea through a Blueprint-style planning flow
-✅ Scans your environment — Detect available executors, runtimes, package managers, deployment tools, and repo signals
-✅ Generates execution packets — Write structured local artifacts into a standard folder
-✅ Creates per-tool prompts — Generate copy-ready prompts for Codex CLI and Claude Code
-✅ Shows progress in a dashboard — Visualize plans, packets, phases, and execution timeline
-✅ Keeps files local — No cloud sync of your project files
+It cannot:
 
-What BuildFlow does NOT do
+- bypass the policy
+- write secrets or traversal paths
+- write generated/vendor/runtime directories
+- claim success without `verified:true`
+- run git actions through BuildFlow tools
+- broadly delete, move, or rename files
 
-❌ Replace your coding tool — BuildFlow is the planning and handoff layer, not a full IDE agent replacement
-❌ Upload your repo to a hosted SaaS by default — The core workflow is local-first
-❌ Promise perfect automation — v1 is designed for reliable handoff, not fully autonomous execution
-❌ Hide everything behind a paywall — The free local product is meant to be genuinely useful
+## Quick start
 
-Core workflow
+BuildFlow Local runs on your machine.
 
-1. Start with an idea in ChatGPT
-2. BuildFlow loads local context from your repos, notes, and docs
-3. BuildFlow captures the blueprint
-4. BuildFlow scans your local toolchain and repo
-5. BuildFlow generates an execution packet
-6. You copy a tool-specific prompt into Codex CLI, Claude Code, or your IDE
-7. BuildFlow tracks progress in the dashboard
+1. Clone the repo
+2. Run `pnpm install`
+3. Run `pnpm local:restart`
+4. Open `http://127.0.0.1:3054/dashboard`
 
-Example execution packet
+If you already have a local setup, use the beta release note and the Custom GPT import guide as the canonical paths for the current beta surface.
 
-BuildFlow writes structured local artifacts like these:
+## Product docs
 
-.buildflow/
-  blueprint/
-    session.json
-    summary.md
-    capability-profile.json
-    repo-profile.json
-  plan/
-    overview.md
-    phases.json
-    tasks.json
-    acceptance-criteria.md
-  prompts/
-    codex/
-      phase-01.txt
-    claude/
-      phase-01.txt
-  execution/
-    active-run.json
-    timeline.jsonl
-    status.json
-  artifacts/
-    decisions.md
-    risks.md
+For the canonical product index and release history, see [`docs/product/README.md`](docs/product/README.md).
 
-This means your planning output is no longer trapped inside one chat. It becomes a portable, inspectable handoff format your local tools can use.
-
-Architecture
+## Architecture
 
 BuildFlow runs three services locally:
 
@@ -167,215 +150,10 @@ BuildFlow runs three services locally:
          │ • notes                                │
          │ • docs                                 │
          │ • skills / methods                     │
-         │ • .buildflow execution packets           │
+         │ • .buildflow execution packets         │
          └────────────────────────────────────────┘
 
-Two execution modes
+Two execution modes:
 
-direct-agent (default):
-
-* Web forwards requests directly to the local agent (3052)
-* Simplest setup for local-only use
-* No relay needed
-* BUILDFLOW_BACKEND_MODE=direct-agent
-
-relay-agent:
-
-* Web routes through relay (3053) to the agent via WebSocket
-* Enables device coordination and bearer token auth
-* Designed for more advanced and future hosted workflows
-* BUILDFLOW_BACKEND_MODE=relay-agent
-
-Quick Start
-
-If you are a new GitHub user trying BuildFlow Local for the public beta, use this path first:
-
-1. `pnpm install`
-2. `pnpm local:restart`
-3. Open `http://127.0.0.1:3054/dashboard`
-
-This is the default free/local path. BuildFlow Managed and `buildflow.prochat.tools` are separate, later SaaS paths and are not required for the public GitHub beta.
-
-When the dashboard opens, focus on:
-
-- Overview: local health and current mode
-- Sources: add and manage local repositories or folders
-- Plan: inspect the current blueprint or execution packet
-- Handoff: copy the prompt for Codex or Claude Code
-- Settings: adjust local behavior and preferences
-
-1. Clone & install
-
-git clone https://github.com/stevewesthoek/buildflow
-cd buildflow
-pnpm install
-
-2. Start the local services
-
-**Option A: Using the production-grade orchestrator (recommended):**
-```bash
-./buildflow-orchestrator.sh start
-```
-
-**Option A2: Reliability-safe local stack helper:**
-```bash
-pnpm local:restart
-```
-
-**Option B: Manual dev mode (for development):**
-```bash
-export BUILDFLOW_ACTION_TOKEN=$(openssl rand -hex 32)
-export LOCAL_AGENT_URL="http://127.0.0.1:3052"
-pnpm dev
-```
-
-Either approach starts:
-
-* Agent on http://localhost:3052 (local CLI server)
-* Relay on http://localhost:3053 (Docker bridge, requires OrbStack)
-* Web on http://localhost:3054 (Next.js dashboard)
-
-Reliability rule for the web service:
-
-* For dashboard work, use `pnpm local:rebuild-web` when the local web server may already be running.
-* For throwaway-clone beta checks without relay startup, use `pnpm local:verify:dashboard-only`.
-* Never run `pnpm --dir apps/web build` while `pnpm --dir apps/web dev` is already running on port `3054`.
-* If you build manually, stop web on `3054` first, clear `apps/web/.next` only if stale, rebuild, restart web, then run `pnpm local:verify`.
-* Verify in this order before handing off:
-  * `http://127.0.0.1:3052/health`
-  * `http://127.0.0.1:3053/health`
-  * `http://127.0.0.1:3054/api/openapi`
-  * `http://127.0.0.1:3054/api/actions/status`
-  * `https://buildflow.prochat.tools/api/openapi`
-  * `https://buildflow.prochat.tools/api/actions/status`
-
-For orchestrator features like fact-checking, atomic operations, and graceful shutdown, use Option A.
-For comprehensive documentation, see `ORCHESTRATOR_GUIDE.md`.
-
-3. Connect your local source(s)
-
-Point BuildFlow at a local repo, markdown folder, notes vault, or workspace you want to plan with.
-
-For now, source setup is managed in the current local flow. The BuildFlow UX builds on top of that foundation.
-
-4. Set up your Custom GPT
-
-1. Create a new Custom GPT in ChatGPT
-2. Import the combined OpenAPI schema from `https://buildflow.prochat.tools/api/openapi`
-   - **Migration note:** today this URL is Steve's local BuildFlow endpoint. During Dokploy staging tests, use `https://buildflow-staging.prochat.tools/api/openapi` for the staging Custom GPT. Do not switch the production Custom GPT back to `buildflow.prochat.tools` until Steve explicitly approves Phase 4.
-3. Set authentication to Bearer token, using your `BUILDFLOW_ACTION_TOKEN`
-4. Test with a simple prompt like:
-    * “Search my local project context for notes about pricing”
-    * “Help me turn this idea into a phased implementation plan”
-
-First things to try
-
-Try one of these prompts after setup:
-
-"Search my local context for everything related to my SaaS idea and summarize the current direction."
-"Help me turn this idea into a phased implementation plan for Codex CLI."
-"Read my local strategy docs and create a build-ready task breakdown."
-"Search my repo and notes, then create a local execution plan for the next phase."
-
-Privacy & security
-
-Local-first by design:
-
-* your files stay on your machine
-* indexing and scanning happen locally
-* ChatGPT only receives the results and content explicitly returned through the bridge
-
-Current security guarantees:
-
-* path traversal prevention
-* extension filtering
-* append-only write flows where applicable
-* bearer token authentication
-* audit logging
-* user-controlled local runtime
-
-For Custom GPTs, use only the combined import URL above. The lower-level `/api/actions/*` endpoints remain available for internal/debug use, but they are not the recommended GPT import surface.
-
-Current limitations
-
-BuildFlow is early and evolving.
-
-Current limitations include:
-
-* some product language and internals may still reference BuildFlow while the project transitions to BuildFlow
-* the strongest v1 workflow is planning + packet generation + handoff, not full autonomous execution
-* multi-device and team workflows are future work
-* semantic search and richer packet templates are planned
-* the current setup is still more builder-focused than beginner-friendly
-
-Roadmap
-
-Near term
-
-* BuildFlow rebrand and docs update
-* Blueprint Wizard flow
-* local capability scan
-* execution packet generator
-* packet visualization in dashboard
-* per-tool prompt generation
-
-Later
-
-* richer executor integrations
-* live timeline improvements
-* better template packs
-* hosted control plane for BuildFlow Pro
-* team workflows
-
-Why try it now?
-
-Because the core loop is already useful today:
-
-Plan in ChatGPT. Generate a packet. Build with the tools you already use.
-
-If you care about:
-
-* local-first AI workflows
-* better planning-to-execution handoff
-* AI-native developer tooling
-* structured execution instead of messy copy-paste
-
-then BuildFlow is worth trying now.
-
-It is early, but the product direction is clear and the workflow is inspectable.
-
-For testers & contributors
-
-BuildFlow is early stage and actively looking for:
-
-* testers
-* bug reports
-* feedback on the packet format
-* feedback on the best Codex / Claude / IDE handoff workflow
-* contributors interested in local-first AI tooling
-
-Ways to help
-
-* ⭐ Star the repo if the direction is interesting
-* open an issue with what broke or confused you
-* share your preferred Codex / Claude / IDE workflow
-* suggest better packet structures or dashboard views
-* contribute docs, fixes, scans, templates, or integrations
-
-Development
-
-pnpm install
-pnpm dev
-pnpm type-check
-pnpm test
-pnpm build
-
-Support & feedback
-
-* Issues & bugs: GitHub Issues
-* Questions & ideas: GitHub Discussions
-* Roadmap / docs: repo docs and future BuildFlow docs
-
-License
-
-MIT — free to use, modify, and distribute
+- `direct-agent` uses the local agent on port 3052.
+- `relay-agent` routes through the relay on port 3053.

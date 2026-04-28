@@ -135,6 +135,13 @@ function ensureSchemaRules(schema) {
       })
     }
   }
+
+  const writeArtifactSchema = schema.paths?.['/api/actions/write-artifact']?.post?.requestBody?.content?.['application/json']?.schema?.properties || {}
+  const applyChangeSchema = schema.paths?.['/api/actions/apply-file-change']?.post?.requestBody?.content?.['application/json']?.schema?.properties || {}
+  assert(Object.prototype.hasOwnProperty.call(writeArtifactSchema, 'dryRun'), 'writeBuildFlowArtifact must accept dryRun')
+  assert(Object.prototype.hasOwnProperty.call(writeArtifactSchema, 'preflight'), 'writeBuildFlowArtifact must accept preflight')
+  assert(Object.prototype.hasOwnProperty.call(applyChangeSchema, 'dryRun'), 'applyBuildFlowFileChange must accept dryRun')
+  assert(Object.prototype.hasOwnProperty.call(applyChangeSchema, 'preflight'), 'applyBuildFlowFileChange must accept preflight')
 }
 
 function ensureConsequentialFlags(schema) {

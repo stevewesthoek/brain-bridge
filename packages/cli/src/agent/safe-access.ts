@@ -10,10 +10,18 @@ export type WritePolicySummary = {
   allowAppend: boolean
   allowPatch: boolean
   allowCreateParentDirectories: boolean
+  allowDelete: boolean
+  allowMove: boolean
+  allowRename: boolean
   allowedRoots: string[]
   blockedGlobs: string[]
+  confirmationRequiredGlobs: string[]
   protectedGlobs: string[]
+  blockedContentPatterns: string[]
   maxWriteBytes: number
+  maxCreateBytes: number
+  maxOverwriteBytes: number
+  maxPatchTargetBytes: number
 }
 
 export type WriteValidationErrorCode =
@@ -32,10 +40,14 @@ export type WriteValidationErrorCode =
   | 'PATH_TRAVERSAL_BLOCKED'
   | 'ABSOLUTE_PATH_BLOCKED'
   | 'SECRET_PATH_BLOCKED'
+  | 'SECRET_PATTERN_BLOCKED'
+  | 'GENERATED_FILE_BLOCKED'
+  | 'LOCKFILE_WRITE_BLOCKED'
   | 'BINARY_FILE_BLOCKED'
   | 'FILE_TOO_LARGE'
   | 'INVALID_ENCODING'
   | 'VERIFY_FAILED'
+  | 'REQUIRES_EXPLICIT_CONFIRMATION'
 
 export type WriteValidationError = {
   code: WriteValidationErrorCode
@@ -64,22 +76,46 @@ export type WriteValidationResult =
       policy: WritePolicySummary
     }
 
+const ENV_TEMPLATE_FILES = new Set([
+  '.env.example',
+  '.env.sample',
+  '.env.template',
+  '.env.local.example',
+  '.env.development.example',
+  '.env.production.example'
+])
+
 const BLOCKED_WRITE_PATTERNS = [
-  /\.env(\..*)?$/i,
   /\.pem$/i,
   /\.key$/i,
+  /\.crt$/i,
+  /\.p12$/i,
+  /\.pfx$/i,
+  /\.ppk$/i,
+  /(^|\/)id_rsa$/i,
+  /(^|\/)id_dsa$/i,
+  /(^|\/)id_ed25519$/i,
+  /(^|\/)secrets(\/|$)/i,
+  /(^|\/)secret(\/|$)/i,
+  /(^|\/)credentials(\/|$)/i,
+  /(^|\/)[^/]*private_key[^/]*$/i,
+  /(^|\/)[^/]*credential[^/]*$/i,
+  /(^|\/)[^/]*token[^/]*$/i,
   /(^|\/)\.git(\/|$)/i,
   /(^|\/)node_modules(\/|$)/i,
   /(^|\/)\.next(\/|$)/i,
   /(^|\/)dist(\/|$)/i,
   /(^|\/)build(\/|$)/i,
   /(^|\/)coverage(\/|$)/i,
-  /(^|\/)package-lock\.json$/i,
-  /(^|\/)pnpm-lock\.yaml$/i,
-  /(^|\/)yarn\.lock$/i,
-  /(^|\/)bun\.lockb$/i,
-  /(^|\/)id_rsa$/i,
-  /(^|\/)id_ed25519$/i
+  /(^|\/)generated(\/|$)/i,
+  /(^|\/)vendor(\/|$)/i,
+  /(^|\/)\.cache(\/|$)/i,
+  /(^|\/)\.turbo(\/|$)/i,
+  /(^|\/)\.vercel(\/|$)/i,
+  /(^|\/)\.npm(\/|$)/i,
+  /(^|\/)\.yarn(\/|$)/i,
+  /(^|\/)\.pnpm-store(\/|$)/i,
+  /(^|\/)\.prisma\/client(\/|$)/i
 ]
 
 const SAFE_ROOT_WRITE_FILES = new Set([
@@ -90,10 +126,41 @@ const SAFE_ROOT_WRITE_FILES = new Set([
   'LICENSE',
   'ROADMAP.md',
   'SECURITY.md',
-  'CODE_OF_CONDUCT.md'
+  'CODE_OF_CONDUCT.md',
+  '.env.example',
+  '.env.sample',
+  '.env.template',
+  '.env.local.example',
+  '.env.development.example',
+  '.env.production.example'
 ])
 
 const SAFE_WRITE_ROOTS = [
+  'src',
+  'app',
+  'components',
+  'lib',
+  'pages',
+  'server',
+  'client',
+  'shared',
+  'features',
+  'modules',
+  'utils',
+  'hooks',
+  'services',
+  'styles',
+  'types',
+  'test',
+  'tests',
+  '__tests__',
+  'e2e',
+  'playwright',
+  'cypress',
+  'prisma',
+  'scripts',
+  'bin',
+  'tools',
   'docs',
   'docs/product',
   'docs/product/releases',
@@ -109,9 +176,11 @@ const SAFE_WRITE_ROOTS = [
   '.buildflow'
 ]
 
-const PROTECTED_FILES = new Set(['package.json', 'docker-compose.yml'])
+const PROTECTED_FILES = new Set(['docker-compose.yml'])
 const BLOCKED_DIRECTORY_NAMES = new Set(['node_modules', '.next', 'dist', 'build', 'coverage', '.git'])
 const ALLOWED_DOTFILES = new Set(['.github', '.env.example', '.gitignore', '.buildflow', '.nvmrc', '.prettierrc', '.eslintrc'])
+const CONFIRMATION_REQUIRED_GLOBS = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', '.github/**', 'LICENSE', 'prisma/migrations/**']
+const BLOCKED_CONTENT_PATTERNS = ['BEGIN RSA PRIVATE KEY', 'BEGIN OPENSSH PRIVATE KEY', 'BEGIN EC PRIVATE KEY', 'ghp_', 'github_pat_', 'sk_live_', 'rk_live_', 'xoxb-', 'AKIA', 'AIza']
 
 export function isSafeRelativePath(relativePath: string): boolean {
   if (!relativePath || relativePath.includes('..') || relativePath.startsWith('/')) return false
@@ -129,17 +198,25 @@ export function getDefaultWritePolicy(): WritePolicySummary {
     allowAppend: true,
     allowPatch: true,
     allowCreateParentDirectories: true,
-    allowedRoots: ['*.md', 'docs/**', 'plans/**', 'notes/**', 'artifacts/**', '.buildflow/**', 'package.json', 'docker-compose.yml'],
+    allowDelete: false,
+    allowMove: false,
+    allowRename: false,
+    allowedRoots: ['src/**', 'app/**', 'components/**', 'lib/**', 'pages/**', 'server/**', 'client/**', 'shared/**', 'features/**', 'modules/**', 'utils/**', 'hooks/**', 'services/**', 'styles/**', 'types/**', 'test/**', 'tests/**', '__tests__/**', 'e2e/**', 'playwright/**', 'cypress/**', 'prisma/**', 'scripts/**', 'bin/**', 'tools/**', '*.md', '*.mdx', 'docs/**', 'plans/**', 'notes/**', 'artifacts/**', '.buildflow/**', 'README.md', 'CHANGELOG.md', 'CLAUDE.md', 'decision-log.md', 'LICENSE', 'package.json', 'docker-compose.yml', 'Dockerfile', 'next.config.*', 'vite.config.*', 'nuxt.config.*', 'remix.config.*', 'astro.config.*', 'tsconfig.json', 'jsconfig.json', 'tailwind.config.*', 'postcss.config.*', 'components.json', 'eslint.config.*', 'prettier.config.*', '.prettierrc', '.prettierrc.*', 'vitest.config.*', 'jest.config.*', 'playwright.config.*', 'cypress.config.*', 'nixpacks.toml', 'turbo.json', 'pnpm-workspace.yaml', '.env.example', '.env.sample', '.env.template', '.env.local.example', '.env.development.example', '.env.production.example'],
     blockedGlobs: ['.env', '.env.*', '**/*.pem', '**/*.key', '**/id_rsa', '**/id_ed25519', '.git/**', 'node_modules/**', '.next/**', 'dist/**', 'build/**', 'coverage/**'],
+    confirmationRequiredGlobs: CONFIRMATION_REQUIRED_GLOBS,
     protectedGlobs: ['package.json', 'docker-compose.yml'],
-    maxWriteBytes: 1_000_000
+    blockedContentPatterns: BLOCKED_CONTENT_PATTERNS,
+    maxWriteBytes: 1_000_000,
+    maxCreateBytes: 200_000,
+    maxOverwriteBytes: 300_000,
+    maxPatchTargetBytes: 1_000_000
   }
 }
 
 function isWithinAllowedRoots(normalized: string): boolean {
   if (!normalized) return false
   if (!normalized.includes('/') && SAFE_ROOT_WRITE_FILES.has(normalized)) return true
-  if (normalized.endsWith('.md') || normalized.endsWith('.txt') || normalized.endsWith('.json')) return true
+  if (normalized.endsWith('.md') || normalized.endsWith('.mdx') || normalized.endsWith('.txt') || normalized.endsWith('.json') || normalized.endsWith('.ts') || normalized.endsWith('.tsx') || normalized.endsWith('.js') || normalized.endsWith('.jsx') || normalized.endsWith('.mjs') || normalized.endsWith('.cjs') || normalized.endsWith('.cts') || normalized.endsWith('.mts') || normalized.endsWith('.css') || normalized.endsWith('.scss') || normalized.endsWith('.sass') || normalized.endsWith('.html') || normalized.endsWith('.sql') || normalized.endsWith('.prisma') || normalized.endsWith('.graphql') || normalized.endsWith('.gql') || normalized.endsWith('.yaml') || normalized.endsWith('.yml') || normalized.endsWith('.toml') || normalized.endsWith('.sh') || normalized.endsWith('.bash') || normalized.endsWith('.zsh')) return true
   return SAFE_WRITE_ROOTS.some(root => normalized === root || normalized.startsWith(`${root}/`))
 }
 
@@ -149,6 +226,9 @@ function classifyBlockedPath(normalized: string): { code: WriteValidationErrorCo
   }
   if (normalized.includes('..')) {
     return { code: 'PATH_TRAVERSAL_BLOCKED', reason: 'path_traversal', message: 'Path traversal outside the repo is blocked.', hint: 'Use a normalized path within the connected source root.' }
+  }
+  if (ENV_TEMPLATE_FILES.has(path.basename(normalized))) {
+    return null
   }
   if (/(\.env(\..*)?)$/i.test(normalized) || /(^|\/)\.env(\..*)?$/i.test(normalized)) {
     return { code: 'SECRET_PATH_BLOCKED', reason: 'secret_path', message: 'Files that may contain secrets are blocked.', hint: 'Choose a documentation path instead of an environment file.' }
@@ -165,12 +245,36 @@ function classifyBlockedPath(normalized: string): { code: WriteValidationErrorCo
   return null
 }
 
+function matchesGlob(pattern: string, value: string): boolean {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '::DOUBLESTAR::').replace(/\*/g, '[^/]*').replace(/::DOUBLESTAR::/g, '.*')
+  return new RegExp(`^${escaped}$`, 'i').test(value)
+}
+
+function buildConfirmationError(reason: string, hint: string): WriteValidationError {
+  return { code: 'REQUIRES_EXPLICIT_CONFIRMATION', message: 'This change requires explicit confirmation.', userMessage: 'BuildFlow needs explicit confirmation before making this change.', reason, hint }
+}
+
+function isConfirmationRequiredPath(normalizedPath: string): boolean {
+  return CONFIRMATION_REQUIRED_GLOBS.some(pattern => matchesGlob(pattern, normalizedPath))
+}
+
+function isDependencyChange(content?: string): boolean {
+  if (typeof content !== 'string' || !content.trim()) return false
+  try {
+    const parsed = JSON.parse(content) as Record<string, unknown>
+    return Boolean(parsed.dependencies || parsed.devDependencies || parsed.peerDependencies || parsed.optionalDependencies)
+  } catch {
+    return false
+  }
+}
+
 export function validateWriteTarget(params: {
   sourceId?: string
   requestedPath: string
   changeType: WriteChangeType
   sourceRoot?: string
   allowCreateParentDirectories?: boolean
+  content?: string
 }): WriteValidationResult {
   const policy = getDefaultWritePolicy()
   const requestedPath = params.requestedPath || ''
@@ -193,6 +297,37 @@ export function validateWriteTarget(params: {
 
   if (!isWithinAllowedRoots(normalizedPath)) {
     return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: { code: 'WRITE_PATH_BLOCKED', message: 'This path is blocked by the source write policy.', userMessage: 'BuildFlow can read this file, but the current write policy blocks changes to this path.', reason: 'path_not_allowed', hint: 'Choose an allowed docs path or update the source write policy.' } }
+  }
+
+  if (isConfirmationRequiredPath(normalizedPath)) {
+    return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: buildConfirmationError('confirmation_required_path', 'Explicitly confirm before editing lockfiles, GitHub workflows, LICENSE, or Prisma migrations.') }
+  }
+
+  if (normalizedPath === 'package.json') {
+    if (typeof params.content === 'string' && isDependencyChange(params.content)) {
+      return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: buildConfirmationError('dependency_change', 'Explicitly confirm dependency changes before editing package.json.') }
+    }
+    if (typeof params.content === 'string') {
+      try {
+        JSON.parse(params.content)
+      } catch {
+        return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: { code: 'INVALID_ENCODING', message: 'Package.json content must be valid JSON.', userMessage: 'BuildFlow could not parse package.json content.', reason: 'invalid_json', hint: 'Provide valid JSON before writing package.json.' } }
+      }
+    }
+  }
+
+  if (typeof params.content === 'string') {
+    const byteLength = Buffer.byteLength(params.content, 'utf8')
+    const maxBytes = params.changeType === 'create' ? policy.maxCreateBytes : params.changeType === 'overwrite' ? policy.maxOverwriteBytes : policy.maxPatchTargetBytes
+    if (byteLength > maxBytes) {
+      return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: { code: 'FILE_TOO_LARGE', message: 'The write exceeds the configured size limit.', userMessage: 'BuildFlow is not allowed to write content this large without a smaller change.', reason: 'content_too_large', hint: 'Reduce the file size or split the change into smaller edits.' } }
+    }
+    if (BLOCKED_CONTENT_PATTERNS.some(pattern => params.content.includes(pattern))) {
+      return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: { code: 'SECRET_PATTERN_BLOCKED', message: 'The content looks like it contains a secret.', userMessage: 'BuildFlow will not write content that looks like a real secret or private key.', reason: 'blocked_content_pattern', hint: 'Replace secrets with placeholders such as [REDACTED] or <token>.' } }
+    }
+    if (/[\u0000]/.test(params.content)) {
+      return { ok: false, requestedPath, normalizedPath, sourceRootRelativePath, policy, error: { code: 'BINARY_FILE_BLOCKED', message: 'Binary content is blocked by policy.', userMessage: 'BuildFlow only writes text files with the general repo-write profile.', reason: 'binary_content', hint: 'Use a text-based file or a dedicated binary upload path.' } }
+    }
   }
 
   if (params.changeType === 'create' && !policy.allowCreate) {

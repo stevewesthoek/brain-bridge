@@ -8,6 +8,7 @@ type NormalizedSource = {
   active: boolean
   type?: string
   writable?: boolean
+  writeProfile?: string
   writePolicy?: Record<string, unknown>
 }
 
@@ -32,11 +33,28 @@ type WritePolicy = {
   allowAppend?: boolean
   allowPatch?: boolean
   allowCreateParentDirectories?: boolean
+  allowDelete?: boolean
+  allowMove?: boolean
+  allowRename?: boolean
   allowedRoots?: string[]
   blockedGlobs?: string[]
+  confirmationRequiredGlobs?: string[]
   protectedGlobs?: string[]
+  blockedContentPatterns?: string[]
   maxWriteBytes?: number
+  maxCreateBytes?: number
+  maxOverwriteBytes?: number
+  maxPatchTargetBytes?: number
 }
+
+const ENV_TEMPLATE_FILES = new Set([
+  '.env.example',
+  '.env.sample',
+  '.env.template',
+  '.env.local.example',
+  '.env.development.example',
+  '.env.production.example'
+])
 
 export async function requireExplicitSourceId(body: Record<string, unknown>, userToken?: string) {
   if (typeof body.sourceId === 'string' && body.sourceId.length > 0) {
@@ -73,7 +91,22 @@ function matchesAny(patterns: unknown, value: string): boolean {
   return patterns.some(pattern => typeof pattern === 'string' && pattern.length > 0 && matchesWildcard(pattern, value))
 }
 
-function classifyBlockedWrite(path: string, policy?: WritePolicy) {
+function findMatchingGlob(patterns: unknown, value: string): string | undefined {
+  if (!Array.isArray(patterns)) return undefined
+  return patterns.find(pattern => typeof pattern === 'string' && pattern.length > 0 && matchesWildcard(pattern, value)) as string | undefined
+}
+
+function isDependencyChange(content?: string): boolean {
+  if (typeof content !== 'string' || !content.trim()) return false
+  try {
+    const parsed = JSON.parse(content) as Record<string, unknown>
+    return Boolean(parsed.dependencies || parsed.devDependencies || parsed.peerDependencies || parsed.optionalDependencies)
+  } catch {
+    return false
+  }
+}
+
+function classifyBlockedWrite(path: string, policy?: WritePolicy, content?: string) {
   const normalized = normalizePath(path)
   if (!normalized) {
     return { code: 'WRITE_PATH_BLOCKED', message: 'This path is blocked by the source write policy.', userMessage: 'BuildFlow can read this file, but it needs a valid repo-relative path to write it.', reason: 'empty_path', hint: 'Provide a repo-relative path like docs/README.md.' }
@@ -84,8 +117,17 @@ function classifyBlockedWrite(path: string, policy?: WritePolicy) {
   if (path.startsWith('/')) {
     return { code: 'ABSOLUTE_PATH_BLOCKED', message: 'Absolute paths outside the repo are blocked.', userMessage: 'BuildFlow can only write inside the connected source root.', reason: 'absolute_path', hint: 'Use a repo-relative path inside the source root.' }
   }
+  if (ENV_TEMPLATE_FILES.has(normalized.split('/').pop() || '')) {
+    return null
+  }
   if (normalized.split('/').some(part => part === '.git' || part === 'node_modules' || part === '.next' || part === 'dist' || part === 'build' || part === 'coverage')) {
     return { code: 'PROTECTED_PATH', message: 'This file or directory is protected by policy.', userMessage: 'BuildFlow is not allowed to write to protected runtime or dependency directories.', reason: 'protected_directory', hint: 'Choose a docs path or update the source policy if intentional.' }
+  }
+  if (normalized === 'package.json' && isDependencyChange(content)) {
+    return { code: 'REQUIRES_EXPLICIT_CONFIRMATION', message: 'This change requires explicit confirmation.', userMessage: 'BuildFlow needs explicit confirmation before making this change.', reason: 'dependency_change', hint: 'Explicitly confirm dependency changes before editing package.json.' }
+  }
+  if (matchesAny(policy?.confirmationRequiredGlobs, normalized)) {
+    return { code: 'REQUIRES_EXPLICIT_CONFIRMATION', message: 'This change requires explicit confirmation.', userMessage: 'BuildFlow needs explicit confirmation before making this change.', reason: 'confirmation_required_path', hint: 'Explicitly confirm before editing lockfiles, GitHub workflows, LICENSE, or Prisma migrations.' }
   }
   if (matchesAny(policy?.blockedGlobs, normalized)) {
     return { code: 'SECRET_PATH_BLOCKED', message: 'This path is blocked because it may contain secrets.', userMessage: 'BuildFlow will not write to secret-like files such as .env or private key paths.', reason: 'blocked_glob', hint: 'Use a docs or project note path instead.' }
@@ -116,13 +158,14 @@ function normalizeSourceRecord(source: Record<string, unknown>): NormalizedSourc
   const active = source.active === true
   const type = typeof source.type === 'string' && source.type.trim() ? source.type : undefined
   const writable = typeof source.writable === 'boolean' ? source.writable : undefined
+  const writeProfile = typeof source.writeProfile === 'string' && source.writeProfile.trim() ? source.writeProfile : undefined
   const writePolicy = source.writePolicy && typeof source.writePolicy === 'object' ? source.writePolicy as Record<string, unknown> : undefined
   const indexed = source.indexed === true
   const indexStatus = typeof source.indexStatus === 'string' && source.indexStatus.trim() ? source.indexStatus : undefined
   const indexedFileCount = typeof source.indexedFileCount === 'number' ? source.indexedFileCount : undefined
   const lastIndexedAt = typeof source.lastIndexedAt === 'string' && source.lastIndexedAt.trim() ? source.lastIndexedAt : undefined
   const searchable = typeof source.searchable === 'boolean' ? source.searchable : (indexStatus ?? (indexed ? 'ready' : 'pending')) === 'ready'
-  return { id, label, enabled, active, ...(type ? { type } : {}), ...(writable !== undefined ? { writable } : {}), ...(writePolicy ? { writePolicy } : {}), ...(indexed !== undefined ? { indexed } : {}), ...(indexStatus ? { indexStatus } : {}), ...(indexedFileCount !== undefined ? { indexedFileCount } : {}), ...(lastIndexedAt ? { lastIndexedAt } : {}), ...(searchable !== undefined ? { searchable } : {}) }
+  return { id, label, enabled, active, ...(type ? { type } : {}), ...(writable !== undefined ? { writable } : {}), ...(writeProfile ? { writeProfile } : {}), ...(writePolicy ? { writePolicy } : {}), ...(indexed !== undefined ? { indexed } : {}), ...(indexStatus ? { indexStatus } : {}), ...(indexedFileCount !== undefined ? { indexedFileCount } : {}), ...(lastIndexedAt ? { lastIndexedAt } : {}), ...(searchable !== undefined ? { searchable } : {}) }
 }
 
 function normalizeSourcesList(sourcesPayload: unknown) {
@@ -162,6 +205,7 @@ function normalizeContextResult(sourcesPayload: unknown, activePayload: unknown,
     active: activeIds.has(source.id) || source.active === true,
     ...(source.type ? { type: source.type } : {}),
     ...(source.writable !== undefined ? { writable: source.writable } : {}),
+    ...(source.writeProfile ? { writeProfile: source.writeProfile } : {}),
     ...(source.writePolicy ? { writePolicy: source.writePolicy } : {})
   }))
 
@@ -270,7 +314,10 @@ async function preflightWrite(body: Record<string, unknown>, userToken?: string)
   const sourceMap = await loadSourceMap(userToken)
   const source = sourceId ? sourceMap.map.get(sourceId) : sourceMap.sources[0]
   const policy = (source?.writePolicy || {}) as WritePolicy
-  const blocked = classifyBlockedWrite(path, policy)
+  const normalizedPath = normalizePath(path)
+  const blocked = classifyBlockedWrite(path, policy, typeof body.content === 'string' ? body.content : undefined)
+  const matchedAllowGlob = findMatchingGlob(policy?.allowedRoots, normalizedPath)
+  const matchedBlockGlob = findMatchingGlob(policy?.blockedGlobs, normalizedPath) || findMatchingGlob(policy?.confirmationRequiredGlobs, normalizedPath) || findMatchingGlob(policy?.protectedGlobs, normalizedPath)
   if (blocked) {
     return {
       status: 403,
@@ -280,9 +327,12 @@ async function preflightWrite(body: Record<string, unknown>, userToken?: string)
       sourceId: source?.id || sourceId || '',
       path,
       requestedPath: path,
-      normalizedPath: normalizePath(path),
-      sourceRootRelativePath: normalizePath(path),
+      normalizedPath,
+      sourceRootRelativePath: normalizedPath,
       changeType,
+      matchedAllowGlob,
+      matchedBlockGlob,
+      requiresConfirmation: blocked.code === 'REQUIRES_EXPLICIT_CONFIRMATION',
       error: { ...blocked, policy }
     }
   }
@@ -292,11 +342,12 @@ async function preflightWrite(body: Record<string, unknown>, userToken?: string)
     verified: false,
     sourceId: source?.id || sourceId || '',
     requestedPath: path,
-    normalizedPath: normalizePath(path),
-    sourceRootRelativePath: normalizePath(path),
+    normalizedPath,
+    sourceRootRelativePath: normalizedPath,
     changeType,
     wouldCreateParentDirectories: true,
     wouldWrite: true,
+    matchedAllowGlob,
     policy
   }
 }
@@ -318,6 +369,7 @@ export async function listBuildFlowSources(userToken?: string) {
       indexStatus: source.indexStatus ?? (source.searchable ? 'ready' : 'pending'),
       searchable: source.searchable === true,
       writable: source.writable === true,
+      writeProfile: source.writeProfile,
       writePolicy: source.writePolicy
     }))
   }

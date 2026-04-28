@@ -13,7 +13,30 @@ const sourceItemSchema = {
     indexStatus: { type: 'string' },
     searchable: { type: 'boolean' },
     writable: { type: 'boolean' },
-    writePolicy: { type: 'object', additionalProperties: true }
+    writeProfile: { type: 'string' },
+    writePolicy: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        allowCreate: { type: 'boolean' },
+        allowOverwrite: { type: 'boolean' },
+        allowAppend: { type: 'boolean' },
+        allowPatch: { type: 'boolean' },
+        allowCreateParentDirectories: { type: 'boolean' },
+        allowDelete: { type: 'boolean' },
+        allowMove: { type: 'boolean' },
+        allowRename: { type: 'boolean' },
+        allowedRoots: { type: 'array', items: { type: 'string' } },
+        blockedGlobs: { type: 'array', items: { type: 'string' } },
+        confirmationRequiredGlobs: { type: 'array', items: { type: 'string' } },
+        protectedGlobs: { type: 'array', items: { type: 'string' } },
+        blockedContentPatterns: { type: 'array', items: { type: 'string' } },
+        maxWriteBytes: { type: 'integer' },
+        maxCreateBytes: { type: 'integer' },
+        maxOverwriteBytes: { type: 'integer' },
+        maxPatchTargetBytes: { type: 'integer' }
+      }
+    }
   },
   required: ['id', 'label', 'enabled', 'active', 'indexStatus', 'searchable']
 }

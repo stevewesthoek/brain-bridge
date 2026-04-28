@@ -1,55 +1,33 @@
 # BuildFlow Docs
 
-BuildFlow v1.0 is the current stable baseline for the Custom GPT Actions surface.
+BuildFlow is a local-first planning and handoff layer for AI-native builders. It connects a Custom GPT to local repos and notes so it can inspect, read, plan, and safely write when policy allows.
 
-This directory is the canonical documentation path for BuildFlow planning, release context, and future work.
+## Canonical product references
 
-## Canonical docs
+- [`README.md`](../../README.md)
+- [`docs/product/releases/buildflow-v1.2.11-beta.md`](./releases/buildflow-v1.2.11-beta.md)
+- [`docs/product/releases/custom-gpt-actions-v1.0.md`](./releases/custom-gpt-actions-v1.0.md)
+- [`docs/CUSTOM_GPT_INSTRUCTIONS.md`](../CUSTOM_GPT_INSTRUCTIONS.md)
+- [`docs/openapi.chatgpt/README.md`](../openapi.chatgpt/README.md)
 
-- [Product README](../../README.md)
-- [Roadmap](./roadmap.md)
-- [Implementation plan](./implementation-plan.md)
-- [BuildFlow v1.0 release note](./releases/custom-gpt-actions-v1.0.md)
-- [BuildFlow v1.2.1-beta release note](./releases/buildflow-v1.2.1-beta.md)
-- [Custom GPT instructions](../CUSTOM_GPT_INSTRUCTIONS.md)
-- [Custom GPT OpenAPI import guide](../openapi.chatgpt/README.md)
+## Current beta scope
 
-## Additional product docs
+BuildFlow v1.2.11-beta adds a repo-agnostic `repo_app_write` profile for safe repo-local app-code work.
 
-- [Launch strategy](./launch-strategy.md)
-- [v1.2.0-beta release gate](./beta-release-gate.md)
-- [Custom GPT connection architecture](./custom-gpt-connection-architecture.md) — Architecture decision for Local vs Managed modes
-- [Custom GPT endpoint model and self-hosting setup](./custom-gpt-self-hosting-model.md) — User setup guide for local and managed paths
-- [Dokploy relay deployment plan](./dokploy-relay-deployment-plan.md) — Managed relay infrastructure guide
-- [Dashboard design brief](./dashboard-design-brief.md)
+That beta now covers:
 
-## Source of truth hierarchy
+- inspect and read connected sources
+- plan and generate execution packets
+- verified writes for allowed repo-local files
+- `dryRun` / `preflight` checks before writes
+- structured policy errors for blocked or confirmation-required paths
+- source metadata that exposes `writable`, `writeProfile`, and `writePolicy`
 
-Use this order when resolving conflicts or deciding which document is canonical:
+## Safety model
 
-1. Release notes define stable released baselines.
-2. [`docs/product/roadmap.md`](./roadmap.md) defines current planning direction.
-3. [`docs/product/implementation-plan.md`](./implementation-plan.md) defines execution method.
-4. Root [`README.md`](../../README.md) defines public product positioning.
-5. Older phase, MVP, transition, and board docs are historical/reference unless explicitly linked as canonical.
+The beta still blocks secrets, traversal, and generated/vendor output, and it keeps confirmation gates on sensitive maintenance paths such as lockfiles, GitHub workflows, Prisma migrations, and dependency changes.
 
-### Product mode guidance
+## Release history
 
-- **BuildFlow Local** docs should be read as the default free GitHub self-hosted product.
-- **BuildFlow Managed** docs should be read as the future paid managed relay / SaaS path.
-- If a doc does not clearly say which mode it applies to, prefer the interpretation that keeps the free GitHub product truly self-hosted.
-
-## Historical/reference docs
-
-The repository contains older phase, transition, and implementation documents in the repo root and related folders.
-
-Treat those documents as historical/reference material unless they are explicitly linked here or in a canonical release note.
-
-Examples of reference material include older phase docs, transition notes, and implementation briefs that predate the current stable v1.0 baseline.
-
-## How to use this index
-
-- Read the v1.0 release note first when you need the canonical stable baseline.
-- Use the roadmap to understand the next documented phase.
-- Use the implementation plan for file-scoped task structure and lower-model execution prompts.
-- Keep documentation claims conservative unless they are backed by linked canonical sources.
+- [`v1.0`](./releases/custom-gpt-actions-v1.0.md) is the stable Custom GPT Actions baseline.
+- [`v1.2.11-beta`](./releases/buildflow-v1.2.11-beta.md) is the current beta write-policy release.

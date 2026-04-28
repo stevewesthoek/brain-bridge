@@ -28,4 +28,5 @@ The Custom GPT surface is exactly these 8 operations:
 ## Verification
 
 - Run `pnpm verify:gpt-contract` after regenerating the schema file.
-- If the root schema changes, re-import the Custom GPT actions.
+- If the root schema changes, re-import the Custom GPT actions in the OpenAI Custom GPT editor.
+- Restarting BuildFlow Local alone is not enough to update a previously imported GPT action definition.

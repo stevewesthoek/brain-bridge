@@ -92,7 +92,7 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
         port,
         vaultPath: config?.vaultPath || 'not configured',
         indexedFiles: indexer.getDocs().length,
-        version: '1.2.1-beta'
+        version: '1.2.11-beta'
       }
   })
 
@@ -595,6 +595,7 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
         lastIndexedAt: source.lastIndexedAt,
         indexError: source.indexError,
         writable: source.enabled !== false,
+        writeProfile: 'repo_app_write',
         writePolicy: getDefaultWritePolicy()
       }))
 

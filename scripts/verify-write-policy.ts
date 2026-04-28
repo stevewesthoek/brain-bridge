@@ -9,10 +9,20 @@ assert.equal(policy.allowOverwrite, true)
 assert.equal(policy.allowAppend, true)
 assert.equal(policy.allowPatch, true)
 assert.equal(policy.allowCreateParentDirectories, true)
+assert.equal(policy.allowDelete, false)
+assert.equal(policy.allowMove, false)
+assert.equal(policy.allowRename, false)
+assert(policy.allowedRoots.includes('src/**'))
+assert(policy.allowedRoots.includes('app/**'))
 assert(policy.allowedRoots.includes('*.md'))
 assert(policy.blockedGlobs.includes('.env'))
+assert(policy.confirmationRequiredGlobs.includes('LICENSE'))
 assert(policy.protectedGlobs.includes('package.json'))
+assert(policy.blockedContentPatterns.includes('BEGIN OPENSSH PRIVATE KEY'))
 assert.equal(policy.maxWriteBytes, 1000000)
+assert.equal(policy.maxCreateBytes, 200000)
+assert.equal(policy.maxOverwriteBytes, 300000)
+assert.equal(policy.maxPatchTargetBytes, 1000000)
 
 const root = path.resolve(process.cwd(), 'packages/cli')
 
@@ -22,6 +32,11 @@ if (safe.ok) {
   assert.equal(safe.normalizedPath, '.buildflow/write-policy-test.md')
 }
 
+const appSafe = validateWriteTarget({ requestedPath: 'src/lib/example.ts', changeType: 'create', sourceRoot: root, content: 'export const example = 1\n' })
+assert.equal(appSafe.ok, true)
+const envTemplate = validateWriteTarget({ requestedPath: '.env.example', changeType: 'create', sourceRoot: root, content: 'API_KEY=<your-api-key>\n' })
+assert.equal(envTemplate.ok, true)
+
 const blockedCases = [
   { requestedPath: '.env', code: 'SECRET_PATH_BLOCKED' },
   { requestedPath: '.env.local', code: 'SECRET_PATH_BLOCKED' },
@@ -30,11 +45,16 @@ const blockedCases = [
   { requestedPath: 'secrets.pem', code: 'SECRET_PATH_BLOCKED' },
   { requestedPath: 'id_rsa', code: 'SECRET_PATH_BLOCKED' },
   { requestedPath: '.git/config', code: 'PROTECTED_PATH' },
-  { requestedPath: 'node_modules/example.md', code: 'PROTECTED_PATH' }
+  { requestedPath: 'node_modules/example.md', code: 'PROTECTED_PATH' },
+  { requestedPath: 'package-lock.json', code: 'REQUIRES_EXPLICIT_CONFIRMATION' },
+  { requestedPath: '.github/workflows/build.yml', code: 'REQUIRES_EXPLICIT_CONFIRMATION' },
+  { requestedPath: 'LICENSE', code: 'REQUIRES_EXPLICIT_CONFIRMATION' },
+  { requestedPath: 'prisma/migrations/20260428_test/migration.sql', code: 'REQUIRES_EXPLICIT_CONFIRMATION' },
+  { requestedPath: 'package.json', code: 'REQUIRES_EXPLICIT_CONFIRMATION', content: JSON.stringify({ name: 'demo', version: '1.0.0', dependencies: { lodash: '^4.17.21' } }, null, 2) }
 ]
 
 for (const testCase of blockedCases) {
-  const result = validateWriteTarget({ requestedPath: testCase.requestedPath, changeType: 'create', sourceRoot: root })
+  const result = validateWriteTarget({ requestedPath: testCase.requestedPath, changeType: 'create', sourceRoot: root, content: testCase.content })
   assert.equal(result.ok, false, testCase.requestedPath)
   if (!result.ok) {
     assert.equal(result.error.code, testCase.code, testCase.requestedPath)
@@ -48,5 +68,6 @@ assert(openapiSource.includes('dryRun'))
 assert(openapiSource.includes('preflight'))
 assert(openapiSource.includes('writable'))
 assert(openapiSource.includes('writePolicy'))
+assert(openapiSource.includes('writeProfile'))
 
 console.log('write policy contract checks passed')

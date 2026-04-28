@@ -230,18 +230,90 @@
                           "writable": {
                             "type": "boolean"
                           },
+                          "writeProfile": {
+                            "type": "string"
+                          },
                           "writePolicy": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "allowCreate": {
+                                "type": "boolean"
+                              },
+                              "allowOverwrite": {
+                                "type": "boolean"
+                              },
+                              "allowAppend": {
+                                "type": "boolean"
+                              },
+                              "allowPatch": {
+                                "type": "boolean"
+                              },
+                              "allowCreateParentDirectories": {
+                                "type": "boolean"
+                              },
+                              "allowDelete": {
+                                "type": "boolean"
+                              },
+                              "allowMove": {
+                                "type": "boolean"
+                              },
+                              "allowRename": {
+                                "type": "boolean"
+                              },
+                              "allowedRoots": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "blockedGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "confirmationRequiredGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "protectedGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "blockedContentPatterns": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "maxWriteBytes": {
+                                "type": "integer"
+                              },
+                              "maxCreateBytes": {
+                                "type": "integer"
+                              },
+                              "maxOverwriteBytes": {
+                                "type": "integer"
+                              },
+                              "maxPatchTargetBytes": {
+                                "type": "integer"
+                              }
+                            }
                           }
                         },
-                  "required": [
-                    "id",
-                    "label",
-                    "enabled",
-                    "active",
-                    "indexStatus",
-                    "searchable"
-                  ]
+                        "required": [
+                          "id",
+                          "label",
+                          "enabled",
+                          "active",
+                          "indexStatus",
+                          "searchable"
+                        ]
                       }
                     }
                   },
@@ -649,6 +721,84 @@
                           },
                           "searchable": {
                             "type": "boolean"
+                          },
+                          "writable": {
+                            "type": "boolean"
+                          },
+                          "writeProfile": {
+                            "type": "string"
+                          },
+                          "writePolicy": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "allowCreate": {
+                                "type": "boolean"
+                              },
+                              "allowOverwrite": {
+                                "type": "boolean"
+                              },
+                              "allowAppend": {
+                                "type": "boolean"
+                              },
+                              "allowPatch": {
+                                "type": "boolean"
+                              },
+                              "allowCreateParentDirectories": {
+                                "type": "boolean"
+                              },
+                              "allowDelete": {
+                                "type": "boolean"
+                              },
+                              "allowMove": {
+                                "type": "boolean"
+                              },
+                              "allowRename": {
+                                "type": "boolean"
+                              },
+                              "allowedRoots": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "blockedGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "confirmationRequiredGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "protectedGlobs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "blockedContentPatterns": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "maxWriteBytes": {
+                                "type": "integer"
+                              },
+                              "maxCreateBytes": {
+                                "type": "integer"
+                              },
+                              "maxOverwriteBytes": {
+                                "type": "integer"
+                              },
+                              "maxPatchTargetBytes": {
+                                "type": "integer"
+                              }
+                            }
                           }
                         },
                         "required": [
@@ -1328,6 +1478,14 @@
                   "filename": {
                     "type": "string",
                     "description": "Optional filename."
+                  },
+                  "dryRun": {
+                    "type": "boolean",
+                    "description": "Check whether the artifact write would be allowed without writing."
+                  },
+                  "preflight": {
+                    "type": "boolean",
+                    "description": "Alias for dryRun."
                   }
                 },
                 "required": [
@@ -1351,22 +1509,10 @@
                     "status": {
                       "type": "string"
                     },
-                    "allowed": {
-                      "type": "boolean"
-                    },
                     "sourceId": {
                       "type": "string"
                     },
                     "path": {
-                      "type": "string"
-                    },
-                    "requestedPath": {
-                      "type": "string"
-                    },
-                    "normalizedPath": {
-                      "type": "string"
-                    },
-                    "sourceRootRelativePath": {
                       "type": "string"
                     },
                     "artifactType": {
@@ -1599,19 +1745,19 @@
                     "description": "Allow multiple patch matches.",
                     "default": false
                   },
-                    "reason": {
-                      "type": "string",
-                      "description": "Why the file changed."
-                    },
-                    "dryRun": {
-                      "type": "boolean",
-                      "description": "Check whether the write would be allowed without writing."
-                    },
-                    "preflight": {
-                      "type": "boolean",
-                      "description": "Alias for dryRun."
-                    }
+                  "reason": {
+                    "type": "string",
+                    "description": "Why the file changed."
                   },
+                  "dryRun": {
+                    "type": "boolean",
+                    "description": "Check whether the write would be allowed without writing."
+                  },
+                  "preflight": {
+                    "type": "boolean",
+                    "description": "Alias for dryRun."
+                  }
+                },
                 "required": [
                   "changeType",
                   "sourceId",
@@ -1665,6 +1811,15 @@
                       "type": "integer"
                     },
                     "replacements": {
+                      "type": "integer"
+                    },
+                    "matchCount": {
+                      "type": "integer"
+                    },
+                    "bytesBefore": {
+                      "type": "integer"
+                    },
+                    "bytesAfter": {
                       "type": "integer"
                     },
                     "contentHash": {
