@@ -42,6 +42,7 @@ For alternate-port verification, allow the throwaway clone to override these val
 3. Update the web package scripts so `next dev` and `next start` can respect an alternate web port when launched through the stack script or a documented wrapper.
 4. Update the verification scripts so they can read the same alternate base URLs.
 5. Document the alternate-port mode as a verification-only path for throwaway clones.
+6. Add a no-Docker relay option or a dashboard-only verification mode if a future fresh-clone test needs to avoid Docker entirely.
 
 ## Proposed throwaway-clone command sequence
 
@@ -84,3 +85,5 @@ No secrets, bearer tokens, raw env values, or full config files are included in 
 ## Next step
 
 If the team wants fresh-clone verification while the current runtime occupies `3054`, implement the alternate-port mode in the smallest possible docs-safe way, then verify it in a throwaway clone only.
+
+If Docker must be avoided for the throwaway clone, the repo still needs a separate no-Docker relay or dashboard-only verification mode before runtime verification can proceed.

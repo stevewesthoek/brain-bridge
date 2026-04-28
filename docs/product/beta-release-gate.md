@@ -151,6 +151,8 @@ AGENT_PORT=3152 RELAY_PORT=3153 WEB_PORT=3154 pnpm local:restart
 LOCAL_DASHBOARD_BASE_URL=http://127.0.0.1:3154 LOCAL_AGENT_URL=http://127.0.0.1:3152 pnpm local:verify
 ```
 
+Current blocker note: the repo still starts the relay through Docker Compose in the documented Local stack script, so a true no-Docker throwaway-clone verification path is not yet available from repo-local commands alone. A future implementation needs either a no-Docker relay path or a dashboard-only verification mode for throwaway clones.
+
 ## Gate 6: GitHub and community readiness
 
 - [ ] GitHub repo description is clear and star-worthy.
