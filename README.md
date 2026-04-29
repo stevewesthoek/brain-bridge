@@ -134,6 +134,7 @@ If you already have a local setup, use the beta release note and the Custom GPT 
 ## Product docs
 
 For the canonical product index and release history, see [`docs/product/README.md`](docs/product/README.md).
+For the public scope boundary, see [`docs/product/public-scope.md`](docs/product/public-scope.md).
 
 ## Architecture
 

@@ -5,6 +5,7 @@ BuildFlow is a local-first planning and handoff layer for AI-native builders. It
 ## Canonical product references
 
 - [`README.md`](../../README.md)
+- [`docs/product/public-scope.md`](./public-scope.md)
 - [`docs/product/releases/buildflow-v1.2.13-beta.md`](./releases/buildflow-v1.2.13-beta.md)
 - [`docs/product/releases/buildflow-v1.2.12-beta.md`](./releases/buildflow-v1.2.12-beta.md)
 - [`docs/product/releases/custom-gpt-actions-v1.0.md`](./releases/custom-gpt-actions-v1.0.md)
