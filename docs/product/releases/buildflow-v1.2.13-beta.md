@@ -29,7 +29,7 @@ The assistant can now give users clearer progress updates during longer BuildFlo
 
 ## Limitation
 
-BuildFlow cannot control ChatGPT’s native "Talking to buildflow.prochat.tools" loading label. This release improves the assistant’s own narration before and after tool calls instead.
+BuildFlow cannot control ChatGPT’s native action loading label. That label is based on the endpoint configured in the user’s Custom GPT. This release improves the assistant’s own narration before and after tool calls instead.
 
 ## Safety and privacy
 

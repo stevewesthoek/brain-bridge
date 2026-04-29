@@ -13,6 +13,8 @@ BuildFlow is a local-first planning and handoff layer for AI-native builders. It
 
 ## Current beta scope
 
+BuildFlow v1.2.13-beta is focused on the free GitHub Local path. Users run BuildFlow themselves and import their own `/api/openapi` endpoint into a ChatGPT Custom GPT. BuildFlow-managed domains belong to the future Managed product, not the default free beta.
+
 BuildFlow v1.2.13-beta adds user-facing activity feedback on top of the repo-app-maintainer capability.
 
 That beta now covers:

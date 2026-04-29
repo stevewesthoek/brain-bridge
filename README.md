@@ -44,7 +44,7 @@ It adds:
 - clear post-action summaries like "Write was verified" or "Needs confirmation"
 - the same `dryRun` / `preflight`, confirmation, and safety boundaries as before
 
-BuildFlow still cannot control ChatGPT’s native "Talking to buildflow.prochat.tools" loading label. The new feedback layer improves the assistant’s own narration before and after each action.
+BuildFlow still cannot control ChatGPT’s native action loading label, which will show the endpoint configured in your Custom GPT. The new feedback layer improves the assistant’s own narration before and after each action.
 
 ## Transparent activity feedback
 
@@ -88,10 +88,13 @@ When the OpenAPI action schema changes:
 3. Start a new chat if the old action definition was cached.
 4. Restart BuildFlow only when the runtime code changed.
 
-The canonical schema lives in:
+For the free GitHub Local path, import the OpenAPI schema from your own BuildFlow endpoint:
 
-- [`docs/openapi.chatgpt.json`](docs/openapi.chatgpt.json)
-- [`https://buildflow.prochat.tools/api/openapi`](https://buildflow.prochat.tools/api/openapi)
+- local reference file: [`docs/openapi.chatgpt.json`](docs/openapi.chatgpt.json)
+- local running endpoint: `http://127.0.0.1:3054/api/openapi`
+- public Custom GPT endpoint: `https://<your-domain-or-tunnel>/api/openapi`
+
+Do not use a BuildFlow-managed domain for the free GitHub path. Managed endpoints belong to the future BuildFlow Managed product, not the self-hosted beta.
 
 The GPT instructions live in:
 
@@ -138,11 +141,12 @@ BuildFlow runs three services locally:
 
 ```mermaid
 flowchart TD
-  Assistant["ChatGPT / Claude / Codex"] --> Actions["BuildFlow Actions API"]
-  Actions --> Web["Web dashboard<br/>3054"]
-  Actions --> Relay["Relay<br/>3053"]
-  Relay --> Agent["Local agent<br/>3052"]
-  Web --> Agent
+  GPT["ChatGPT Custom GPT<br/>user-owned action schema"] --> Endpoint["Your public BuildFlow endpoint<br/>https://&lt;your-domain-or-tunnel&gt;/api/openapi"]
+  Endpoint --> Web["BuildFlow web dashboard<br/>3054"]
+  Web --> Actions["Custom GPT action routes"]
+  Actions --> Agent["Local agent<br/>3052"]
+  Web --> Relay["Optional local relay<br/>3053"]
+  Relay --> Agent
   Agent --> Workspace["Local workspace<br/>repos · notes · docs · skills · methods"]
   Agent --> Context["Context engine<br/>inspect · search · read"]
   Agent --> Writes["Safe file operations<br/>preflight · confirmation · verified writes"]
@@ -153,19 +157,21 @@ flowchart TD
   classDef local fill:#ecfeff,stroke:#0891b2,color:#0f172a;
   classDef safe fill:#f0fdf4,stroke:#16a34a,color:#0f172a;
 
-  class Assistant,Actions entry;
-  class Web,Relay,Agent service;
+  class GPT,Endpoint entry;
+  class Web,Actions,Relay,Agent service;
   class Workspace,Context local;
   class Writes,Activity safe;
 ```
 
 Service roles:
 
+- **ChatGPT Custom GPT**: The user-created GPT that imports your BuildFlow action schema.
+- **Your public BuildFlow endpoint**: A tunnel, reverse proxy, or domain you control for Custom GPT access.
 - **Web dashboard (`3054`)**: Local UI and Custom GPT action routes.
 - **Relay (`3053`)**: Optional local routing layer for action traffic.
 - **Local agent (`3052`)**: Source indexing, context reads, packet generation, and policy-checked file operations.
 
-The agent only works inside connected local sources and applies BuildFlow’s write policy before any file change.
+The free GitHub beta is self-hosted. Your Custom GPT should call your own endpoint, and the agent only works inside connected local sources with BuildFlow’s write policy applied before any file change.
 
 Two execution modes:
 

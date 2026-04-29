@@ -1,9 +1,14 @@
 # BuildFlow Custom GPT Action Imports
 
-Import the canonical schema from:
+For the free GitHub Local path, import the schema from your own BuildFlow endpoint.
 
-- `docs/openapi.chatgpt.json`
-- or `https://buildflow.prochat.tools/api/openapi`
+Use one of these:
+
+- local reference file: `docs/openapi.chatgpt.json`
+- local running endpoint: `http://127.0.0.1:3054/api/openapi`
+- public Custom GPT endpoint you control: `https://<your-domain-or-tunnel>/api/openapi`
+
+Do not use a BuildFlow-managed domain for the free GitHub path. Managed endpoints belong to the future BuildFlow Managed product.
 
 BuildFlow v1.2.13-beta actions now return structured `activity` fields. The GPT must be instructed to surface those summaries in conversation; the schema alone does not make the assistant narrate progress.
 
