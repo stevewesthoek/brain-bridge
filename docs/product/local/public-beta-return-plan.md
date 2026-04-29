@@ -19,7 +19,7 @@
 ## Stop point
 
 - keep Local as the default public story
-- keep external product planning out of the public repo
+- keep the public repo focused only on BuildFlow Local planning
 - keep the dashboard activity feed as a future visibility enhancement after the Custom GPT narration layer
 
 ## Intent
