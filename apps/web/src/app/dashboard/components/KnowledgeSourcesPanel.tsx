@@ -1,8 +1,6 @@
 import type { FormEvent, RefObject } from 'react'
 import type { KnowledgeSource } from '@buildflow/shared'
 import {
-  getSourceActiveClassName,
-  getSourceEnabledClassName,
   getSourceIndexStatusClassName,
   getSourceIndexStatusLabel
 } from '../helpers'
@@ -156,12 +154,10 @@ export function KnowledgeSourcesPanel({
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-[minmax(0,1.6fr)_8rem_6.5rem_6rem_7rem_3rem] gap-2 border-b border-slate-200 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              <div className="grid grid-cols-[minmax(0,1.8fr)_minmax(7.5rem,9rem)_minmax(6.5rem,8rem)_2.5rem] gap-2 border-b border-slate-200 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 <span>Source</span>
-                <span>Status / files</span>
-                <span>Enabled</span>
-                <span>Active</span>
-                <span>Access</span>
+                <span>Status</span>
+                <span>Mode</span>
                 <span className="text-right">Actions</span>
               </div>
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -191,43 +187,41 @@ export function KnowledgeSourcesPanel({
                   ]
 
                   return (
-                    <article key={source.id} className="grid grid-cols-[minmax(0,1.6fr)_8rem_6.5rem_6rem_7rem_3rem] items-center gap-2 px-3 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-950/30">
+                    <article key={source.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(7.5rem,9rem)_minmax(6.5rem,8rem)_2.5rem] items-center gap-2 px-3 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-950/30">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="truncate font-medium text-slate-900 dark:text-slate-50">{source.label}</h4>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceActiveClassName(isActive)}`}>
-                            {isActive ? 'active' : 'inactive'}
-                          </span>
+                          {isActive ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> : null}
                         </div>
-                        <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">{source.path}</p>
+                        <p className="mt-0.5 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">{source.path}</p>
                       </div>
                       <div className="min-w-0 text-[11px] text-slate-600 dark:text-slate-300">
-                        <div className={`inline-flex rounded-full px-2 py-1 font-medium ${getSourceIndexStatusClassName(source.indexStatus)}`}>
+                        <span className={`font-medium ${getSourceIndexStatusClassName(source.indexStatus)}`}>
                           {getSourceIndexStatusLabel(source)}
-                        </div>
-                        <div className="mt-1 truncate text-[10px] text-slate-500 dark:text-slate-400">{source.id}</div>
+                        </span>
+                        <div className="mt-0.5 truncate font-mono text-[10px] text-slate-500 dark:text-slate-400">{source.id}</div>
                       </div>
-                      <div className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${getSourceEnabledClassName(source.enabled)}`}>
-                        {source.enabled ? 'Enabled' : 'Disabled'}
-                      </div>
-                      <div className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${getSourceActiveClassName(isActive)}`}>
-                        {isActive ? 'Active' : 'Idle'}
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {source.indexStatus === 'ready' ? 'Read' : 'Sync'}
+                      <div className="min-w-0 text-[11px] text-slate-600 dark:text-slate-300">
+                        <span className={source.enabled ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}>
+                          {source.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        <span className="mx-1 text-slate-300 dark:text-slate-600">·</span>
+                        <span className={isActive ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}>
+                          {isActive ? 'Active' : 'Idle'}
+                        </span>
                       </div>
                       <details className="relative justify-self-end">
-                        <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
-                          <span aria-hidden="true" className="text-base leading-none">⋯</span>
+                        <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                          <span aria-hidden="true" className="text-sm leading-none">⋯</span>
                         </summary>
-                        <div className="absolute right-0 top-10 z-10 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                        <div className="absolute right-0 top-10 z-10 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
                           {actions.map(action => (
                             <button
                               key={action.label}
                               type="button"
                               disabled={action.disabled}
                               onClick={action.onClick}
-                              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
+                              className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
                             >
                               {action.label}
                             </button>

@@ -517,7 +517,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                 </div>
               )}
 
-              <div className="min-h-0 flex-1 overflow-hidden p-4 lg:p-6">
+              <div className="min-h-0 flex-1 overflow-hidden p-3 lg:p-4">
                   {activeDashboardSection === 'overview' && (
                     <DashboardOverview
                       loading={loading}
