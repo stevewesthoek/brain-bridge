@@ -425,11 +425,29 @@ async function runActionSuite(baseUrl, label) {
   const applyDiskPath = path.resolve(ROOT, applyChange.json.path || applyPath)
   assert(fs.existsSync(applyDiskPath), `${label}: applied file missing on disk`)
 
+  const mkdirPath = `.buildflow/gpt-contract-smoke-${label.toLowerCase()}-${Date.now()}/nested`
+  const mkdirResult = await runStep('applyBuildFlowFileChange mkdir', () => requestJson(`${baseUrl}/api/actions/apply-file-change`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      changeType: 'mkdir',
+      sourceId: 'buildflow',
+      path: mkdirPath,
+      createParents: true,
+      reason: 'Contract smoke test mkdir'
+    })
+  }))
+  assert(mkdirResult.response.status === 200, `${label}: mkdir must return 200`)
+  assert(mkdirResult.json.verified === true, `${label}: mkdir must return verified:true`)
+  assert(fs.existsSync(path.resolve(ROOT, mkdirPath)), `${label}: mkdir target missing on disk`)
+
   for (const filePath of [artifactDiskPath, applyDiskPath]) {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
   }
   assert(!fs.existsSync(artifactDiskPath), `${label}: write artifact cleanup failed`)
   assert(!fs.existsSync(applyDiskPath), `${label}: apply-file cleanup failed`)
+  const mkdirDiskPath = path.resolve(ROOT, mkdirPath)
+  if (fs.existsSync(mkdirDiskPath)) fs.rmSync(path.dirname(mkdirDiskPath), { recursive: true, force: true })
 
   return { startedAt, finishedAt: Date.now(), steps }
 }

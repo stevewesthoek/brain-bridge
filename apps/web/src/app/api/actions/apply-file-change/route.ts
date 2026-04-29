@@ -12,10 +12,6 @@ export async function POST(request: NextRequest) {
       const data = await dispatchBuildFlowFileChange(body, auth.bearerToken)
       return NextResponse.json(data)
     }
-    if (body.dryRun !== true && body.preflight !== true) {
-      const preflight = await dispatchBuildFlowFileChange({ ...body, dryRun: true }, auth.bearerToken)
-      return NextResponse.json(preflight)
-    }
     const data = await dispatchBuildFlowFileChange(body, auth.bearerToken)
     if ('error' in (data as Record<string, unknown>)) {
       const payload = data as { error: unknown; status: number }
