@@ -232,6 +232,18 @@ function classifyBlockedWrite(path: string, policy?: WritePolicy, content?: stri
   if (normalized.split('/').some(part => part === '.git' || part === 'node_modules' || part === '.next' || part === 'dist' || part === 'build' || part === 'coverage')) {
     return { code: 'PROTECTED_PATH', message: 'This file or directory is protected by policy.', userMessage: 'BuildFlow is not allowed to write to protected runtime or dependency directories.', reason: 'protected_directory', hint: 'Choose a docs path or update the source policy if intentional.' }
   }
+  if (typeof content === 'string' && Array.isArray(policy?.blockedContentPatterns)) {
+    const matchedPattern = policy.blockedContentPatterns.find(pattern => typeof pattern === 'string' && pattern.length > 0 && content.includes(pattern))
+    if (matchedPattern) {
+      return {
+        code: 'SECRET_PATTERN_BLOCKED',
+        message: 'This content is blocked because it looks like it may contain a secret.',
+        userMessage: 'BuildFlow will not write content that looks like a token, credential, or private key.',
+        reason: 'blocked_content_pattern',
+        hint: 'Use redacted placeholders such as [REDACTED], <token>, or your-key-here instead.'
+      }
+    }
+  }
   if (normalized === 'package.json' && isDependencyChange(content)) {
     return { code: 'REQUIRES_EXPLICIT_CONFIRMATION', message: 'This change requires explicit confirmation.', userMessage: 'BuildFlow needs explicit confirmation before making this change.', reason: 'dependency_change', hint: 'Explicitly confirm dependency changes before editing package.json.' }
   }

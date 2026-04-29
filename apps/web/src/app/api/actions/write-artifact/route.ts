@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
       }
     }
     const data = await dispatchBuildFlowArtifact(body, auth.bearerToken)
+    if (body.dryRun === true || body.preflight === true) {
+      return NextResponse.json(data)
+    }
     if ('error' in (data as Record<string, unknown>)) {
       const payload = data as { error: unknown }
       const status = getSafeActionHttpStatus(payload.error)
@@ -42,9 +45,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(payload.error, { status })
       }
       return NextResponse.json({ error: payload.error }, { status })
-    }
-    if ((body.dryRun === true || body.preflight === true) && (data as { verified?: unknown }).verified === false) {
-      return NextResponse.json(data)
     }
     if ((data as { verified?: unknown }).verified !== true) {
       return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
