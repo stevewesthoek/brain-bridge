@@ -136,38 +136,36 @@ For the canonical product index and release history, see [`docs/product/README.m
 
 BuildFlow runs three services locally:
 
-┌──────────────────────────────────────────────────────────────┐
-│                  ChatGPT / Claude (via HTTPS)               │
-│      planning, reasoning, summarization, clarification      │
-└───────────────────────────┬──────────────────────────────────┘
-                            │
-                 ┌──────────┴──────────┐
-                 │                     │
-         ┌───────▼────────┐    ┌──────▼────────┐
-         │   Web (3054)   │    │ Relay (3053)  │
-         │ Next.js +      │    │ WebSocket     │
-         │ Actions/API    │    │ bridge        │
-         └───────┬────────┘    └──────┬────────┘
-                 │                    │
-                 └──────────┬─────────┘
-                            │
-                    ┌───────▼────────┐
-                    │ Agent (3052)   │
-                    │ • Context      │
-                    │ • Search/read  │
-                    │ • Scan         │
-                    │ • Packet gen   │
-                    │ • File ops     │
-                    └────────┬───────┘
-                             │
-         ┌───────────────────▼────────────────────┐
-         │ Your Local Workspace                   │
-         │ • repos                                │
-         │ • notes                                │
-         │ • docs                                 │
-         │ • skills / methods                     │
-         │ • .buildflow execution packets         │
-         └────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  Assistant["ChatGPT / Claude / Codex"] --> Actions["BuildFlow Actions API"]
+  Actions --> Web["Web dashboard<br/>3054"]
+  Actions --> Relay["Relay<br/>3053"]
+  Relay --> Agent["Local agent<br/>3052"]
+  Web --> Agent
+  Agent --> Workspace["Local workspace<br/>repos · notes · docs · skills · methods"]
+  Agent --> Context["Context engine<br/>inspect · search · read"]
+  Agent --> Writes["Safe file operations<br/>preflight · confirmation · verified writes"]
+  Agent --> Activity["Activity feedback<br/>checked · read · blocked · verified"]
+
+  classDef entry fill:#111827,stroke:#475569,color:#f8fafc;
+  classDef service fill:#0f172a,stroke:#2563eb,color:#f8fafc;
+  classDef local fill:#ecfeff,stroke:#0891b2,color:#0f172a;
+  classDef safe fill:#f0fdf4,stroke:#16a34a,color:#0f172a;
+
+  class Assistant,Actions entry;
+  class Web,Relay,Agent service;
+  class Workspace,Context local;
+  class Writes,Activity safe;
+```
+
+Service roles:
+
+- **Web dashboard (`3054`)**: Local UI and Custom GPT action routes.
+- **Relay (`3053`)**: Optional local routing layer for action traffic.
+- **Local agent (`3052`)**: Source indexing, context reads, packet generation, and policy-checked file operations.
+
+The agent only works inside connected local sources and applies BuildFlow’s write policy before any file change.
 
 Two execution modes:
 
