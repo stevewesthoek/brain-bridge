@@ -30,10 +30,10 @@ export function DashboardRail({
   const shownSources = sources.slice(0, 5)
 
   return (
-    <aside className="flex h-full min-h-0 flex-col border-r border-bf-border bg-bf-bg/95 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="shrink-0 border-b border-bf-border px-3 py-3.5 dark:border-slate-800">
+    <aside className="flex h-full min-h-0 flex-col border-r border-bf-border/80 bg-bf-bg/96 dark:border-slate-800/80 dark:bg-slate-950/78">
+      <div className="shrink-0 border-b border-bf-border/70 px-3 py-3.5 dark:border-slate-800/70">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-bf-border bg-bf-surface text-[11px] font-semibold text-bf-text dark:border-slate-800 dark:bg-slate-900 dark:text-slate-50">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-bf-border/80 bg-bf-surface text-[11px] font-semibold text-bf-text dark:border-slate-800 dark:bg-slate-900 dark:text-slate-50">
             BF
           </div>
           <div className="min-w-0">
@@ -69,13 +69,13 @@ export function DashboardRail({
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-0.5">
             {shownSources.length === 0 ? (
-              <div className="rounded-md border border-dashed border-bf-border bg-bf-subtle px-3 py-3 text-sm text-bf-muted dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+              <div className="rounded-lg border border-dashed border-bf-border/70 bg-bf-subtle px-3 py-3 text-sm text-bf-muted dark:border-slate-800/70 dark:bg-slate-950/40 dark:text-slate-300">
                 No sources yet. Add a local folder in Sources.
               </div>
             ) : (
-              <div className="divide-y divide-bf-border dark:divide-slate-800">
+              <div className="overflow-hidden rounded-lg border border-bf-border/70 bg-bf-surface/80 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)] dark:border-slate-800/70 dark:bg-slate-950/40 dark:shadow-[0_10px_24px_-20px_rgba(15,23,42,0.5)]">
                 {shownSources.map(source => (
-                  <DashboardListRow key={source.id} className="px-2">
+                  <DashboardListRow key={source.id} className="px-2.5">
                     <DashboardStatusDot tone={source.enabled ? 'good' : 'neutral'} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-medium text-bf-text dark:text-slate-50">{source.label}</div>

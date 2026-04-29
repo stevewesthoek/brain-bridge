@@ -26,6 +26,8 @@ This is a visual and information-architecture pass, not a backend rewrite.
 - Use one professional icon source or no icons at all
 - Default controls should be rectangular, not pill-shaped
 - UI text should use the system font stack; code, prompts, and paths should use JetBrains Mono or JetBrainsMono Nerd Font
+- Prefer flat panels and subtle surfaces; avoid a grid of boxed cards
+- Each data point should have one primary owner in the layout
 
 ## Layout
 
@@ -88,7 +90,7 @@ This is a visual and information-architecture pass, not a backend rewrite.
 ## Visual treatment
 
 - Reduce the number of large rounded cards
-- Prefer `rounded-xl` and `rounded-2xl`
+- Prefer `rounded-lg` and `rounded-xl`
 - Use flat panels, subtle borders, and precise spacing
 - Avoid default Tailwind admin-dashboard spacing
 - Make light mode feel intentional, not generic

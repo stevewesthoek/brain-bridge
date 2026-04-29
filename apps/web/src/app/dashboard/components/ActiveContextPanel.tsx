@@ -34,7 +34,7 @@ export function ActiveContextPanel({
 }: ActiveContextPanelProps) {
   return (
     <div className="space-y-3">
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader
           eyebrow="Context"
           title="Active context"
@@ -49,7 +49,7 @@ export function ActiveContextPanel({
                 type="button"
                 onClick={() => onSetMode(button.id)}
                 variant={active ? 'primary' : 'secondary'}
-                className="h-8 w-full justify-center text-[12px]"
+                className="h-7 w-full justify-center text-[12px]"
               >
                 {button.label}
               </DashboardButton>
@@ -65,7 +65,7 @@ export function ActiveContextPanel({
         </div>
       </DashboardPanel>
 
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Write" title="Write mode" />
         <div className="mt-4 grid gap-2">
           {writeButtons.map(button => {
@@ -76,7 +76,7 @@ export function ActiveContextPanel({
                 type="button"
                 onClick={() => onSetWriteMode(button.id)}
                 variant={active ? 'primary' : 'secondary'}
-                className="h-8 w-full justify-start px-3 text-[12px]"
+                className="h-7 w-full justify-start px-3 text-[12px]"
               >
                 {button.label}
               </DashboardButton>

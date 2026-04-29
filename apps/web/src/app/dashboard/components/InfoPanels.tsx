@@ -6,7 +6,7 @@ import { DashboardSectionHeader } from './ui/DashboardSectionHeader'
 export function InfoPanels() {
   return (
     <>
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Execution" title="Execution modes" detail="Local agent and relay remain separate." />
         <div className="mt-4 space-y-2">
           <DashboardMetaRow label="Direct" value="Local agent (3052)" className="text-[12px]" />
@@ -17,7 +17,7 @@ export function InfoPanels() {
         </p>
       </DashboardPanel>
 
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Setup" title="Local setup" detail="Keep the stack running locally." />
         <div className="mt-4 space-y-2 text-[12px] text-bf-muted">
           <div><DashboardCodeText>pnpm install</DashboardCodeText></div>

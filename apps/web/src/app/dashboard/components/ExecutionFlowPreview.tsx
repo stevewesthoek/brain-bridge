@@ -15,7 +15,7 @@ export function ExecutionFlowPreview() {
   ]
 
   return (
-    <DashboardPanel className="p-4">
+    <DashboardPanel variant="flat" className="p-4">
       <DashboardSectionHeader eyebrow="Execution" title="Execution states" detail="Progress markers used in plans and handoffs." />
       <div className="mt-4 divide-y divide-bf-border dark:divide-slate-800">
         {states.map(([label, tone]) => (

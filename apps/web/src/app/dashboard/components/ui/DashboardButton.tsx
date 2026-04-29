@@ -25,7 +25,7 @@ export function DashboardButton({
     <button
       {...props}
       className={classNames(
-        'inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950',
+        'inline-flex h-7 items-center justify-center rounded-[10px] border px-2.5 text-[12px] font-medium leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-y-px dark:focus-visible:ring-offset-slate-950',
         VARIANT_CLASSES[variant],
         className
       )}

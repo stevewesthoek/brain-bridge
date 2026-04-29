@@ -25,11 +25,11 @@ export function DashboardTopBar({
   children
 }: DashboardTopBarProps) {
   return (
-    <div className="shrink-0 border-b border-bf-border bg-bf-surface/95 backdrop-blur supports-[backdrop-filter]:bg-bf-surface/90 dark:border-slate-800 dark:bg-slate-950/95">
-      <div className="flex h-12 items-center justify-between gap-3 px-4 lg:px-5">
+    <div className="shrink-0 border-b border-bf-border/80 bg-bf-surface/96 backdrop-blur supports-[backdrop-filter]:bg-bf-surface/92 dark:border-slate-800/80 dark:bg-slate-950/96">
+      <div className="flex h-11 items-center justify-between gap-3 px-4 lg:px-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            <span className="text-slate-700 dark:text-slate-200">BuildFlow</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-bf-muted dark:text-slate-400">
+            <span className="text-bf-text dark:text-slate-200">BuildFlow</span>
             <span>·</span>
             <span>{currentSectionLabel}</span>
           </div>
@@ -37,7 +37,7 @@ export function DashboardTopBar({
 
         <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 xl:flex">
           <DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+          <span className="truncate text-[11px] font-medium text-bf-muted dark:text-slate-400">
             {getAgentHealthLabel(agentConnected)}
           </span>
         </div>
@@ -61,14 +61,14 @@ export function DashboardTopBar({
         </div>
       </div>
 
-      {statusText && (
-        <div className="border-t border-bf-border bg-bf-subtle px-5 py-2 text-[11px] dark:border-slate-800 dark:bg-slate-950/60">
+      {statusText && /error|unable|fail|disconnect/i.test(statusText) ? (
+        <div className="border-t border-bf-border/80 bg-bf-subtle px-5 py-2 text-[11px] dark:border-slate-800/80 dark:bg-slate-950/60">
           <div className="flex min-h-5 items-center gap-2 text-bf-muted dark:text-slate-300">
-            <span className={`h-1.5 w-1.5 rounded-full ${/error|unable|fail|disconnect/i.test(statusText) ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             <span className="truncate">{statusText}</span>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

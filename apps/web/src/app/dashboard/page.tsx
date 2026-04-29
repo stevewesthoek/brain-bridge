@@ -488,7 +488,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
-      <div className="h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950">
+      <div className="h-screen overflow-hidden flex flex-col bg-bf-bg dark:bg-slate-950">
         <DashboardTopBar
           currentSectionLabel={currentSectionLabel}
           agentConnected={agentConnected}
@@ -500,7 +500,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
         <DashboardShell
           leftRail={<DashboardRail activeSection={activeDashboardSection} sources={sources} onSelectSection={setActiveDashboardSection} />}
           mainContent={
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-bf-bg dark:bg-slate-950">
               {error && (
                 <div className="px-5 pt-4 lg:px-6">
                   <DashboardPanel className="border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">

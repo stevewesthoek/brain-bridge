@@ -10,7 +10,7 @@ export function DashboardListRow({ children, className }: DashboardListRowProps)
   return (
     <div
       className={classNames(
-        'flex min-h-8 items-center gap-2 border-b border-bf-border px-3 py-2 text-sm transition-colors duration-150 last:border-b-0 hover:bg-bf-subtle dark:hover:bg-slate-900/40',
+        'flex min-h-7 items-center gap-2 rounded-md px-3 py-1.5 text-[12px] transition-colors duration-150 hover:bg-bf-subtle/80 dark:hover:bg-slate-900/50',
         className
       )}
     >

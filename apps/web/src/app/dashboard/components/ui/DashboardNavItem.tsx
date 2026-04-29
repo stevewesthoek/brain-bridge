@@ -19,10 +19,10 @@ export function DashboardNavItem({
       {...props}
       type={props.type || 'button'}
       className={classNames(
-        'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950',
+        'flex h-7 w-full items-center gap-2 rounded-[10px] px-2.5 text-left text-[12px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-y-px dark:focus-visible:ring-offset-slate-950',
         active
-          ? 'bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-50'
-          : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900/70',
+          ? 'bg-bf-subtle text-bf-text dark:bg-slate-900/80 dark:text-slate-50'
+          : 'text-slate-600 hover:bg-bf-subtle/80 dark:text-slate-400 dark:hover:bg-slate-900/60',
         className
       )}
     >

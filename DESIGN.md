@@ -158,7 +158,7 @@ Do not include:
 
 Use:
 
-- shared dashboard UI primitives for buttons, panels, rows, status, and headers
+- shared dashboard UI primitives for buttons, icon buttons, panels, rows, status, and headers
 - high-quality spacing
 - precise alignment
 - restrained color
@@ -171,6 +171,8 @@ Use:
 - one consistent icon source or no icons at all
 - small dots plus plain text for secondary state
 - professional icons from one source only, or no icons if consistency cannot be maintained
+- flat panels and subtle surfaces by default; reserve stronger elevation for rare emphasis
+- a single information owner for each data point so the same state is not repeated across top bar, rail, main view, and inspector
 
 Avoid:
 
@@ -182,6 +184,7 @@ Avoid:
 - gradients as the primary design language
 - visual density that creates intimidation
 - rounded-full buttons and chips unless they are tiny dots
+- strongly boxed card grids as the default layout pattern
 
 ## Typography
 

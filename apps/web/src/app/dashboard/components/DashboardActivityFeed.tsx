@@ -22,24 +22,24 @@ const TONE_CLASSES: Record<NonNullable<DashboardActivityEntry['tone']>, string> 
 
 export function DashboardActivityFeed({ entries, emptyMessage }: DashboardActivityFeedProps) {
   return (
-    <DashboardPanel className="h-full min-h-0 overflow-hidden">
-      <div className="border-b border-bf-border px-4 py-3 dark:border-slate-800">
+    <DashboardPanel variant="flat" className="h-full min-h-0 overflow-hidden">
+      <div className="border-b border-bf-border/70 px-4 py-3 dark:border-slate-800/70">
         <DashboardSectionHeader eyebrow="Activity" title="Recent BuildFlow events" />
       </div>
       <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
         {entries.length === 0 ? (
           <div className="px-4 py-4">
-            <div className="rounded-lg border border-dashed border-bf-border bg-bf-subtle px-4 py-6 text-[13px] text-bf-muted dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+            <div className="rounded-lg border border-dashed border-bf-border/70 bg-bf-subtle/40 px-4 py-6 text-[13px] text-bf-muted dark:border-slate-800/70 dark:bg-slate-950/30 dark:text-slate-300">
               {emptyMessage}
             </div>
           </div>
         ) : (
-          <div className="divide-y divide-bf-border dark:divide-slate-800">
+          <div className="divide-y divide-bf-border/60 dark:divide-slate-800/60">
             {entries.map((entry, index) => (
-              <div key={`${entry.title}-${index}`} className="flex items-start gap-3 px-4 py-3">
+              <div key={`${entry.title}-${index}`} className="flex items-start gap-3 px-4 py-2.5 hover:bg-bf-subtle/40 dark:hover:bg-slate-900/30">
                 <DashboardStatusDot tone={entry.tone || 'neutral'} className="mt-1" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
+                  <div className="truncate text-[12px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
                   <div className={`mt-0.5 truncate text-[12px] leading-5 ${TONE_CLASSES[entry.tone || 'neutral']}`}>{entry.detail}</div>
                 </div>
               </div>

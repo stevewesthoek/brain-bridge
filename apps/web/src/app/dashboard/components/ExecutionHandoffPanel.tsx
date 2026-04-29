@@ -29,7 +29,7 @@ export function ExecutionHandoffPanel({
 }: ExecutionHandoffPanelProps) {
   return (
     <div className="flex min-h-0 flex-col gap-3">
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader
           eyebrow="Handoff"
           title="Copy-ready execution prompts"
@@ -38,7 +38,7 @@ export function ExecutionHandoffPanel({
       </DashboardPanel>
 
       <div className="grid gap-3 xl:grid-cols-2">
-        <DashboardPanel className="flex min-h-0 flex-col p-4">
+        <DashboardPanel variant="flat" className="flex min-h-0 flex-col p-4">
           <DashboardSectionHeader
             title="Codex"
             detail="Use for scoped implementation or review."
@@ -49,14 +49,14 @@ export function ExecutionHandoffPanel({
               </DashboardButton>
             }
           />
-          <div className="mt-3 rounded-lg border border-bf-border bg-bf-subtle p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <div className="mt-3 rounded-lg border border-bf-border/70 bg-bf-subtle/40 p-3 dark:border-slate-800/70 dark:bg-slate-950/30">
             <DashboardCodeText className="whitespace-pre-wrap break-words text-[12px] leading-5 text-bf-text dark:text-slate-200">
               {codexPrompt}
             </DashboardCodeText>
           </div>
         </DashboardPanel>
 
-        <DashboardPanel className="flex min-h-0 flex-col p-4">
+        <DashboardPanel variant="flat" className="flex min-h-0 flex-col p-4">
           <DashboardSectionHeader
             title="Claude Code"
             detail="Use for long-context orchestration or repo-wide work."
@@ -67,7 +67,7 @@ export function ExecutionHandoffPanel({
               </DashboardButton>
             }
           />
-          <div className="mt-3 rounded-lg border border-bf-border bg-bf-subtle p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <div className="mt-3 rounded-lg border border-bf-border/70 bg-bf-subtle/40 p-3 dark:border-slate-800/70 dark:bg-slate-950/30">
             <DashboardCodeText className="whitespace-pre-wrap break-words text-[12px] leading-5 text-bf-text dark:text-slate-200">
               {claudeCodePrompt}
             </DashboardCodeText>

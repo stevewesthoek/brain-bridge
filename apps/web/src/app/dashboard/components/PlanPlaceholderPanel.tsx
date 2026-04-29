@@ -22,7 +22,7 @@ export function PlanPlaceholderPanel({ sources, agentConnected, variant = 'full'
 
   if (variant === 'compact') {
     return (
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Plan" title="No plan loaded yet" detail="Use the next step below to begin." />
         <div className="mt-4 space-y-2">
           <DashboardMetaRow
@@ -40,7 +40,7 @@ export function PlanPlaceholderPanel({ sources, agentConnected, variant = 'full'
 
   return (
     <div className="space-y-3">
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Plan" title="Current plan" detail="No plan loaded yet." />
         <div className="mt-4 flex items-center gap-2 text-[12px] text-bf-muted">
           <DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />
@@ -50,7 +50,7 @@ export function PlanPlaceholderPanel({ sources, agentConnected, variant = 'full'
         </div>
       </DashboardPanel>
 
-      <DashboardPanel className="p-4">
+      <DashboardPanel variant="flat" className="p-4">
         <DashboardSectionHeader eyebrow="Next" title="Next action" detail="Move the workspace forward with one step." />
         <div className="mt-4 flex flex-wrap gap-2">
           <DashboardButton type="button" variant="primary">
