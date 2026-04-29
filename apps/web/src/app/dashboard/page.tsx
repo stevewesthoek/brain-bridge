@@ -58,9 +58,9 @@ const readSourceSnapshot = (): DashboardSourceSnapshot | null => {
   }
 }
 
-const writeSourceSnapshot = (snapshot: Omit<DashboardSourceSnapshot, 'savedAt'>) => {
+const saveSourceSnapshot = (snapshot: DashboardSourceSnapshot) => {
   try {
-    window.localStorage.setItem(DASHBOARD_SOURCE_CACHE_KEY, JSON.stringify({ ...snapshot, savedAt: new Date().toISOString() }))
+    window.localStorage.setItem(DASHBOARD_SOURCE_CACHE_KEY, JSON.stringify(snapshot))
   } catch {
     // Local storage is a convenience cache only. Ignore quota/private-mode failures.
   }
@@ -87,6 +87,20 @@ const fetchJsonWithRetry = async (url: string, attempts = 3): Promise<{ response
   }
 
   throw lastError instanceof Error ? lastError : new Error(String(lastError))
+}
+
+const getMutationErrorMessage = (data: any, err: unknown, fallback: string) => {
+  const fromData = typeof data?.userMessage === 'string'
+    ? data.userMessage
+    : typeof data?.message === 'string'
+      ? data.message
+      : typeof data?.error === 'string'
+        ? data.error
+        : ''
+  if (fromData) return fromData
+  if (err instanceof Error && err.message) return err.message
+  if (typeof err === 'string' && err) return err
+  return fallback
 }
 
 export default function Dashboard() {
@@ -139,11 +153,12 @@ Keep all services healthy on ports 3052, 3053, 3054.`
   }
 
   const fetchSources = async (options: FetchSourcesOptions = {}) => {
-    const blocking = options.blocking ?? (!snapshotRef.current && sources.length === 0)
-    let fetchedSources: KnowledgeSource[] = sources
-    let fetchedActiveMode: ActiveSourcesMode = activeMode
-    let fetchedActiveIds: string[] = activeSourceIds
-    let fetchedWriteMode: WriteMode = writeMode
+    const snapshot = snapshotRef.current
+    const blocking = options.blocking ?? (!snapshot && sources.length === 0)
+    let fetchedSources: KnowledgeSource[] = snapshot?.sources ?? sources
+    let fetchedActiveMode: ActiveSourcesMode = snapshot?.activeMode ?? activeMode
+    let fetchedActiveIds: string[] = snapshot?.activeSourceIds ?? activeSourceIds
+    let fetchedWriteMode: WriteMode = snapshot?.writeMode ?? writeMode
     try {
       setError(null)
       setLoadErrorDetail(null)
@@ -171,12 +186,15 @@ Keep all services healthy on ports 3052, 3053, 3054.`
         fetchedWriteMode = (writeData.writeMode as WriteMode) || 'safeWrites'
         setWriteMode(fetchedWriteMode)
       }
-      writeSourceSnapshot({
+      const nextSnapshot: DashboardSourceSnapshot = {
         sources: fetchedSources,
         activeMode: fetchedActiveMode,
         activeSourceIds: fetchedActiveIds,
-        writeMode: fetchedWriteMode
-      })
+        writeMode: fetchedWriteMode,
+        savedAt: new Date().toISOString()
+      }
+      snapshotRef.current = nextSnapshot
+      saveSourceSnapshot(nextSnapshot)
       setAgentConnected(true)
       return true
     } catch (err) {
@@ -262,8 +280,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        const details = data?.details ? ` ${data.details}` : ''
-        throw new Error(`${data?.error || `Request failed: ${response.status}`}${details}`.trim())
+        throw new Error(getMutationErrorMessage(data, null, `Request failed: ${response.status}`))
       }
 
       const refreshed = await fetchSources({ blocking: false })
@@ -272,7 +289,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       }
       return true
     } catch (err) {
-      setMutationError(String(err))
+      setMutationError(getMutationErrorMessage(null, err, 'Source action failed'))
       if (url === '/api/agent/sources/toggle' || url === '/api/agent/sources/reindex' || url === '/api/agent/sources/add' || url === '/api/agent/sources/remove' || url === '/api/agent/active-sources' || url === '/api/agent/write-mode') {
         void fetchSources({ blocking: false }).catch(() => {})
       }
@@ -286,14 +303,30 @@ Keep all services healthy on ports 3052, 3053, 3054.`
     const startedAt = Date.now()
 
     while (Date.now() - startedAt < timeoutMs) {
-      const response = await fetch('/api/agent/sources', { cache: 'no-store' })
-      const data = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(`${data?.error || `Failed to refresh sources: ${response.status}`}`)
+      let response: Response
+      let data: Record<string, unknown>
+      try {
+        ({ response, data } = await fetchJsonWithRetry('/api/agent/sources'))
+      } catch (err) {
+        const remaining = timeoutMs - (Date.now() - startedAt)
+        if (remaining <= 0) break
+        setMutationNotice('Reindex is still running; source refresh was temporarily unavailable.')
+        await sleep(Math.min(1500, remaining))
+        continue
       }
 
-      const nextSources: KnowledgeSource[] = data.sources || []
+      if (!response.ok) {
+        if ([502, 503, 504].includes(response.status)) {
+          const remaining = timeoutMs - (Date.now() - startedAt)
+          if (remaining <= 0) break
+          setMutationNotice('Reindex is still running; source refresh was temporarily unavailable.')
+          await sleep(Math.min(1500, remaining))
+          continue
+        }
+        throw new Error(getMutationErrorMessage(data, null, `Failed to refresh sources: ${response.status}`))
+      }
+
+      const nextSources = Array.isArray(data.sources) ? (data.sources as KnowledgeSource[]) : []
       setSources(nextSources)
 
       const current = nextSources.find(source => source.id === sourceId)
@@ -312,7 +345,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       }
 
       setMutationNotice(`Reindexing ${current.label || sourceId}... (${current.indexStatus || 'unknown'})`)
-      await new Promise(resolve => window.setTimeout(resolve, 1500))
+      await sleep(1500)
     }
 
     throw new Error(`Reindex timed out after ${Math.round(timeoutMs / 1000)}s for source ${sourceId}`)
