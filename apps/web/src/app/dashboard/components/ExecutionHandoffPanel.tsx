@@ -14,37 +14,37 @@ export function ExecutionHandoffPanel({
   onCopyClaude
 }: ExecutionHandoffPanelProps) {
   return (
-    <div className="flex flex-col h-full gap-4 min-h-0">
-      <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70 flex flex-col min-h-0 flex-1">
-        <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-3 dark:text-slate-400 shrink-0">Codex CLI</h3>
-        <div className="bg-slate-50 border border-slate-200 rounded p-2 mb-3 overflow-y-auto min-h-0 flex-1 dark:border-slate-800 dark:bg-slate-950/50">
-          <p className="text-xs text-slate-700 font-mono whitespace-pre-wrap dark:text-slate-300">{codexPrompt}</p>
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h3 className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Codex CLI</h3>
+        <div className="mb-3 min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+          <p className="whitespace-pre-wrap font-mono text-xs text-slate-700 dark:text-slate-300">{codexPrompt}</p>
         </div>
         <button
           type="button"
           onClick={onCopyCodex}
-          className="w-full rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white shrink-0"
+          className="shrink-0 rounded-full bg-slate-900 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           {handoffCopyStatus === 'codex-copied' ? 'Copied!' : 'Copy prompt'}
         </button>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70 flex flex-col min-h-0 flex-1">
-        <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-3 dark:text-slate-400 shrink-0">Claude Code</h3>
-        <div className="bg-slate-50 border border-slate-200 rounded p-2 mb-3 overflow-y-auto min-h-0 flex-1 dark:border-slate-800 dark:bg-slate-950/50">
-          <p className="text-xs text-slate-700 font-mono whitespace-pre-wrap dark:text-slate-300">{claudeCodePrompt}</p>
+      <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h3 className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Claude Code</h3>
+        <div className="mb-3 min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+          <p className="whitespace-pre-wrap font-mono text-xs text-slate-700 dark:text-slate-300">{claudeCodePrompt}</p>
         </div>
         <button
           type="button"
           onClick={onCopyClaude}
-          className="w-full rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white shrink-0"
+          className="shrink-0 rounded-full bg-slate-900 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           {handoffCopyStatus === 'claude-copied' ? 'Copied!' : 'Copy prompt'}
         </button>
       </div>
 
       {handoffCopyStatus !== 'idle' && (
-        <div aria-live="polite" className="p-3 rounded text-xs bg-emerald-50 border border-emerald-200 dark:border-emerald-900 dark:bg-emerald-950/20">
+        <div aria-live="polite" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs dark:border-emerald-900 dark:bg-emerald-950/20">
           {handoffCopyStatus === 'codex-copied' && (
             <p className="font-medium text-emerald-800 dark:text-emerald-200">Codex prompt copied!</p>
           )}

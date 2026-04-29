@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
-
-type DashboardSection = 'overview' | 'sources' | 'plan' | 'handoff' | 'settings'
+import { getActiveContextLabel, getWriteModeLabel } from './helpers'
 import { DashboardTopBar } from './components/DashboardTopBar'
 import { DashboardShell } from './components/DashboardShell'
 import { DashboardOverview } from './components/DashboardOverview'
@@ -15,6 +14,10 @@ import { KnowledgeSourcesPanel } from './components/KnowledgeSourcesPanel'
 import { ActiveContextPanel } from './components/ActiveContextPanel'
 import { InfoPanels } from './components/InfoPanels'
 import { InsightPanel } from './components/InsightPanel'
+import { DashboardRail } from './components/DashboardRail'
+import { DashboardActivityFeed } from './components/DashboardActivityFeed'
+
+type DashboardSection = 'overview' | 'sources' | 'activity' | 'plan' | 'handoff' | 'settings'
 
 const TERMINAL_INDEX_STATUSES = new Set(['ready', 'failed', 'disabled'])
 
@@ -31,6 +34,21 @@ type DashboardSourceSnapshot = {
 }
 
 const DASHBOARD_SOURCE_CACHE_KEY = 'buildflow-dashboard-source-snapshot'
+
+type DashboardActivityEntry = {
+  title: string
+  detail: string
+  tone?: 'neutral' | 'good' | 'warn' | 'bad'
+}
+
+const SECTION_LABELS: Record<DashboardSection, string> = {
+  overview: 'Overview',
+  sources: 'Sources',
+  activity: 'Activity',
+  plan: 'Plans',
+  handoff: 'Handoff',
+  settings: 'Settings'
+}
 
 const sleep = (ms: number) => new Promise(resolve => globalThis.setTimeout(resolve, ms))
 
@@ -64,6 +82,49 @@ const saveSourceSnapshot = (snapshot: DashboardSourceSnapshot) => {
   } catch {
     // Local storage is a convenience cache only. Ignore quota/private-mode failures.
   }
+}
+
+const buildActivityEntries = (args: {
+  loading: boolean
+  error: string | null
+  mutationError: string | null
+  mutationNotice: string | null
+  sources: KnowledgeSource[]
+  agentConnected: boolean
+  activeMode: ActiveSourcesMode
+  writeMode: WriteMode
+}): DashboardActivityEntry[] => {
+  const readyCount = args.sources.filter(source => source.enabled && source.indexStatus === 'ready').length
+  const indexingCount = args.sources.filter(source => source.enabled && source.indexStatus === 'indexing').length
+  const failedCount = args.sources.filter(source => source.enabled && source.indexStatus === 'failed').length
+  const enabledCount = args.sources.filter(source => source.enabled).length
+  const entries: DashboardActivityEntry[] = []
+
+  if (args.loading) {
+    entries.push({ title: 'Loading workspace', detail: 'BuildFlow is fetching the latest source, context, and write-mode state.', tone: 'neutral' })
+  } else if (args.agentConnected) {
+    entries.push({ title: 'Agent connected', detail: 'The local agent is available and the dashboard can refresh source state.', tone: 'good' })
+  } else {
+    entries.push({ title: 'Agent unavailable', detail: 'BuildFlow could not reach the local agent right now.', tone: 'warn' })
+  }
+
+  entries.push({ title: 'Source summary', detail: `${args.sources.length} total · ${enabledCount} enabled · ${readyCount} ready · ${indexingCount} indexing · ${failedCount} failed`, tone: readyCount > 0 ? 'good' : indexingCount > 0 ? 'warn' : 'neutral' })
+  entries.push({ title: 'Context mode', detail: `Active context is set to ${args.activeMode}.`, tone: 'neutral' })
+  entries.push({ title: 'Write mode', detail: `Current write mode: ${args.writeMode}.`, tone: 'neutral' })
+
+  if (args.mutationNotice) {
+    entries.unshift({ title: 'Dashboard notice', detail: args.mutationNotice, tone: 'good' })
+  }
+
+  if (args.mutationError) {
+    entries.unshift({ title: 'Source action error', detail: args.mutationError, tone: 'bad' })
+  }
+
+  if (args.error) {
+    entries.unshift({ title: 'Source refresh issue', detail: args.error, tone: 'warn' })
+  }
+
+  return entries.slice(0, 8)
 }
 
 const fetchJsonWithRetry = async (url: string, attempts = 3): Promise<{ response: Response; data: Record<string, unknown> }> => {
@@ -401,141 +462,129 @@ Keep all services healthy on ports 3052, 3053, 3054.`
     await mutateSources('/api/agent/write-mode', { writeMode: nextMode })
   }
 
+  const currentSectionLabel = SECTION_LABELS[activeDashboardSection]
+  const activityEntries = buildActivityEntries({
+    loading,
+    error,
+    mutationError,
+    mutationNotice,
+    sources,
+    agentConnected,
+    activeMode,
+    writeMode
+  })
+
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
       <div className="h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950">
         <DashboardTopBar
+          currentSectionLabel={currentSectionLabel}
+          activeModeLabel={getActiveContextLabel(activeMode)}
+          writeModeLabel={getWriteModeLabel(writeMode)}
+          sourceCount={sources.length}
           agentConnected={agentConnected}
           mutationError={mutationError}
           mutationNotice={mutationNotice}
           error={error}
           theme={theme}
           onToggleTheme={handleToggleTheme}
+          onRefresh={() => fetchSources({ blocking: false })}
         />
         <DashboardShell
-          leftRail={
-            <div className="w-80 border-r border-slate-200 bg-slate-50 overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
-              <div className="p-6 space-y-8">
-                <div>
-                  <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4 dark:text-slate-400">Navigation</h2>
-                  <div className="space-y-1">
-                    {(['overview', 'sources', 'plan', 'handoff', 'settings'] as const).map(section => (
-                      <button
-                        key={section}
-                        type="button"
-                        onClick={() => setActiveDashboardSection(section)}
-                        aria-current={activeDashboardSection === section ? 'page' : undefined}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                          activeDashboardSection === section
-                            ? 'bg-slate-100 text-slate-900 font-medium dark:bg-slate-900 dark:text-slate-50'
-                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900'
-                        }`}
-                      >
-                        {section.charAt(0).toUpperCase() + section.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
+          leftRail={<DashboardRail activeSection={activeDashboardSection} agentConnected={agentConnected} sources={sources} activeMode={activeMode} writeMode={writeMode} onSelectSection={setActiveDashboardSection} />}
           mainContent={
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
               {error && (
-                <div className="px-8 pt-6 shrink-0">
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
-                    <div className="flex items-start justify-between gap-4">
+                <div className="px-5 pt-4 lg:px-6">
+                  <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold text-red-900 text-sm">Unable to Load Sources</h3>
-                        <p className="text-red-700 text-sm mt-1">{error}</p>
-                        {loadErrorDetail && (
-                          <p className="text-red-600 text-xs mt-2 font-mono bg-red-100 px-2 py-1 rounded">{loadErrorDetail}</p>
-                        )}
-                        <p className="text-red-700 text-xs mt-3">
-                          Check that the BuildFlow agent is running: <code className="bg-red-100 px-1 rounded font-mono">buildflow serve</code>
-                        </p>
+                        <div className="font-semibold">Unable to load sources</div>
+                        <p className="mt-1 text-xs text-red-700 dark:text-red-200">{error}</p>
+                        {loadErrorDetail && <p className="mt-1 font-mono text-[11px] text-red-600 dark:text-red-300">{loadErrorDetail}</p>}
                       </div>
-                      <button type="button" onClick={() => fetchSources()} disabled={mutationLoading} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 shrink-0 hover:bg-red-700 transition-colors">
-                        Retry
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => fetchSources()} disabled={mutationLoading} className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-900 dark:text-red-200 dark:hover:bg-slate-800">
+                          Retry load
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {activeDashboardSection === 'overview' && (
-                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
-                  <DashboardOverview
-                    loading={loading}
-                    agentConnected={agentConnected}
-                    sources={sources}
-                    activeMode={activeMode}
-                    writeMode={writeMode}
-                    onManageSources={() => setActiveDashboardSection('sources')}
-                    onAddSource={() => setActiveDashboardSection('sources')}
-                    onOpenHandoff={() => setActiveDashboardSection('handoff')}
-                  />
-                </div>
-              )}
+              <div className="min-h-0 flex-1 overflow-hidden p-4 lg:p-6">
+                  {activeDashboardSection === 'overview' && (
+                    <DashboardOverview
+                      loading={loading}
+                      agentConnected={agentConnected}
+                      sources={sources}
+                      activeMode={activeMode}
+                      writeMode={writeMode}
+                      onManageSources={() => setActiveDashboardSection('sources')}
+                      onAddSource={() => setActiveDashboardSection('sources')}
+                      onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                    />
+                  )}
 
-              {activeDashboardSection === 'sources' && (
-                <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
-                  <KnowledgeSourcesPanel
-                    sources={sources}
-                    loading={loading}
-                    mutationLoading={mutationLoading}
-                    mutationError={mutationError}
-                    mutationNotice={mutationNotice}
-                    sourcePath={sourcePath}
-                    sourceLabel={sourceLabel}
-                    sourceId={sourceId}
-                    activeSourceIds={activeSourceIds}
-                    onAddSourceSubmit={handleAddSource}
-                    onSourcePathChange={setSourcePath}
-                    onSourceLabelChange={setSourceLabel}
-                    onSourceIdChange={setSourceId}
-                    onToggleActiveSource={toggleActiveSource}
-                    onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
-                    onReindexSource={handleReindexSource}
-                    onRemoveSource={(source) => {
-                      if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
-                        mutateSources('/api/agent/sources/remove', { sourceId: source.id })
-                      }
-                    }}
-                    addSourceFormRef={addSourceFormRef}
-                  />
-                </div>
-              )}
+                  {activeDashboardSection === 'sources' && (
+                    <KnowledgeSourcesPanel
+                      sources={sources}
+                      loading={loading}
+                      mutationLoading={mutationLoading}
+                      mutationError={mutationError}
+                      mutationNotice={mutationNotice}
+                      sourcePath={sourcePath}
+                      sourceLabel={sourceLabel}
+                      sourceId={sourceId}
+                      activeSourceIds={activeSourceIds}
+                      onAddSourceSubmit={handleAddSource}
+                      onSourcePathChange={setSourcePath}
+                      onSourceLabelChange={setSourceLabel}
+                      onSourceIdChange={setSourceId}
+                      onToggleActiveSource={toggleActiveSource}
+                      onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
+                      onReindexSource={handleReindexSource}
+                      onRemoveSource={(source) => {
+                        if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
+                          mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+                        }
+                      }}
+                      addSourceFormRef={addSourceFormRef}
+                    />
+                  )}
 
-              {activeDashboardSection === 'plan' && (
-                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
-                  <div className="space-y-4">
-                    <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
-                    <ExecutionFlowPreview />
-                  </div>
-                </div>
-              )}
+                  {activeDashboardSection === 'activity' && (
+                    <DashboardActivityFeed
+                      entries={activityEntries}
+                      emptyMessage="BuildFlow activity will appear here."
+                    />
+                  )}
 
-              {activeDashboardSection === 'handoff' && (
-                <div className="flex-1 overflow-hidden p-6 flex flex-col min-h-0">
-                  <ExecutionHandoffPanel
-                    codexPrompt={codexPrompt}
-                    claudeCodePrompt={claudeCodePrompt}
-                    handoffCopyStatus={handoffCopyStatus}
-                    onCopyCodex={() => copyToClipboard(codexPrompt, 'codex-copied')}
-                    onCopyClaude={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
-                  />
-                </div>
-              )}
+                  {activeDashboardSection === 'plan' && (
+                    <div className="space-y-4">
+                      <PlanPlaceholderPanel sources={sources} agentConnected={agentConnected} />
+                      <ExecutionFlowPreview />
+                    </div>
+                  )}
 
-              {activeDashboardSection === 'settings' && (
-                <div className="flex-1 overflow-hidden min-h-0 p-6 flex flex-col">
-                  <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2">
-                    <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
-                    <InfoPanels />
-                  </div>
+                  {activeDashboardSection === 'handoff' && (
+                    <ExecutionHandoffPanel
+                      codexPrompt={codexPrompt}
+                      claudeCodePrompt={claudeCodePrompt}
+                      handoffCopyStatus={handoffCopyStatus}
+                      onCopyCodex={() => copyToClipboard(codexPrompt, 'codex-copied')}
+                      onCopyClaude={() => copyToClipboard(claudeCodePrompt, 'claude-copied')}
+                    />
+                  )}
+
+                  {activeDashboardSection === 'settings' && (
+                    <div className="space-y-4 overflow-y-auto pr-1">
+                      <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
+                      <InfoPanels />
+                    </div>
+                  )}
                 </div>
-              )}
             </div>
           }
           rightPanel={
@@ -544,6 +593,11 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               error={error}
               sourceCount={sources.length}
               section={activeDashboardSection}
+              activeMode={activeMode}
+              writeMode={writeMode}
+              agentConnected={agentConnected}
+              sources={sources}
+              activityEntries={activityEntries}
             />
           }
         />

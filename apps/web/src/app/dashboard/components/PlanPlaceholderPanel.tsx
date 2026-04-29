@@ -9,15 +9,15 @@ type PlanPlaceholderPanelProps = {
 export function PlanPlaceholderPanel({ sources, agentConnected, variant = 'full' }: PlanPlaceholderPanelProps) {
   if (variant === 'compact') {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-2 dark:text-slate-400">Plan</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300">No plan loaded yet</p>
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Plan</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No plan loaded yet</p>
           </div>
           <div>
-            <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-2 dark:text-slate-400">Next</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Next</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               {sources.length === 0
                 ? 'Add a source'
                 : !agentConnected
@@ -32,15 +32,15 @@ export function PlanPlaceholderPanel({ sources, agentConnected, variant = 'full'
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-        <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-3 dark:text-slate-400">Current Plan</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-300">No plan loaded yet</p>
-        <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">Create a plan in ChatGPT to begin tracking it here.</p>
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Current plan</h3>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No plan loaded yet</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Create a plan in ChatGPT to begin tracking it here.</p>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-        <h3 className="text-xs uppercase font-semibold text-slate-500 tracking-wide mb-3 dark:text-slate-400">Next Action</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Next action</h3>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {sources.length === 0
             ? 'Add a knowledge source'
             : !agentConnected
