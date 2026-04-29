@@ -23,11 +23,6 @@ Please keep contributions focused on the free local-first path unless something 
 - Do not include bearer tokens, env values, or raw app JSON in issues or pull requests.
 - Redact any local configuration details before sharing logs or screenshots.
 
-## Managed work
-
-- BuildFlow Managed is paused unless it directly blocks BuildFlow Local beta readiness.
-- Do not treat Managed/SaaS work as the default contribution path right now.
-
 ## Before opening a pull request
 
 - Describe the Local beta problem or improvement clearly.

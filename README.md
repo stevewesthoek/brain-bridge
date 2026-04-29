@@ -94,7 +94,7 @@ For the free GitHub Local path, import the OpenAPI schema from your own BuildFlo
 - local running endpoint: `http://127.0.0.1:3054/api/openapi`
 - public Custom GPT endpoint: `https://<your-domain-or-tunnel>/api/openapi`
 
-Do not use a BuildFlow-managed domain for the free GitHub path. Managed endpoints belong to the future BuildFlow Managed product, not the self-hosted beta.
+Use your own BuildFlow endpoint, such as a local endpoint, tunnel, reverse proxy, or domain you control.
 
 The GPT instructions live in:
 

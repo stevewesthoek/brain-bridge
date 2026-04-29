@@ -2,19 +2,18 @@
 
 ## Status
 
-Working checklist for the public Free GitHub self-hosted beta.
+Working checklist for the public free GitHub self-hosted beta.
 
-This document does not claim that v1.2.0-beta is complete. It defines the gate that must be satisfied before BuildFlow is marketed as a public beta.
-BuildFlow Local is the release target. BuildFlow Managed / SaaS work is out of scope here unless it directly blocks the Local beta.
+This document defines the gate that must be satisfied before BuildFlow Local is marketed as a public beta.
 
 ## Release identity
 
 - **Version:** v1.2.0-beta
-- **Audience:** Free GitHub self-hosted users
+- **Audience:** free GitHub self-hosted users
 - **Primary user:** solo builders, indie hackers, AI-native developers, technical early adopters
 - **Launch promise:** Think in ChatGPT. Build anywhere.
 - **Product type:** local-first open-source planning and handoff workflow
-- **Not included:** hosted SaaS account, billing, team workspaces, cloud sync, managed execution, direct hosted executor sessions
+- **Not included:** account-based access, team workspaces, cloud sync, execution infrastructure, or direct remote sessions
 
 ## Beta readiness definition
 
@@ -30,165 +29,20 @@ The user should be able to:
 6. see source and agent readiness
 7. configure the accompanying Custom GPT
 8. search/read local context through ChatGPT
-9. create or inspect a plan/execution packet
+9. create or inspect a plan or execution packet
 10. copy a Codex or Claude Code handoff prompt
 11. recover from common failures using docs
-12. know how to ask questions, open issues, join discussions, star, and share the project
+12. know how to ask questions, open issues, contribute, star, and share the project
 
-## Critical architecture question: Custom GPT endpoint model
+## Gate focus
 
-✅ **RESOLVED** — See `docs/product/custom-gpt-connection-architecture.md` for the architecture decision.
+- keep the public docs focused on BuildFlow Local
+- keep self-hosted Custom GPT setup clear
+- keep `dryRun` / `preflight` behavior documented
+- keep safety, verification, and confirmation gates visible
+- keep launch-readiness evidence tied to local commands and local URLs only
 
-**Summary:**
-
-- **Preferred v1.2.0-beta path:** BuildFlow Local with a user-owned endpoint, tunnel, or domain
-  - User: Clone repo, generate token, start BuildFlow Local, import the schema that points at their own endpoint
-  - User data: Stays local; the user controls the endpoint and any tunnel or reverse proxy
-  - No BuildFlow Managed dependency for the free GitHub beta
-  
-- **Fallback path:** User-managed HTTPS tunnel (Cloudflare/ngrok/Tailscale) for power users
-  - Still supported and documented
-  - Optional, not required
-
-- **Relay infrastructure:** Already implemented in `packages/bridge`
-  - Device registration, WebSocket routing, action proxy, request audit
-  - Managed deployment is a later SaaS concern, not the Local beta default
-
-- **v1.2.0-beta blocker status:** NOT a blocker for Local beta
-  - Managed relay is later and optional
-  - The free GitHub beta should launch based on Local-first docs and verified local runtime behavior
-
-Beta can launch with preferred managed relay path or fallback to user-managed tunnels.
-
-## Gate 1: Product workflow
-
-- [ ] Dashboard opens at `/dashboard` after local stack start.
-- [ ] Dashboard shows agent health.
-- [ ] Dashboard shows source count and readiness.
-- [ ] User can add a local source.
-- [ ] User can enable/disable a source.
-- [ ] User can activate/deactivate a source for context.
-- [ ] User can reindex a source.
-- [ ] User can remove a source.
-- [ ] Active context mode is visible and controllable.
-- [ ] Write mode is visible and controllable.
-- [ ] Handoff panel provides Codex prompt copy.
-- [ ] Handoff panel provides Claude Code prompt copy.
-- [ ] Plan/execution packet placeholder or real state is understandable.
-- [ ] Empty state guides the user to the next action.
-- [ ] Error state explains recovery steps.
-
-## Gate 2: Dashboard quality
-
-- [ ] Fixed-viewport shell is preserved.
-- [ ] No browser/page-level scroll is used as the main navigation mechanism.
-- [ ] No essential information is clipped behind the fold at 1366×768.
-- [ ] No essential information is clipped behind the fold at 1440×900.
-- [ ] Internal scroll is used only when unavoidable: source list, settings content, prompt text, sidebars.
-- [ ] Light/dark mode toggle works.
-- [ ] Light/dark preference persists after refresh.
-- [ ] No duplicate metric surfaces confuse the user.
-- [ ] Left navigation is functional and carries the dashboard sections.
-- [ ] Right panel is useful or intentionally minimal.
-- [ ] Dashboard feels like a control center, not a document.
-
-## Gate 3: Self-hosting docs
-
-Required docs before public beta:
-
-- [ ] Root README first screen explains what BuildFlow is and who it is for.
-- [ ] Root README has one recommended quickstart path.
-- [ ] Self-hosting guide exists and is linked from README.
-- [ ] Local stack services are explained: agent 3052, relay 3053, web 3054.
-- [ ] Required prerequisites are listed: Node/pnpm and any relay/Docker/OrbStack requirement if still needed.
-- [ ] Environment variables are documented, including token setup.
-- [ ] Start, stop, restart, rebuild-web, and verify commands are documented.
-- [ ] Dashboard usage guide exists.
-- [ ] Maintenance/troubleshooting guide exists.
-- [ ] Privacy/security explanation is clear: what stays local and what is sent to ChatGPT.
-
-## Gate 4: Custom GPT setup
-
-- [ ] Accompanying Custom GPT is named and linked when available.
-- [ ] OpenAPI import path is documented.
-- [ ] Bearer token setup is documented.
-- [ ] Expected 401 without auth is documented.
-- [ ] Public `buildflow.prochat.tools` purpose is documented.
-- [ ] Self-hosted user's endpoint/tunnel requirement is documented.
-- [ ] At least one end-to-end Custom GPT setup test is performed from docs.
-- [ ] Example prompts are included.
-
-## Gate 5: Packaging and first-run simplicity
-
-- [ ] One command or very small command sequence starts the local stack.
-- [ ] Repo root is not confusing to a first-time user.
-- [ ] Package scripts are named clearly.
-- [ ] Any legacy/orchestrator scripts are documented or de-emphasized to avoid confusion.
-- [ ] Failure messages guide the user to `pnpm local:status` or `pnpm local:verify`.
-- [ ] Fresh clone test is performed in a clean folder.
-
-### Fresh clone verification plan
-
-Use a separate throwaway clone for the public beta verification path so the current working BuildFlow Local runtime stays untouched.
-
-Recommended sequence:
-
-1. clone the repo into a new empty folder
-2. run `pnpm install`
-3. run the documented Local start command from the README
-4. open `http://127.0.0.1:3054/dashboard`
-5. confirm the dashboard loads, sources can be added, and the local health surfaces are visible
-6. run the documented verification commands after the first start
-
-This is a documentation gate, not a requirement to mutate the current developer runtime.
-
-Fresh-clone runtime verification is blocked while the current BuildFlow Local web runtime occupies port 3054, unless an alternate-port mode is added and documented for the free beta path.
-
-If the alternate-port mode is enabled later, use it only in a throwaway clone and keep the default public beta path on `3052/3053/3054` unchanged. Example:
-
-```bash
-AGENT_PORT=3152 RELAY_PORT=3153 WEB_PORT=3154 pnpm local:restart
-LOCAL_DASHBOARD_BASE_URL=http://127.0.0.1:3154 LOCAL_AGENT_URL=http://127.0.0.1:3152 pnpm local:verify
-```
-
-Current blocker note: the repo still starts the relay through Docker Compose in the documented Local stack script, so a true no-Docker throwaway-clone verification path is not yet available from repo-local commands alone. A future implementation needs either a no-Docker relay path or a dashboard-only verification mode for throwaway clones.
-
-Dashboard-only throwaway-clone verification is now planned as `pnpm local:verify:dashboard-only`, which should prove `http://127.0.0.1:<WEB_PORT>/api/openapi` and `http://127.0.0.1:<WEB_PORT>/dashboard` without starting the relay.
-
-## Gate 6: GitHub and community readiness
-
-- [ ] GitHub repo description is clear and star-worthy.
-- [ ] README asks for stars and feedback without sounding desperate.
-- [ ] Issues are enabled.
-- [ ] Discussions are enabled or a clear alternative is provided.
-- [ ] Bug report issue template exists.
-- [ ] Setup/friction issue template exists.
-- [ ] Feature idea issue template exists.
-- [ ] Question/discussion template exists if using GitHub Discussions.
-- [ ] CONTRIBUTING.md exists or README has a contribution section.
-- [ ] Commit messages are clear enough for public build-in-public history.
-
-## Gate 7: Marketing assets
-
-- [ ] Screenshot of dashboard exists or is planned.
-- [ ] GIF/video demo path exists or is planned.
-- [ ] Short public description exists.
-- [ ] X launch post draft exists.
-- [ ] Facebook launch post draft exists.
-- [ ] Demo workflow can be performed live without private setup.
-
-### Demo asset expectation
-
-For the public beta, keep at least one repo-visible demo path ready:
-
-- a dashboard screenshot in `docs/product/` or `docs/product/assets/`
-- or a short GIF/video reference that shows the Local quickstart path and dashboard
-
-The demo asset should show the free GitHub Local flow, not the Managed staging path.
-
-## Gate 8: Verification commands
-
-Run before marking v1.2.0-beta ready:
+## Verification commands
 
 ```bash
 pnpm --dir apps/web type-check
@@ -198,36 +52,12 @@ curl -sS http://127.0.0.1:3052/health | head -20
 curl -sS http://127.0.0.1:3053/health | head -20
 curl -sS http://127.0.0.1:3054/api/openapi | head -20
 curl -sS http://127.0.0.1:3054/api/actions/status | head -20
-curl -i -sS https://buildflow.prochat.tools/api/openapi | head -20
-curl -i -sS https://buildflow.prochat.tools/api/actions/status | head -20
 ```
 
-Expected baseline:
-
-- local agent health returns ok
-- local relay health returns ok if relay is required in the selected mode
-- local web OpenAPI returns valid JSON
-- unauthenticated action status returns 401
-- public OpenAPI returns 200 if public endpoint is part of the beta setup
-- public action status returns 401 unauthenticated
-
-## Gate 9: Release note
+## Release note
 
 Before tagging or announcing v1.2.0-beta:
 
-- [ ] Create `docs/product/releases/buildflow-v1.2.0-beta.md`.
-- [ ] State what is complete and what remains beta.
-- [ ] State Free GitHub scope.
-- [ ] State Pro SaaS and Team are not included.
-- [ ] State the Custom GPT endpoint model honestly.
-- [ ] Include verification evidence.
-- [ ] Include known limitations.
-
-## Current priority order
-
-1. Resolve Custom GPT endpoint model for self-hosted users.
-2. Finish self-hosting and quickstart docs.
-3. Make dashboard launch-quality enough for screenshots and demos.
-4. Add GitHub community templates and contribution guidance.
-5. Run fresh clone test.
-6. Draft v1.2.0-beta release note and launch posts.
+- create or update the release note
+- state what is complete and what remains beta
+- keep the scope limited to BuildFlow Local

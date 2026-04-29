@@ -8,11 +8,7 @@ Use one of these:
 - local running endpoint: `http://127.0.0.1:3054/api/openapi`
 - public Custom GPT endpoint you control: `https://<your-domain-or-tunnel>/api/openapi`
 
-Do not use a BuildFlow-managed domain for the free GitHub path. Managed endpoints belong to the future BuildFlow Managed product.
-
-BuildFlow v1.2.13-beta actions now return structured `activity` fields. The GPT must be instructed to surface those summaries in conversation; the schema alone does not make the assistant narrate progress.
-
-For the stable product baseline, see [`docs/product/README.md`](../product/README.md) and the v1.0 release note at [`docs/product/releases/custom-gpt-actions-v1.0.md`](../product/releases/custom-gpt-actions-v1.0.md).
+BuildFlow v1.2.13-beta actions return structured `activity` fields. The GPT must be instructed to surface those summaries in conversation; the schema alone does not make the assistant narrate progress.
 
 The Custom GPT surface is exactly these 8 core operations, with `applyBuildFlowFileChange` now carrying maintainer sub-operations through `changeType`:
 

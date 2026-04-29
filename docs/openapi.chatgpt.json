@@ -7,8 +7,8 @@
   },
   "servers": [
     {
-      "url": "https://buildflow.prochat.tools",
-      "description": "BuildFlow public endpoint"
+      "url": "http://127.0.0.1:3054",
+      "description": "Local BuildFlow endpoint"
     }
   ],
   "components": {
