@@ -20,12 +20,14 @@ type KnowledgeSourcesPanelProps = {
   sourceLabel: string
   sourceId: string
   activeSourceIds: string[]
+  selectedSourceId: string | null
   onAddSourceSubmit: (event: FormEvent<HTMLFormElement>) => void
   onSourcePathChange: (value: string) => void
   onSourceLabelChange: (value: string) => void
   onSourceIdChange: (value: string) => void
+  onSelectSource: (sourceId: string) => void
   onToggleActiveSource: (sourceId: string) => void
-  onToggleEnabled: (sourceId: string, nextEnabled: boolean) => void
+  onToggleEnabled: (source: KnowledgeSource, nextEnabled: boolean) => void
   onReindexSource: (source: KnowledgeSource) => void
   onRemoveSource: (source: KnowledgeSource) => void
   onToggleAddSourceForm: () => void
@@ -48,10 +50,12 @@ export function KnowledgeSourcesPanel({
   sourceLabel,
   sourceId,
   activeSourceIds,
+  selectedSourceId,
   onAddSourceSubmit,
   onSourcePathChange,
   onSourceLabelChange,
   onSourceIdChange,
+  onSelectSource,
   onToggleActiveSource,
   onToggleEnabled,
   onReindexSource,
@@ -165,7 +169,7 @@ export function KnowledgeSourcesPanel({
                     {
                       label: source.enabled ? 'Disable' : 'Enable',
                       disabled: mutationLoading,
-                      onClick: () => onToggleEnabled(source.id, !source.enabled)
+                      onClick: () => onToggleEnabled(source, !source.enabled)
                     },
                     {
                       label: source.indexStatus === 'indexing' ? 'Indexing...' : 'Reindex',
@@ -180,7 +184,12 @@ export function KnowledgeSourcesPanel({
                   ]
 
                   return (
-                    <DashboardListRow key={source.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(8.5rem,0.9fr)_2.5rem] gap-2 px-3">
+                    <DashboardListRow
+                      key={source.id}
+                      className="grid grid-cols-[minmax(0,1.8fr)_minmax(8.5rem,0.9fr)_2.5rem] gap-2 px-3"
+                      selected={selectedSourceId === source.id}
+                      onClick={() => onSelectSource(source.id)}
+                    >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <DashboardStatusDot tone={source.enabled ? 'good' : 'neutral'} />

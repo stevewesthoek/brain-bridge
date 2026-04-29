@@ -10,7 +10,9 @@ type DashboardSection = 'overview' | 'sources' | 'activity' | 'plan' | 'handoff'
 type DashboardRailProps = {
   activeSection: DashboardSection
   sources: KnowledgeSource[]
+  selectedSourceId: string | null
   onSelectSection: (section: DashboardSection) => void
+  onSelectSource: (sourceId: string) => void
 }
 
 const NAV_ITEMS: { id: DashboardSection; label: string; icon: JSX.Element }[] = [
@@ -25,7 +27,9 @@ const NAV_ITEMS: { id: DashboardSection; label: string; icon: JSX.Element }[] = 
 export function DashboardRail({
   activeSection,
   sources,
-  onSelectSection
+  selectedSourceId,
+  onSelectSection,
+  onSelectSource
 }: DashboardRailProps) {
   const shownSources = sources.slice(0, 5)
 
@@ -75,7 +79,12 @@ export function DashboardRail({
             ) : (
               <div className="overflow-hidden rounded-lg border border-bf-border/70 bg-bf-surface/80 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)] dark:border-slate-800/70 dark:bg-slate-950/40 dark:shadow-[0_10px_24px_-20px_rgba(15,23,42,0.5)]">
                 {shownSources.map(source => (
-                  <DashboardListRow key={source.id} className="px-2.5">
+                  <DashboardListRow
+                    key={source.id}
+                    className="px-2.5"
+                    selected={selectedSourceId === source.id}
+                    onClick={() => onSelectSource(source.id)}
+                  >
                     <DashboardStatusDot tone={source.enabled ? 'good' : 'neutral'} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-medium text-bf-text dark:text-slate-50">{source.label}</div>

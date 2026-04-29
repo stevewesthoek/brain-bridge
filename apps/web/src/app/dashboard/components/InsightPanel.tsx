@@ -1,18 +1,12 @@
-import type { ActiveSourcesMode, WriteMode } from '@buildflow/shared'
+import type { ActiveSourcesMode, KnowledgeSource, WriteMode } from '@buildflow/shared'
 
+import { DashboardButton } from './ui/DashboardButton'
 import { DashboardCodeText } from './ui/DashboardCodeText'
 import { DashboardMetaRow } from './ui/DashboardMetaRow'
 import { DashboardPanel } from './ui/DashboardPanel'
 import { DashboardSectionHeader } from './ui/DashboardSectionHeader'
 import { DashboardStatusDot } from './ui/DashboardStatusDot'
-
-type DashboardSection = 'overview' | 'sources' | 'activity' | 'plan' | 'handoff' | 'settings'
-
-type DashboardActivityEntry = {
-  title: string
-  detail: string
-  tone?: 'neutral' | 'good' | 'warn' | 'bad'
-}
+import type { DashboardActivityEvent, DashboardSection } from '../types'
 
 type InsightPanelProps = {
   loading: boolean
@@ -21,10 +15,18 @@ type InsightPanelProps = {
   activeMode: ActiveSourcesMode
   writeMode: WriteMode
   agentConnected: boolean
-  activityEntries: DashboardActivityEntry[]
+  activityEntries: DashboardActivityEvent[]
+  sources: KnowledgeSource[]
+  selectedSource: KnowledgeSource | null
+  activeSourceIds: string[]
+  onSelectSource: (sourceId: string) => void
+  onToggleActiveSource: (sourceId: string) => void
+  onToggleEnabled: (source: KnowledgeSource, nextEnabled: boolean) => void
+  onReindexSource: (source: KnowledgeSource) => void
+  onRemoveSource: (source: KnowledgeSource) => void
 }
 
-const toneClasses: Record<NonNullable<DashboardActivityEntry['tone']>, string> = {
+const toneClasses: Record<NonNullable<DashboardActivityEvent['tone']>, string> = {
   neutral: 'text-slate-700 dark:text-slate-300',
   good: 'text-emerald-700 dark:text-emerald-300',
   warn: 'text-amber-700 dark:text-amber-300',
@@ -60,7 +62,15 @@ export function InsightPanel({
   activeMode,
   writeMode,
   agentConnected,
-  activityEntries
+  activityEntries,
+  sources,
+  selectedSource,
+  activeSourceIds,
+  onSelectSource,
+  onToggleActiveSource,
+  onToggleEnabled,
+  onReindexSource,
+  onRemoveSource
 }: InsightPanelProps) {
   const titleBySection: Record<DashboardSection, string> = {
     overview: 'Inspector',
@@ -73,6 +83,72 @@ export function InsightPanel({
 
   const shownActivity = activityEntries.slice(0, 4)
   const primaryActivity = activityEntries[0]
+  const selectedSourceIndex = selectedSource ? sources.findIndex(source => source.id === selectedSource.id) : -1
+
+  const selectedSourceBody = selectedSource ? (
+    <div className="space-y-3">
+      <DashboardSectionHeader
+        eyebrow="Source"
+        title={selectedSource.label}
+        detail={selectedSource.path}
+      />
+      <div className="space-y-1.5">
+        <DashboardMetaRow label="ID" value={<DashboardCodeText>{selectedSource.id}</DashboardCodeText>} className="text-[12px]" />
+        <DashboardMetaRow label="Path" value={<DashboardCodeText>{selectedSource.path}</DashboardCodeText>} className="text-[12px]" />
+        <DashboardMetaRow label="Index" value={selectedSource.indexStatus || 'unknown'} className="text-[12px]" />
+        <DashboardMetaRow label="Files" value={typeof selectedSource.indexedFileCount === 'number' ? selectedSource.indexedFileCount.toLocaleString() : 'Unknown'} className="text-[12px]" />
+        <DashboardMetaRow label="Enabled" value={selectedSource.enabled ? 'Enabled' : 'Disabled'} className="text-[12px]" />
+        <DashboardMetaRow label="Active" value={activeSourceIds.includes(selectedSource.id) ? 'Active' : 'Idle'} className="text-[12px]" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <DashboardButton type="button" variant="secondary" className="justify-center" onClick={() => onSelectSource(selectedSource.id)}>
+          Focus
+        </DashboardButton>
+        <DashboardButton
+          type="button"
+          variant="secondary"
+          className="justify-center"
+          onClick={() => onToggleActiveSource(selectedSource.id)}
+          disabled={!selectedSource.enabled && !activeSourceIds.includes(selectedSource.id)}
+        >
+          {activeSourceIds.includes(selectedSource.id) ? 'Deactivate' : 'Activate'}
+        </DashboardButton>
+        <DashboardButton
+          type="button"
+          variant="secondary"
+          className="justify-center"
+          onClick={() => onToggleEnabled(selectedSource, !selectedSource.enabled)}
+        >
+          {selectedSource.enabled ? 'Disable' : 'Enable'}
+        </DashboardButton>
+        <DashboardButton
+          type="button"
+          variant="secondary"
+          className="justify-center"
+          onClick={() => onReindexSource(selectedSource)}
+          disabled={!selectedSource.enabled || selectedSource.indexStatus === 'indexing'}
+        >
+          Reindex
+        </DashboardButton>
+        <DashboardButton
+          type="button"
+          variant="danger"
+          className="col-span-2 justify-center"
+          onClick={() => onRemoveSource(selectedSource)}
+        >
+          Remove source
+        </DashboardButton>
+      </div>
+      <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Selection</div>
+        <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
+          {selectedSourceIndex >= 0
+            ? `Source ${selectedSourceIndex + 1} of ${sources.length}.`
+            : 'Source selected from the workspace.'}
+        </div>
+      </div>
+    </div>
+  ) : null
 
   const contextualBody = (() => {
     switch (section) {
@@ -96,12 +172,21 @@ export function InsightPanel({
           <div className="space-y-3">
             <DashboardMetaRow label="Mode" value={summarizeMode(activeMode)} className="text-[12px]" />
             <DashboardMetaRow label="Write" value={summarizeWriteMode(writeMode)} className="text-[12px]" />
-            <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Source note</div>
-              <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
-                {loading ? 'Refreshing source state...' : 'Use the list to review and manage individual sources.'}
+            {selectedSource ? (
+              <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Selection</div>
+                <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
+                  {selectedSource.label} is selected in the workspace rail.
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Source note</div>
+                <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
+                  {loading ? 'Refreshing source state...' : 'Select a source to inspect it here.'}
+                </div>
+              </div>
+            )}
           </div>
         )
       case 'activity':
@@ -113,7 +198,7 @@ export function InsightPanel({
               </div>
             ) : (
               shownActivity.map((entry, index) => (
-                <div key={`${entry.title}-${index}`} className="flex items-start gap-2 rounded-md px-3 py-2 hover:bg-bf-subtle/50 dark:hover:bg-slate-900/40">
+                <div key={entry.id || `${entry.title}-${index}`} className="flex w-full items-start gap-2 rounded-md px-3 py-2 hover:bg-bf-subtle/50 dark:hover:bg-slate-900/40">
                   <DashboardStatusDot tone={entry.tone || 'neutral'} className="mt-1" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[12px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
@@ -176,6 +261,12 @@ export function InsightPanel({
                 <DashboardMetaRow label="Write" value={summarizeWriteMode(writeMode)} className="text-[12px]" />
               </div>
             </DashboardPanel>
+
+            {selectedSourceBody ? (
+              <DashboardPanel variant="flat" className="p-3">
+                {selectedSourceBody}
+              </DashboardPanel>
+            ) : null}
 
             {error ? (
               <DashboardPanel variant="flat" className="p-3">

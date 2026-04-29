@@ -18,29 +18,13 @@ import { DashboardActivityFeed } from './components/DashboardActivityFeed'
 import { DashboardButton } from './components/ui/DashboardButton'
 import { DashboardPanel } from './components/ui/DashboardPanel'
 import { DashboardCodeText } from './components/ui/DashboardCodeText'
-
-type DashboardSection = 'overview' | 'sources' | 'activity' | 'plan' | 'handoff' | 'settings'
+import type { DashboardActivityEvent, DashboardSection, DashboardSourceSnapshot } from './types'
 
 const TERMINAL_INDEX_STATUSES = new Set(['ready', 'failed', 'disabled'])
 
+const DASHBOARD_SOURCE_CACHE_KEY = 'buildflow-dashboard-source-snapshot'
 type FetchSourcesOptions = {
   blocking?: boolean
-}
-
-type DashboardSourceSnapshot = {
-  sources: KnowledgeSource[]
-  activeMode: ActiveSourcesMode
-  activeSourceIds: string[]
-  writeMode: WriteMode
-  savedAt: string
-}
-
-const DASHBOARD_SOURCE_CACHE_KEY = 'buildflow-dashboard-source-snapshot'
-
-type DashboardActivityEntry = {
-  title: string
-  detail: string
-  tone?: 'neutral' | 'good' | 'warn' | 'bad'
 }
 
 const SECTION_LABELS: Record<DashboardSection, string> = {
@@ -95,18 +79,27 @@ const buildActivityEntries = (args: {
   agentConnected: boolean
   activeMode: ActiveSourcesMode
   writeMode: WriteMode
-}): DashboardActivityEntry[] => {
+}): DashboardActivityEvent[] => {
   const readyCount = args.sources.filter(source => source.enabled && source.indexStatus === 'ready').length
   const indexingCount = args.sources.filter(source => source.enabled && source.indexStatus === 'indexing').length
   const failedCount = args.sources.filter(source => source.enabled && source.indexStatus === 'failed').length
-  const entries: DashboardActivityEntry[] = []
+  const now = new Date().toISOString()
+  const entries: DashboardActivityEvent[] = []
+  const makeEvent = (type: string, title: string, detail: string, tone: DashboardActivityEvent['tone']) => ({
+    id: `${type}-${detail}-${now}`,
+    type,
+    title,
+    detail,
+    timestamp: now,
+    tone
+  })
 
   if (args.loading) {
-    entries.push({ title: 'Loading workspace', detail: 'BuildFlow is fetching the latest source, context, and write-mode state.', tone: 'neutral' })
+    entries.push(makeEvent('refresh-start', 'Loading workspace', 'BuildFlow is fetching the latest source, context, and write-mode state.', 'neutral'))
   } else if (args.agentConnected) {
-    entries.push({ title: 'Agent connected', detail: 'The local agent is available and the dashboard can refresh source state.', tone: 'good' })
+    entries.push(makeEvent('agent-connected', 'Agent connected', 'The local agent is available and the dashboard can refresh source state.', 'good'))
   } else {
-    entries.push({ title: 'Agent unavailable', detail: 'BuildFlow could not reach the local agent right now.', tone: 'warn' })
+    entries.push(makeEvent('agent-unavailable', 'Agent unavailable', 'BuildFlow could not reach the local agent right now.', 'warn'))
   }
 
   const sourceSummary =
@@ -117,20 +110,20 @@ const buildActivityEntries = (args: {
         : readyCount > 0
           ? 'Sources are ready.'
           : 'No sources are connected yet.'
-  entries.push({ title: 'Source summary', detail: sourceSummary, tone: readyCount > 0 ? 'good' : indexingCount > 0 ? 'warn' : 'neutral' })
-  entries.push({ title: 'Context mode', detail: `Active context is set to ${args.activeMode}.`, tone: 'neutral' })
-  entries.push({ title: 'Write mode', detail: `Current write mode: ${args.writeMode}.`, tone: 'neutral' })
+  entries.push(makeEvent('source-summary', 'Source summary', sourceSummary, readyCount > 0 ? 'good' : indexingCount > 0 ? 'warn' : 'neutral'))
+  entries.push(makeEvent('context-mode', 'Context mode', `Active context is set to ${args.activeMode}.`, 'neutral'))
+  entries.push(makeEvent('write-mode', 'Write mode', `Current write mode: ${args.writeMode}.`, 'neutral'))
 
   if (args.mutationNotice) {
-    entries.unshift({ title: 'Dashboard notice', detail: args.mutationNotice, tone: 'good' })
+    entries.unshift(makeEvent('notice', 'Dashboard notice', args.mutationNotice, 'good'))
   }
 
   if (args.mutationError) {
-    entries.unshift({ title: 'Source action error', detail: args.mutationError, tone: 'bad' })
+    entries.unshift(makeEvent('mutation-error', 'Source action error', args.mutationError, 'bad'))
   }
 
   if (args.error) {
-    entries.unshift({ title: 'Source refresh issue', detail: args.error, tone: 'warn' })
+    entries.unshift(makeEvent('refresh-failed', 'Source refresh issue', args.error, 'warn'))
   }
 
   return entries.slice(0, 8)
@@ -192,11 +185,14 @@ export default function Dashboard() {
   const [handoffCopyStatus, setHandoffCopyStatus] = useState<'idle' | 'codex-copied' | 'claude-copied' | 'error'>('idle')
   const [activeDashboardSection, setActiveDashboardSection] = useState<DashboardSection>('overview')
   const [showAddSourceForm, setShowAddSourceForm] = useState(false)
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
+  const [activityEvents, setActivityEvents] = useState<DashboardActivityEvent[]>([])
 
   const addSourceFormRef = useRef<HTMLFormElement>(null)
   const snapshotRef = useRef<DashboardSourceSnapshot | null>(null)
   const themeInitializedRef = useRef(false)
   const snapshotHydratedRef = useRef(false)
+  const activityEventSeqRef = useRef(0)
 
   const codexPrompt = `Review the current BuildFlow dashboard implementation.
 Check DESIGN.md for design system principles.
@@ -222,6 +218,34 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       setTimeout(() => setHandoffCopyStatus('idle'), 2000)
     }
   }
+
+  const pushActivityEvent = (event: Omit<DashboardActivityEvent, 'id' | 'timestamp'> & { timestamp?: string }) => {
+    activityEventSeqRef.current += 1
+    const nextEvent: DashboardActivityEvent = {
+      id: `${event.type}-${activityEventSeqRef.current}`,
+      timestamp: event.timestamp || new Date().toISOString(),
+      ...event
+    }
+    setActivityEvents(current => [nextEvent, ...current].slice(0, 40))
+  }
+
+  const recordActivity = (type: string, title: string, detail: string, tone: DashboardActivityEvent['tone'] = 'neutral') => {
+    pushActivityEvent({ type, title, detail, tone })
+  }
+
+  const selectedSource = selectedSourceId ? sources.find(source => source.id === selectedSourceId) || null : null
+  const activityFeedEntries = activityEvents.length > 0
+    ? activityEvents
+    : buildActivityEntries({
+        loading,
+        error,
+        mutationError,
+        mutationNotice,
+        sources,
+        agentConnected,
+        activeMode,
+        writeMode
+      })
 
   const fetchSources = async (options: FetchSourcesOptions = {}) => {
     const snapshot = snapshotRef.current
@@ -267,6 +291,12 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       snapshotRef.current = nextSnapshot
       saveSourceSnapshot(nextSnapshot)
       setAgentConnected(true)
+      recordActivity(
+        'refresh-completed',
+        'Refresh completed',
+        `${fetchedSources.length} sources synced, ${fetchedActiveIds.length} active, write mode ${fetchedWriteMode}.`,
+        'good'
+      )
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -279,6 +309,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
           `BuildFlow agent was briefly unavailable while refreshing source state. Retry refresh if this does not update. ${message}`
         )
       }
+      recordActivity('refresh-failed', 'Refresh failed', message, 'warn')
       if (fetchedSources.length > 0) {
         setSources(fetchedSources)
       }
@@ -292,11 +323,28 @@ Keep all services healthy on ports 3052, 3053, 3054.`
     }
   }
 
-  const toggleActiveSource = async (sourceId: string) => {
+  const handleSelectSource = (sourceId: string) => {
+    if (selectedSourceId === sourceId) return
+    setSelectedSourceId(sourceId)
+    const source = sources.find(item => item.id === sourceId)
+    recordActivity('source-selected', 'Source selected', source ? `${source.label} · ${source.path}` : sourceId, 'neutral')
+  }
+
+  const handleToggleActiveSource = async (sourceId: string) => {
+    const source = sources.find(item => item.id === sourceId)
+    const isDeactivating = activeSourceIds.includes(sourceId)
     const next = activeSourceIds.includes(sourceId)
       ? activeSourceIds.filter(id => id !== sourceId)
       : [...activeSourceIds, sourceId]
-    await mutateSources('/api/agent/active-sources', { mode: next.length > 1 ? 'multi' : 'single', activeSourceIds: next })
+    const success = await mutateSources('/api/agent/active-sources', { mode: next.length > 1 ? 'multi' : 'single', activeSourceIds: next })
+    if (success) {
+      recordActivity(
+        isDeactivating ? 'source-deactivated' : 'source-activated',
+        isDeactivating ? 'Source deactivated' : 'Source activated',
+        source ? `${source.label} · ${next.length > 0 ? 'context updated' : 'no active sources'}` : `Source ${sourceId} updated`,
+        'good'
+      )
+    }
   }
 
   useEffect(() => {
@@ -318,6 +366,12 @@ Keep all services healthy on ports 3052, 3053, 3054.`
 
     void fetchSources({ blocking: !snapshot })
   }, [])
+
+  useEffect(() => {
+    if (!selectedSourceId) return
+    if (sources.some(source => source.id === selectedSourceId)) return
+    setSelectedSourceId(sources[0]?.id ?? null)
+  }, [sources, selectedSourceId])
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('buildflow-dashboard-theme')
@@ -432,10 +486,38 @@ Keep all services healthy on ports 3052, 3053, 3054.`
     try {
       await waitForTerminalIndexStatus(source.id)
       setMutationNotice(`Reindex complete for ${source.label}`)
+      recordActivity('source-reindexed', 'Source reindexed', `${source.label} · ${source.indexedFileCount ?? 0} files`, 'good')
     } catch (err) {
       setMutationError(null)
       setMutationNotice(String(err))
+      recordActivity('source-reindex-failed', 'Source reindex failed', `${source.label} · ${String(err)}`, 'bad')
     }
+  }
+
+  const handleToggleEnabled = async (source: KnowledgeSource, nextEnabled: boolean) => {
+    const success = await mutateSources('/api/agent/sources/toggle', { sourceId: source.id, enabled: nextEnabled })
+    if (success) {
+      recordActivity(
+        nextEnabled ? 'source-enabled' : 'source-disabled',
+        nextEnabled ? 'Source enabled' : 'Source disabled',
+        `${source.label} · ${source.path}`,
+        nextEnabled ? 'good' : 'warn'
+      )
+    }
+  }
+
+  const handleRemoveSource = async (source: KnowledgeSource) => {
+    if (!window.confirm(`Remove knowledge source "${source.label}"?`)) {
+      return
+    }
+
+    const selectedWasRemoved = selectedSourceId === source.id
+    const success = await mutateSources('/api/agent/sources/remove', { sourceId: source.id })
+    if (!success) return
+
+    const nextSelection = sources.find(item => item.id !== source.id)?.id ?? null
+    setSelectedSourceId(selectedWasRemoved ? nextSelection : selectedSourceId)
+    recordActivity('source-removed', 'Source removed', `${source.label} · ${source.path}`, 'warn')
   }
 
   const handleAddSource = async (event: FormEvent<HTMLFormElement>) => {
@@ -445,13 +527,17 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       return
     }
 
+    const nextPath = sourcePath.trim()
+    const nextLabel = sourceLabel.trim()
+    const nextId = sourceId.trim()
     const success = await mutateSources('/api/agent/sources/add', {
-      path: sourcePath.trim(),
-      label: sourceLabel.trim() || undefined,
-      id: sourceId.trim() || undefined
+      path: nextPath,
+      label: nextLabel || undefined,
+      id: nextId || undefined
     })
 
     if (success) {
+      recordActivity('source-added', 'Source added', `${nextLabel || nextId || nextPath} · ${nextPath}`, 'good')
       setSourcePath('')
       setSourceLabel('')
       setSourceId('')
@@ -466,25 +552,21 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       return
     }
     const nextIds = mode === 'all' ? [] : activeSourceIds.slice(0, mode === 'single' ? 1 : Math.max(activeSourceIds.length, 1))
-    await mutateSources('/api/agent/active-sources', { mode, activeSourceIds: nextIds })
+    const success = await mutateSources('/api/agent/active-sources', { mode, activeSourceIds: nextIds })
+    if (success) {
+      recordActivity('active-context-changed', 'Active context updated', `Context mode set to ${mode}.`, 'neutral')
+    }
   }
 
   const handleWriteMode = async (nextMode: WriteMode) => {
-    await mutateSources('/api/agent/write-mode', { writeMode: nextMode })
+    const success = await mutateSources('/api/agent/write-mode', { writeMode: nextMode })
+    if (success) {
+      recordActivity('write-mode-changed', 'Write mode updated', `Write mode set to ${nextMode}.`, 'neutral')
+    }
   }
 
   const currentSectionLabel = SECTION_LABELS[activeDashboardSection]
   const topBarStatusText = mutationError || mutationNotice || error
-  const activityEntries = buildActivityEntries({
-    loading,
-    error,
-    mutationError,
-    mutationNotice,
-    sources,
-    agentConnected,
-    activeMode,
-    writeMode
-  })
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
@@ -498,7 +580,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
           onRefresh={() => fetchSources({ blocking: false })}
         />
         <DashboardShell
-          leftRail={<DashboardRail activeSection={activeDashboardSection} sources={sources} onSelectSection={setActiveDashboardSection} />}
+          leftRail={<DashboardRail activeSection={activeDashboardSection} sources={sources} selectedSourceId={selectedSourceId} onSelectSection={setActiveDashboardSection} onSelectSource={handleSelectSource} />}
           mainContent={
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-bf-bg dark:bg-slate-950">
               {error && (
@@ -548,14 +630,12 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                       onSourcePathChange={setSourcePath}
                       onSourceLabelChange={setSourceLabel}
                       onSourceIdChange={setSourceId}
-                      onToggleActiveSource={toggleActiveSource}
-                      onToggleEnabled={(sourceId, nextEnabled) => mutateSources('/api/agent/sources/toggle', { sourceId, enabled: nextEnabled })}
+                      selectedSourceId={selectedSourceId}
+                      onSelectSource={handleSelectSource}
+                      onToggleActiveSource={handleToggleActiveSource}
+                      onToggleEnabled={handleToggleEnabled}
                       onReindexSource={handleReindexSource}
-                      onRemoveSource={(source) => {
-                        if (window.confirm(`Remove knowledge source "${source.label}"?`)) {
-                          mutateSources('/api/agent/sources/remove', { sourceId: source.id })
-                        }
-                      }}
+                      onRemoveSource={handleRemoveSource}
                       onToggleAddSourceForm={() => setShowAddSourceForm(prev => !prev)}
                       addSourceFormRef={addSourceFormRef}
                     />
@@ -563,7 +643,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
 
                   {activeDashboardSection === 'activity' && (
                     <DashboardActivityFeed
-                      entries={activityEntries}
+                      entries={activityFeedEntries}
                       emptyMessage="BuildFlow activity will appear here."
                     />
                   )}
@@ -602,7 +682,15 @@ Keep all services healthy on ports 3052, 3053, 3054.`
               activeMode={activeMode}
               writeMode={writeMode}
               agentConnected={agentConnected}
-              activityEntries={activityEntries}
+              activityEntries={activityFeedEntries}
+              sources={sources}
+              selectedSource={selectedSource}
+              activeSourceIds={activeSourceIds}
+              onSelectSource={handleSelectSource}
+              onToggleActiveSource={handleToggleActiveSource}
+              onToggleEnabled={handleToggleEnabled}
+              onReindexSource={handleReindexSource}
+              onRemoveSource={handleRemoveSource}
             />
           }
         />
