@@ -15,7 +15,7 @@ export async function loginCommand(apiKey: string): Promise<void> {
   }
 
   // In MVP, just store the API key
-  // In real app, would validate against SaaS
+  // In a future hosted flow, this would validate against the remote service
   config.userId = apiKey.slice(0, 10)
 
   saveConfig(config)

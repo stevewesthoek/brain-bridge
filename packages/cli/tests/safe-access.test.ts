@@ -49,7 +49,7 @@ describe('redactSecrets', () => {
     })
 
     it('should preserve RELAY_ADMIN_TOKEN placeholder', () => {
-      const input = 'RELAY_ADMIN_TOKEN="[generate-new-admin-token-for-dokploy]"'
+      const input = 'RELAY_ADMIN_TOKEN="[generate-new-admin-token-for-local-use]"'
       const result = redactSecrets(input)
       expect(result).toEqual(input)
       expect(result).not.toContain('[REDACTED]')

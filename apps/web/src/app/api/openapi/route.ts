@@ -169,7 +169,12 @@ const openapi = {
     version: '3.0.0',
     description: 'BuildFlow GPT actions for status, sources, context, inspection, reading, and verified writes.'
   },
-  servers: [{ url: 'https://buildflow.prochat.tools', description: 'BuildFlow public endpoint' }],
+  servers: [
+    {
+      url: process.env.PUBLIC_BASE_URL || process.env.LOCAL_DASHBOARD_BASE_URL || 'http://127.0.0.1:3054',
+      description: 'BuildFlow public endpoint'
+    }
+  ],
   components: {
     schemas: {},
     securitySchemes: {

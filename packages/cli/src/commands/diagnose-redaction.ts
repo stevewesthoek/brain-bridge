@@ -15,7 +15,7 @@ export function diagnosticRedactionCommand(): Command {
       const docTests = [
         { name: 'BUILDFLOW_ACTION_TOKEN placeholder', value: 'BUILDFLOW_ACTION_TOKEN="[generate-new-token-for-this-new-environment-only]"' },
         { name: 'NEW_BUILDFLOW_ACTION_TOKEN placeholder', value: 'NEW_BUILDFLOW_ACTION_TOKEN="[generate-new-token-for-this-new-environment-only]"' },
-        { name: 'RELAY_ADMIN_TOKEN placeholder', value: 'RELAY_ADMIN_TOKEN="[generate-new-admin-token-for-dokploy]"' },
+        { name: 'RELAY_ADMIN_TOKEN placeholder', value: 'RELAY_ADMIN_TOKEN="[generate-new-admin-token-for-local-use]"' },
         { name: 'Generic TOKEN placeholder', value: 'TOKEN="[placeholder-value]"' }
       ]
 

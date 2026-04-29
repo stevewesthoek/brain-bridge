@@ -38,13 +38,13 @@ export async function serveCommand(): Promise<void> {
         log('Local agent will still work for local testing.')
       }
     } else if (config.deviceToken) {
-      log('Connecting to SaaS bridge...')
+      log('Connecting to bridge relay...')
       const bridgeClient = new BridgeClient(config.apiBaseUrl, config.deviceToken)
 
       try {
         await bridgeClient.connect()
       } catch (err) {
-        log(`Note: Could not connect to SaaS bridge (${String(err)})`)
+        log(`Note: Could not connect to bridge relay (${String(err)})`)
         log('Local agent will still work for local testing.')
       }
     } else {

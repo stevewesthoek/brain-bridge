@@ -6,7 +6,7 @@ import os from 'node:os'
 import { execFileSync } from 'node:child_process'
 
 const LOCAL_BASE_URL = process.env.LOCAL_DASHBOARD_BASE_URL || 'http://127.0.0.1:3054'
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://buildflow.prochat.tools'
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || process.env.LOCAL_DASHBOARD_BASE_URL || 'http://127.0.0.1:3054'
 const TOKEN = process.env.BUILDFLOW_ACTION_TOKEN || ''
 const ROOT = process.cwd()
 const DOCS_SCHEMA_FILE = path.join(ROOT, 'docs/openapi.chatgpt.json')
