@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
-import { getActiveContextLabel, getWriteModeLabel } from './helpers'
 import { DashboardTopBar } from './components/DashboardTopBar'
 import { DashboardShell } from './components/DashboardShell'
 import { DashboardOverview } from './components/DashboardOverview'
@@ -97,7 +96,6 @@ const buildActivityEntries = (args: {
   const readyCount = args.sources.filter(source => source.enabled && source.indexStatus === 'ready').length
   const indexingCount = args.sources.filter(source => source.enabled && source.indexStatus === 'indexing').length
   const failedCount = args.sources.filter(source => source.enabled && source.indexStatus === 'failed').length
-  const enabledCount = args.sources.filter(source => source.enabled).length
   const entries: DashboardActivityEntry[] = []
 
   if (args.loading) {
@@ -108,7 +106,15 @@ const buildActivityEntries = (args: {
     entries.push({ title: 'Agent unavailable', detail: 'BuildFlow could not reach the local agent right now.', tone: 'warn' })
   }
 
-  entries.push({ title: 'Source summary', detail: `${args.sources.length} total · ${enabledCount} enabled · ${readyCount} ready · ${indexingCount} indexing · ${failedCount} failed`, tone: readyCount > 0 ? 'good' : indexingCount > 0 ? 'warn' : 'neutral' })
+  const sourceSummary =
+    indexingCount > 0
+      ? 'Some sources are still indexing.'
+      : failedCount > 0
+        ? 'Some sources need attention.'
+        : readyCount > 0
+          ? 'Sources are ready.'
+          : 'No sources are connected yet.'
+  entries.push({ title: 'Source summary', detail: sourceSummary, tone: readyCount > 0 ? 'good' : indexingCount > 0 ? 'warn' : 'neutral' })
   entries.push({ title: 'Context mode', detail: `Active context is set to ${args.activeMode}.`, tone: 'neutral' })
   entries.push({ title: 'Write mode', detail: `Current write mode: ${args.writeMode}.`, tone: 'neutral' })
 
@@ -182,6 +188,7 @@ export default function Dashboard() {
   const [writeMode, setWriteMode] = useState<WriteMode>('safeWrites')
   const [handoffCopyStatus, setHandoffCopyStatus] = useState<'idle' | 'codex-copied' | 'claude-copied' | 'error'>('idle')
   const [activeDashboardSection, setActiveDashboardSection] = useState<DashboardSection>('overview')
+  const [showAddSourceForm, setShowAddSourceForm] = useState(false)
 
   const addSourceFormRef = useRef<HTMLFormElement>(null)
   const snapshotRef = useRef<DashboardSourceSnapshot | null>(null)
@@ -445,6 +452,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       setSourcePath('')
       setSourceLabel('')
       setSourceId('')
+      setShowAddSourceForm(false)
     }
   }
 
@@ -463,6 +471,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
   }
 
   const currentSectionLabel = SECTION_LABELS[activeDashboardSection]
+  const topBarStatusText = mutationError || mutationNotice || error
   const activityEntries = buildActivityEntries({
     loading,
     error,
@@ -479,19 +488,14 @@ Keep all services healthy on ports 3052, 3053, 3054.`
       <div className="h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950">
         <DashboardTopBar
           currentSectionLabel={currentSectionLabel}
-          activeModeLabel={getActiveContextLabel(activeMode)}
-          writeModeLabel={getWriteModeLabel(writeMode)}
-          sourceCount={sources.length}
           agentConnected={agentConnected}
-          mutationError={mutationError}
-          mutationNotice={mutationNotice}
-          error={error}
+          statusText={topBarStatusText}
           theme={theme}
           onToggleTheme={handleToggleTheme}
           onRefresh={() => fetchSources({ blocking: false })}
         />
         <DashboardShell
-          leftRail={<DashboardRail activeSection={activeDashboardSection} agentConnected={agentConnected} sources={sources} activeMode={activeMode} writeMode={writeMode} onSelectSection={setActiveDashboardSection} />}
+          leftRail={<DashboardRail activeSection={activeDashboardSection} sources={sources} onSelectSection={setActiveDashboardSection} />}
           mainContent={
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
               {error && (
@@ -519,10 +523,8 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                       loading={loading}
                       agentConnected={agentConnected}
                       sources={sources}
-                      activeMode={activeMode}
                       writeMode={writeMode}
                       onManageSources={() => setActiveDashboardSection('sources')}
-                      onAddSource={() => setActiveDashboardSection('sources')}
                       onOpenHandoff={() => setActiveDashboardSection('handoff')}
                     />
                   )}
@@ -534,6 +536,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                       mutationLoading={mutationLoading}
                       mutationError={mutationError}
                       mutationNotice={mutationNotice}
+                      showAddSourceForm={showAddSourceForm}
                       sourcePath={sourcePath}
                       sourceLabel={sourceLabel}
                       sourceId={sourceId}
@@ -550,6 +553,7 @@ Keep all services healthy on ports 3052, 3053, 3054.`
                           mutateSources('/api/agent/sources/remove', { sourceId: source.id })
                         }
                       }}
+                      onToggleAddSourceForm={() => setShowAddSourceForm(prev => !prev)}
                       addSourceFormRef={addSourceFormRef}
                     />
                   )}
@@ -591,12 +595,10 @@ Keep all services healthy on ports 3052, 3053, 3054.`
             <InsightPanel
               loading={loading}
               error={error}
-              sourceCount={sources.length}
               section={activeDashboardSection}
               activeMode={activeMode}
               writeMode={writeMode}
               agentConnected={agentConnected}
-              sources={sources}
               activityEntries={activityEntries}
             />
           }

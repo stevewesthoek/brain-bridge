@@ -13,6 +13,7 @@ type KnowledgeSourcesPanelProps = {
   mutationLoading: boolean
   mutationError: string | null
   mutationNotice: string | null
+  showAddSourceForm: boolean
   sourcePath: string
   sourceLabel: string
   sourceId: string
@@ -25,6 +26,7 @@ type KnowledgeSourcesPanelProps = {
   onToggleEnabled: (sourceId: string, nextEnabled: boolean) => void
   onReindexSource: (source: KnowledgeSource) => void
   onRemoveSource: (source: KnowledgeSource) => void
+  onToggleAddSourceForm: () => void
   addSourceFormRef: RefObject<HTMLFormElement>
 }
 
@@ -34,6 +36,7 @@ export function KnowledgeSourcesPanel({
   mutationLoading,
   mutationError,
   mutationNotice,
+  showAddSourceForm,
   sourcePath,
   sourceLabel,
   sourceId,
@@ -46,77 +49,83 @@ export function KnowledgeSourcesPanel({
   onToggleEnabled,
   onReindexSource,
   onRemoveSource,
+  onToggleAddSourceForm,
   addSourceFormRef
 }: KnowledgeSourcesPanelProps) {
+  const shouldShowAddForm = sources.length === 0 || showAddSourceForm
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-5 lg:p-6">
       <section className="shrink-0 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/50">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Sources</h2>
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Connected local folders, indexes, and source state.</p>
-          </div>
-          <div className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-300">
-            {sources.length} total
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Connected local folders and source state.</p>
           </div>
         </div>
 
-        <form ref={addSourceFormRef} onSubmit={onAddSourceSubmit} className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 md:grid-cols-[1.2fr_1fr_1fr_auto]">
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Path *</span>
-            <input
-              value={sourcePath}
-              onChange={e => onSourcePathChange(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-              placeholder="~/notes"
-              disabled={mutationLoading}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Label</span>
-            <input
-              value={sourceLabel}
-              onChange={e => onSourceLabelChange(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-              placeholder="My Notes"
-              disabled={mutationLoading}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">ID</span>
-            <input
-              value={sourceId}
-              onChange={e => onSourceIdChange(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-              placeholder="my-notes"
-              disabled={mutationLoading}
-            />
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={mutationLoading}
-              className="w-full rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-            >
-              {mutationLoading ? 'Working...' : 'Add source'}
-            </button>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {mutationError ? <span className="text-xs text-red-700 dark:text-red-300">{mutationError}</span> : null}
+            {mutationNotice ? <span className="text-xs text-emerald-700 dark:text-emerald-300">{mutationNotice}</span> : null}
           </div>
-        </form>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Source actions stay inline and use the agent directly.</span>
-          {mutationError ? (
-            <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-              {mutationError}
-            </span>
-          ) : null}
-          {mutationNotice ? (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-              {mutationNotice}
-            </span>
+          {sources.length > 0 ? (
+            <button
+              type="button"
+              onClick={onToggleAddSourceForm}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              {showAddSourceForm ? 'Hide add source' : 'Add source'}
+            </button>
           ) : null}
         </div>
       </section>
+
+      {shouldShowAddForm ? (
+        <section className="shrink-0 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/50">
+          <form ref={addSourceFormRef} onSubmit={onAddSourceSubmit} className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto]">
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Path *</span>
+              <input
+                value={sourcePath}
+                onChange={e => onSourcePathChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
+                placeholder="~/notes"
+                disabled={mutationLoading}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Label</span>
+              <input
+                value={sourceLabel}
+                onChange={e => onSourceLabelChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
+                placeholder="My Notes"
+                disabled={mutationLoading}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">ID</span>
+              <input
+                value={sourceId}
+                onChange={e => onSourceIdChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
+                placeholder="my-notes"
+                disabled={mutationLoading}
+              />
+            </label>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={mutationLoading}
+                className="w-full rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+              >
+                {mutationLoading ? 'Working...' : 'Add source'}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       <section className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/50">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">

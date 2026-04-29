@@ -4,13 +4,8 @@ import { getAgentHealthClassName, getAgentHealthLabel } from '../helpers'
 
 type DashboardTopBarProps = {
   currentSectionLabel: string
-  activeModeLabel: string
-  writeModeLabel: string
-  sourceCount: number
   agentConnected: boolean
-  mutationError: string | null
-  mutationNotice: string | null
-  error: string | null
+  statusText?: string | null
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   onRefresh: () => void
@@ -19,13 +14,8 @@ type DashboardTopBarProps = {
 
 export function DashboardTopBar({
   currentSectionLabel,
-  activeModeLabel,
-  writeModeLabel,
-  sourceCount,
   agentConnected,
-  mutationError,
-  mutationNotice,
-  error,
+  statusText,
   theme,
   onToggleTheme,
   onRefresh,
@@ -45,15 +35,6 @@ export function DashboardTopBar({
         </div>
 
         <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 xl:flex">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-            {sourceCount} sources
-          </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-            {activeModeLabel}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-            {writeModeLabel}
-          </span>
           <span
             className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
               agentConnected
@@ -86,16 +67,12 @@ export function DashboardTopBar({
         </div>
       </div>
 
-      {(mutationError || mutationNotice || error) && (
+      {statusText && (
         <div className="border-t border-slate-200 px-5 py-2 text-[11px] lg:px-6 dark:border-slate-800">
           <div className="flex min-h-5 items-center gap-2 text-slate-600 dark:text-slate-300">
-            <span className={`h-1.5 w-1.5 rounded-full ${mutationError || error ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${/error|unable|fail|disconnect/i.test(statusText) ? 'bg-amber-500' : 'bg-emerald-500'}`} />
             <span className="truncate">
-              {mutationError
-                ? mutationError
-                : mutationNotice
-                  ? mutationNotice
-                  : error || 'Source state is up to date.'}
+              {statusText}
             </span>
           </div>
         </div>
