@@ -121,6 +121,25 @@ function normalizePath(input: string): string {
   return input.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+/g, '/').trim()
 }
 
+export function composeArtifactRelativePath(params: {
+  title: string
+  folder?: string
+  filename?: string
+}): string {
+  const folder = typeof params.folder === 'string' ? normalizePath(params.folder) : ''
+  const filenameSource = typeof params.filename === 'string' && params.filename.trim() ? params.filename : params.title
+  const filename = normalizePath(filenameSource)
+    .replace(/(\.md)+$/i, '')
+    .replace(/[.]+$/g, '')
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'artifact'
+  const safeFolder = folder || '.buildflow'
+  return `${safeFolder.replace(/\/$/, '')}/${filename}.md`
+}
+
 function makeActivity(input: ActivityInput): ActionActivity {
   return {
     version: '1.2.13-beta',
@@ -706,8 +725,13 @@ export async function dispatchBuildFlowRead(body: Record<string, unknown>, userT
 }
 
 export async function dispatchBuildFlowArtifact(body: Record<string, unknown>, userToken?: string) {
+  const artifactPath = composeArtifactRelativePath({
+    title: typeof body.title === 'string' ? body.title : 'artifact',
+    folder: typeof body.folder === 'string' ? body.folder : undefined,
+    filename: typeof body.filename === 'string' ? body.filename : undefined
+  })
   if (body.dryRun === true || body.preflight === true) {
-    const result = await preflightWrite({ ...body, changeType: 'create' }, userToken) as {
+    const result = await preflightWrite({ ...body, path: artifactPath, changeType: 'create' }, userToken) as {
       status: 'allowed' | 'needs_confirmation' | 'error'
       allowed?: boolean
       verified: boolean
@@ -727,10 +751,11 @@ export async function dispatchBuildFlowArtifact(body: Record<string, unknown>, u
         ? String((result.error as Record<string, unknown>)?.userMessage || 'BuildFlow blocked this artifact write.')
         : isNeedsConfirmation
           ? 'BuildFlow needs confirmation before creating this artifact.'
-          : 'BuildFlow checked whether the artifact write is allowed.',
+          : `BuildFlow verified that ${artifactPath} is allowed.`,
       sourceId: typeof result.sourceId === 'string' ? result.sourceId : undefined,
-      targetPaths: typeof result.requestedPath === 'string' && result.requestedPath ? [result.requestedPath] : [],
+      targetPaths: artifactPath ? [artifactPath] : [],
       changedPaths: [],
+      readPaths: [],
       riskLevel: isBlocked ? 'high' : 'medium',
       requiresConfirmation: Boolean(result.requiresConfirmation),
       verified: false,
@@ -739,10 +764,10 @@ export async function dispatchBuildFlowArtifact(body: Record<string, unknown>, u
   }
   const sourceError = await requireExplicitSourceId(body, userToken)
   if (sourceError) return sourceError
-  const result = await executeAction('/api/create-artifact', body, userToken)
+  const result = await executeAction('/api/create-artifact', { ...body, path: artifactPath }, userToken)
   const verified = assertVerifiedWriteResult(result, 'writeBuildFlowArtifact')
   const sourceId = typeof (result as Record<string, unknown>).sourceId === 'string' ? (result as Record<string, unknown>).sourceId as string : typeof body.sourceId === 'string' ? body.sourceId : undefined
-  const path = typeof (result as Record<string, unknown>).path === 'string' ? (result as Record<string, unknown>).path as string : typeof body.path === 'string' ? body.path : undefined
+  const path = typeof (result as Record<string, unknown>).path === 'string' ? (result as Record<string, unknown>).path as string : artifactPath
   return withActivity({ ...result as Record<string, unknown>, ...verified }, makeActivity({
     operationId: 'writeBuildFlowArtifact',
     phase: 'completed',

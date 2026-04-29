@@ -71,6 +71,8 @@ The dashboard activity stream, if added later, is separate from the GPT narratio
 
 The `writeBuildFlowArtifact` route now returns structured JSON for verified writes, dry-run/preflight checks, blocked policy responses, and confirmation-required responses without passing invalid HTTP status values to `NextResponse.json`.
 
+Artifact writes also now compose `folder` + `filename` into a repo-relative path before policy validation, so valid requests like `.buildflow` + `x-demo-buildflow-artifact.md` resolve correctly instead of falling through as an empty path.
+
 ## Future dashboard activity UI
 
 The dashboard-side live activity feed is planned as a future enhancement, not part of v1.2.13-beta.

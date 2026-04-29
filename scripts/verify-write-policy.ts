@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getDefaultWritePolicy, validateWriteTarget } from '../packages/cli/src/agent/safe-access'
 import { validatePath } from '../packages/cli/src/agent/permissions'
+import { composeArtifactRelativePath } from '../apps/web/src/lib/actions/gpt'
 
 const policy = getDefaultWritePolicy()
 assert.equal(policy.allowCreate, true)
@@ -44,6 +45,11 @@ const appSafe = validateWriteTarget({ requestedPath: 'src/lib/example.ts', chang
 assert.equal(appSafe.ok, true)
 const envTemplate = validateWriteTarget({ requestedPath: '.env.example', changeType: 'create', sourceRoot: root, content: 'API_KEY=<your-api-key>\n' })
 assert.equal(envTemplate.ok, true)
+
+assert.equal(composeArtifactRelativePath({ title: 'BuildFlow Action Demo Artifact', folder: '.buildflow', filename: 'x-demo-buildflow-artifact.md' }), '.buildflow/x-demo-buildflow-artifact.md')
+assert.equal(composeArtifactRelativePath({ title: 'BuildFlow Action Demo Artifact', folder: 'docs', filename: 'x-demo-buildflow-artifact.md' }), 'docs/x-demo-buildflow-artifact.md')
+assert.equal(composeArtifactRelativePath({ title: 'BuildFlow Action Demo Artifact', folder: '.buildflow' }), '.buildflow/buildflow-action-demo-artifact.md')
+assert.equal(composeArtifactRelativePath({ title: 'BuildFlow Action Demo Artifact', filename: 'x-demo-buildflow-artifact.md' }), '.buildflow/x-demo-buildflow-artifact.md')
 
 assert.equal(validatePath('.env.example').valid, true)
 assert.equal(validatePath('.gitignore').valid, true)
