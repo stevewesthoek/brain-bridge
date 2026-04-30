@@ -14,10 +14,13 @@ type PlanPlaceholderPanelProps = {
   agentConnected: boolean
   selectedSource: KnowledgeSource | null
   plan: DashboardLocalPlan | null
+  importError: string | null
   onCreatePlan: () => void
   onUpdateTaskStatus: (taskId: string, status: DashboardPlanTaskStatus) => void
   onClearPlan: () => void
   onOpenHandoff: () => void
+  onExportPlan: () => void
+  onImportPlan: (file: File) => void
   variant?: 'full' | 'compact'
 }
 
@@ -46,10 +49,13 @@ export function PlanPlaceholderPanel({
   agentConnected,
   selectedSource,
   plan,
+  importError,
   onCreatePlan,
   onUpdateTaskStatus,
   onClearPlan,
   onOpenHandoff,
+  onExportPlan,
+  onImportPlan,
   variant = 'full'
 }: PlanPlaceholderPanelProps) {
   const readyCount = sources.filter(source => source.enabled && source.indexStatus === 'ready').length
@@ -106,7 +112,21 @@ export function PlanPlaceholderPanel({
             <DashboardButton type="button" variant="secondary" onClick={onOpenHandoff}>
               Open handoff
             </DashboardButton>
+            <label className="inline-flex h-7 cursor-pointer items-center justify-center rounded-[10px] border border-bf-border/80 bg-bf-surface px-2.5 text-[12px] font-medium leading-none text-bf-text transition-colors duration-150 hover:bg-bf-subtle dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800">
+              Import
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0]
+                  if (file) onImportPlan(file)
+                  event.currentTarget.value = ''
+                }}
+              />
+            </label>
           </div>
+          {importError ? <p className="mt-3 text-[12px] text-red-700 dark:text-red-300">{importError}</p> : null}
           {sources.length === 0 || !agentConnected ? (
             <p className="mt-3 text-[12px] text-bf-muted dark:text-slate-400">
               {sources.length === 0 ? 'Add a source before creating a plan.' : 'Reconnect the local agent before creating a plan.'}
@@ -130,6 +150,20 @@ export function PlanPlaceholderPanel({
           action={
             <div className="flex items-center gap-2">
               <DashboardButton type="button" variant="secondary" onClick={onOpenHandoff}>Handoff</DashboardButton>
+              <DashboardButton type="button" variant="secondary" onClick={onExportPlan}>Export</DashboardButton>
+              <label className="inline-flex h-7 cursor-pointer items-center justify-center rounded-[10px] border border-bf-border/80 bg-bf-surface px-2.5 text-[12px] font-medium leading-none text-bf-text transition-colors duration-150 hover:bg-bf-subtle dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800">
+                Import
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (file) onImportPlan(file)
+                    event.currentTarget.value = ''
+                  }}
+                />
+              </label>
               <DashboardButton type="button" variant="ghost" onClick={onClearPlan}>Clear</DashboardButton>
             </div>
           }
@@ -139,6 +173,7 @@ export function PlanPlaceholderPanel({
           <DashboardMetaRow label="Context" value={plan.sourceId ? <DashboardCodeText>{plan.sourceId}</DashboardCodeText> : 'Workspace'} />
           <DashboardMetaRow label="Updated" value={formatTime(plan.updatedAt)} />
         </div>
+        {importError ? <p className="mt-3 text-[12px] text-red-700 dark:text-red-300">{importError}</p> : null}
       </DashboardPanel>
 
       <DashboardPanel variant="flat" className="overflow-hidden">

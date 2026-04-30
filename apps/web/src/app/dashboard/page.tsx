@@ -131,6 +131,36 @@ const saveLocalPlan = (plan: DashboardLocalPlan | null) => {
   }
 }
 
+const normalizeImportedPlan = (value: unknown): DashboardLocalPlan | null => {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Partial<DashboardLocalPlan>
+  if (typeof candidate.title !== 'string' || !Array.isArray(candidate.tasks)) return null
+  const now = new Date().toISOString()
+  const tasks: DashboardLocalPlan['tasks'] = candidate.tasks
+    .filter(task => task && typeof task === 'object')
+    .map((task, index) => {
+      const item = task as Partial<DashboardLocalPlan['tasks'][number]>
+      const status: DashboardPlanTaskStatus =
+        item.status === 'active' || item.status === 'done' || item.status === 'blocked' ? item.status : 'pending'
+      return {
+        id: typeof item.id === 'string' && item.id.trim() ? item.id : `imported-task-${index + 1}`,
+        title: typeof item.title === 'string' && item.title.trim() ? item.title : `Imported task ${index + 1}`,
+        detail: typeof item.detail === 'string' && item.detail.trim() ? item.detail : 'Review and complete this imported local task.',
+        status
+      }
+    })
+  if (tasks.length === 0) return null
+  return {
+    id: typeof candidate.id === 'string' && candidate.id.trim() ? candidate.id : `imported-plan-${Date.now()}`,
+    title: candidate.title.trim(),
+    summary: typeof candidate.summary === 'string' && candidate.summary.trim() ? candidate.summary : 'Imported local dashboard plan',
+    sourceId: typeof candidate.sourceId === 'string' && candidate.sourceId.trim() ? candidate.sourceId : null,
+    createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : now,
+    updatedAt: now,
+    tasks
+  }
+}
+
 const createDashboardPlan = (args: {
   sources: KnowledgeSource[]
   selectedSource: KnowledgeSource | null
@@ -296,6 +326,7 @@ export default function Dashboard() {
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
   const [activityEvents, setActivityEvents] = useState<DashboardActivityEvent[]>([])
   const [localPlan, setLocalPlan] = useState<DashboardLocalPlan | null>(null)
+  const [localPlanImportError, setLocalPlanImportError] = useState<string | null>(null)
 
   const addSourceFormRef = useRef<HTMLFormElement>(null)
   const snapshotRef = useRef<DashboardSourceSnapshot | null>(null)
@@ -397,8 +428,45 @@ export default function Dashboard() {
   }
 
   const handleClearLocalPlan = () => {
+    setLocalPlanImportError(null)
     setLocalPlan(null)
     recordActivity('local-plan-cleared', 'Local plan cleared', 'The in-browser dashboard plan was cleared.', 'warn')
+  }
+
+  const handleExportLocalPlan = () => {
+    if (!localPlan) {
+      setLocalPlanImportError('Create or import a plan before exporting.')
+      return
+    }
+    setLocalPlanImportError(null)
+    const blob = new Blob([JSON.stringify(localPlan, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${localPlan.id || 'buildflow-local-plan'}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    recordActivity('local-plan-exported', 'Local plan exported', `${localPlan.title} was downloaded as JSON.`, 'good')
+  }
+
+  const handleImportLocalPlan = async (file: File) => {
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      const nextPlan = normalizeImportedPlan(parsed)
+      if (!nextPlan) {
+        throw new Error('This file is not a valid BuildFlow Local plan JSON file.')
+      }
+      setLocalPlanImportError(null)
+      setLocalPlan(nextPlan)
+      recordActivity('local-plan-imported', 'Local plan imported', `${nextPlan.title} · ${nextPlan.tasks.length} tasks`, 'good')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not import this local plan.'
+      setLocalPlanImportError(message)
+      recordActivity('local-plan-import-failed', 'Local plan import failed', message, 'bad')
+    }
   }
 
   const handleOpenHandoff = () => {
@@ -830,10 +898,13 @@ export default function Dashboard() {
                         agentConnected={agentConnected}
                         selectedSource={selectedSource}
                         plan={localPlan}
+                        importError={localPlanImportError}
                         onCreatePlan={handleCreateLocalPlan}
                         onUpdateTaskStatus={handleUpdatePlanTaskStatus}
                         onClearPlan={handleClearLocalPlan}
                         onOpenHandoff={handleOpenHandoff}
+                        onExportPlan={handleExportLocalPlan}
+                        onImportPlan={handleImportLocalPlan}
                       />
                       <ExecutionFlowPreview />
                     </div>
