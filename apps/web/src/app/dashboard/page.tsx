@@ -15,6 +15,7 @@ import { InfoPanels } from './components/InfoPanels'
 import { InsightPanel } from './components/InsightPanel'
 import { DashboardRail } from './components/DashboardRail'
 import { DashboardActivityFeed } from './components/DashboardActivityFeed'
+import { SetupChecklistPanel } from './components/SetupChecklistPanel'
 import { DashboardButton } from './components/ui/DashboardButton'
 import { DashboardPanel } from './components/ui/DashboardPanel'
 import { DashboardCodeText } from './components/ui/DashboardCodeText'
@@ -327,6 +328,7 @@ export default function Dashboard() {
   const [activityEvents, setActivityEvents] = useState<DashboardActivityEvent[]>([])
   const [localPlan, setLocalPlan] = useState<DashboardLocalPlan | null>(null)
   const [localPlanImportError, setLocalPlanImportError] = useState<string | null>(null)
+  const [setupCopyStatus, setSetupCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
 
   const addSourceFormRef = useRef<HTMLFormElement>(null)
   const snapshotRef = useRef<DashboardSourceSnapshot | null>(null)
@@ -334,6 +336,20 @@ export default function Dashboard() {
   const snapshotHydratedRef = useRef(false)
   const activityEventSeqRef = useRef(0)
   const currentSectionLabel = SECTION_LABELS[activeDashboardSection]
+  const openApiUrl = typeof window === 'undefined' ? '/api/openapi' : `${window.location.origin}/api/openapi`
+
+  const copySetupOpenApiUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(openApiUrl)
+      setSetupCopyStatus('copied')
+      recordActivity('setup-openapi-copied', 'OpenAPI URL copied', openApiUrl, 'good')
+      setTimeout(() => setSetupCopyStatus('idle'), 2000)
+    } catch {
+      setSetupCopyStatus('error')
+      recordActivity('setup-openapi-copy-failed', 'OpenAPI copy failed', 'Could not copy the OpenAPI URL from the dashboard.', 'bad')
+      setTimeout(() => setSetupCopyStatus('idle'), 2000)
+    }
+  }
 
   const copyToClipboard = async (
     text: string,
@@ -839,16 +855,34 @@ export default function Dashboard() {
               <div className="min-h-0 flex-1 overflow-hidden p-3 lg:p-4">
                 {activeDashboardSection === 'overview' && (
                   <div className="h-full min-h-0 overflow-y-auto pb-4">
-                    <DashboardOverview
-                      loading={loading}
-                      agentConnected={agentConnected}
-                      sources={sources}
-                      writeMode={writeMode}
-                      localPlan={localPlan}
-                      onManageSources={() => setActiveDashboardSection('sources')}
-                      onOpenHandoff={() => setActiveDashboardSection('handoff')}
-                      onOpenPlan={() => setActiveDashboardSection('plan')}
-                    />
+                    <div className="space-y-4">
+                      <DashboardOverview
+                        loading={loading}
+                        agentConnected={agentConnected}
+                        sources={sources}
+                        writeMode={writeMode}
+                        localPlan={localPlan}
+                        onManageSources={() => setActiveDashboardSection('sources')}
+                        onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                        onOpenPlan={() => setActiveDashboardSection('plan')}
+                      />
+                      <SetupChecklistPanel
+                        sources={sources}
+                        agentConnected={agentConnected}
+                        activeMode={activeMode}
+                        activeSourceIds={activeSourceIds}
+                        writeMode={writeMode}
+                        localPlan={localPlan}
+                        openApiUrl={openApiUrl}
+                        copyStatus={setupCopyStatus}
+                        onOpenSources={() => setActiveDashboardSection('sources')}
+                        onOpenSettings={() => setActiveDashboardSection('settings')}
+                        onOpenPlan={() => setActiveDashboardSection('plan')}
+                        onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                        onCopyOpenApi={copySetupOpenApiUrl}
+                        variant="compact"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -931,6 +965,21 @@ export default function Dashboard() {
                 {activeDashboardSection === 'settings' && (
                   <div className="h-full min-h-0 overflow-y-auto pr-1 pb-4">
                     <div className="space-y-4">
+                      <SetupChecklistPanel
+                        sources={sources}
+                        agentConnected={agentConnected}
+                        activeMode={activeMode}
+                        activeSourceIds={activeSourceIds}
+                        writeMode={writeMode}
+                        localPlan={localPlan}
+                        openApiUrl={openApiUrl}
+                        copyStatus={setupCopyStatus}
+                        onOpenSources={() => setActiveDashboardSection('sources')}
+                        onOpenSettings={() => setActiveDashboardSection('settings')}
+                        onOpenPlan={() => setActiveDashboardSection('plan')}
+                        onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                        onCopyOpenApi={copySetupOpenApiUrl}
+                      />
                       <ActiveContextPanel activeMode={activeMode} writeMode={writeMode} activeSourceIds={activeSourceIds} onSetMode={handleSetMode} onSetWriteMode={handleWriteMode} />
                       <InfoPanels />
                     </div>
