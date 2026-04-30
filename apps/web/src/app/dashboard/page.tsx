@@ -776,8 +776,10 @@ export default function Dashboard() {
                       agentConnected={agentConnected}
                       sources={sources}
                       writeMode={writeMode}
+                      localPlan={localPlan}
                       onManageSources={() => setActiveDashboardSection('sources')}
                       onOpenHandoff={() => setActiveDashboardSection('handoff')}
+                      onOpenPlan={() => setActiveDashboardSection('plan')}
                     />
                   </div>
                 )}
@@ -875,6 +877,7 @@ export default function Dashboard() {
               writeMode={writeMode}
               agentConnected={agentConnected}
               activityEntries={activityFeedEntries}
+              localPlan={localPlan}
               sources={sources}
               selectedSource={selectedSource}
               activeSourceIds={activeSourceIds}

@@ -6,7 +6,7 @@ import { DashboardMetaRow } from './ui/DashboardMetaRow'
 import { DashboardPanel } from './ui/DashboardPanel'
 import { DashboardSectionHeader } from './ui/DashboardSectionHeader'
 import { DashboardStatusDot } from './ui/DashboardStatusDot'
-import type { DashboardActivityEvent, DashboardSection } from '../types'
+import type { DashboardActivityEvent, DashboardLocalPlan, DashboardSection } from '../types'
 
 type InsightPanelProps = {
   loading: boolean
@@ -16,6 +16,7 @@ type InsightPanelProps = {
   writeMode: WriteMode
   agentConnected: boolean
   activityEntries: DashboardActivityEvent[]
+  localPlan: DashboardLocalPlan | null
   sources: KnowledgeSource[]
   selectedSource: KnowledgeSource | null
   activeSourceIds: string[]
@@ -63,6 +64,7 @@ export function InsightPanel({
   writeMode,
   agentConnected,
   activityEntries,
+  localPlan,
   sources,
   selectedSource,
   activeSourceIds,
@@ -84,6 +86,8 @@ export function InsightPanel({
   const shownActivity = activityEntries.slice(0, 4)
   const primaryActivity = activityEntries[0]
   const selectedSourceIndex = selectedSource ? sources.findIndex(source => source.id === selectedSource.id) : -1
+  const doneTaskCount = localPlan?.tasks.filter(task => task.status === 'done').length ?? 0
+  const nextPlanTask = localPlan?.tasks.find(task => task.status === 'active') || localPlan?.tasks.find(task => task.status === 'pending') || localPlan?.tasks[0] || null
 
   const selectedSourceBody = selectedSource ? (
     <div className="space-y-3">
@@ -212,10 +216,12 @@ export function InsightPanel({
       case 'plan':
         return (
           <div className="space-y-3">
-            <DashboardMetaRow label="Plan" value="Not loaded yet" className="text-[12px]" />
+            <DashboardMetaRow label="Plan" value={localPlan ? localPlan.title : 'Not loaded yet'} className="text-[12px]" />
+            <DashboardMetaRow label="Progress" value={localPlan ? `${doneTaskCount}/${localPlan.tasks.length} done` : 'No tasks'} className="text-[12px]" />
             <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Next</div>
-              <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">Review sources, then open Handoff for the next execution step.</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Next task</div>
+              <div className="mt-1 truncate text-[12px] font-medium text-bf-text dark:text-slate-100">{nextPlanTask?.title || 'Create a local plan'}</div>
+              <div className="mt-0.5 line-clamp-2 text-[12px] text-bf-muted dark:text-slate-300">{nextPlanTask?.detail || 'Review sources, then create a local execution plan.'}</div>
             </div>
           </div>
         )
@@ -223,6 +229,7 @@ export function InsightPanel({
         return (
           <div className="space-y-3">
             <DashboardMetaRow label="Codex" value={<DashboardCodeText>Scoped review</DashboardCodeText>} className="text-[12px]" />
+            <DashboardMetaRow label="Plan" value={localPlan ? `${doneTaskCount}/${localPlan.tasks.length} done` : 'No local plan'} className="text-[12px]" />
             <DashboardMetaRow label="Claude" value={<DashboardCodeText>Long-context orchestration</DashboardCodeText>} className="text-[12px]" />
             <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
               <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Copy tip</div>

@@ -136,9 +136,9 @@ start_web_if_needed() {
   fi
   log "Starting web on ${WEB_PORT}."
   if command -v setsid >/dev/null 2>&1; then
-    PORT="$WEB_PORT" setsid pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
+    HOST="127.0.0.1" PORT="$WEB_PORT" setsid pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
   else
-    PORT="$WEB_PORT" nohup pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
+    HOST="127.0.0.1" PORT="$WEB_PORT" nohup pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
   fi
 }
 
