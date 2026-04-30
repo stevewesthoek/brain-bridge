@@ -19,6 +19,7 @@ RELAY_LOG="/tmp/buildflow-relay.log"
 RELAY_ERR_LOG="/tmp/buildflow-relay.err.log"
 WEB_LOG="/tmp/buildflow-web.log"
 WEB_ERR_LOG="/tmp/buildflow-web.err.log"
+WEB_PID_FILE="/tmp/buildflow-web.pid"
 
 die() {
   echo "buildflow-local-stack: $*" >&2
@@ -37,6 +38,41 @@ kill_port() {
     log "Stopping listeners on port $port: $pids"
     kill $pids || true
   fi
+}
+
+web_pid_running() {
+  if [ ! -f "$WEB_PID_FILE" ]; then
+    return 1
+  fi
+  local pid
+  pid="$(cat "$WEB_PID_FILE" 2>/dev/null || true)"
+  if [ -z "$pid" ]; then
+    return 1
+  fi
+  kill -0 "$pid" >/dev/null 2>&1
+}
+
+stop_web_pid() {
+  if [ ! -f "$WEB_PID_FILE" ]; then
+    return 0
+  fi
+  local pid
+  pid="$(cat "$WEB_PID_FILE" 2>/dev/null || true)"
+  if [ -n "$pid" ] && kill -0 "$pid" >/dev/null 2>&1; then
+    log "Stopping web PID $pid"
+    kill "$pid" || true
+    for _ in $(seq 1 10); do
+      if ! kill -0 "$pid" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
+    if kill -0 "$pid" >/dev/null 2>&1; then
+      log "Force stopping web PID $pid"
+      kill -9 "$pid" || true
+    fi
+  fi
+  rm -f "$WEB_PID_FILE"
 }
 
 wait_for_docker() {
@@ -134,15 +170,43 @@ start_web_if_needed() {
     log "Web already healthy on ${WEB_PORT}."
     return 0
   fi
-  log "Starting web on ${WEB_PORT}."
-  if command -v setsid >/dev/null 2>&1; then
-    HOST="127.0.0.1" PORT="$WEB_PORT" setsid pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
-  else
-    HOST="127.0.0.1" PORT="$WEB_PORT" nohup pnpm --dir "$REPO_ROOT/apps/web" dev >"$WEB_LOG" 2>"$WEB_ERR_LOG" </dev/null &
+  if web_pid_running; then
+    log "Web PID file exists but health check failed; stopping stale web process."
+    stop_web_pid
   fi
+  log "Starting web on ${WEB_PORT}."
+  : >"$WEB_LOG"
+  : >"$WEB_ERR_LOG"
+  local next_bin="$REPO_ROOT/apps/web/node_modules/.bin/next"
+  local pid
+  pid="$(
+    python3 - "$REPO_ROOT/apps/web" "$WEB_PORT" "$WEB_LOG" "$WEB_ERR_LOG" "$next_bin" <<'PY'
+import os
+import subprocess
+import sys
+
+web_dir, port, log_path, err_path, next_bin = sys.argv[1:6]
+env = os.environ.copy()
+env["HOST"] = "127.0.0.1"
+env["PORT"] = port
+with open(log_path, "ab", buffering=0) as log_file, open(err_path, "ab", buffering=0) as err_file:
+    proc = subprocess.Popen(
+        [next_bin, "dev", "-H", "127.0.0.1", "-p", port],
+        cwd=web_dir,
+        env=env,
+        stdin=subprocess.DEVNULL,
+        stdout=log_file,
+        stderr=err_file,
+        start_new_session=True,
+    )
+    print(proc.pid)
+PY
+  )"
+  echo "$pid" >"$WEB_PID_FILE"
 }
 
 stop_web() {
+  stop_web_pid
   kill_port "$WEB_PORT"
 }
 
@@ -166,6 +230,11 @@ rebuild_web() {
 }
 
 verify_local_web() {
+  if ! web_pid_running && ! web_healthy; then
+    tail -n 80 "$WEB_LOG" || true
+    tail -n 80 "$WEB_ERR_LOG" || true
+    die "Web process is not running and ${WEB_PORT} is not healthy"
+  fi
   web_healthy || die "Web on ${WEB_PORT} is not healthy"
   local status_body
   status_body="$(curl -sS "$WEB_ACTION_STATUS_URL" 2>/dev/null || true)"
