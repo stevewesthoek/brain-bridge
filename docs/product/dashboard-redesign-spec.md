@@ -4,6 +4,12 @@
 
 Design the BuildFlow Local dashboard as a compact local AI workbench.
 
+The dashboard should implement the generated BuildFlow three-panel mockup direction:
+
+1. Overview dashboard for at-a-glance health, source metrics, activity, plans, and workflow.
+2. Context & Sources dashboard for source health, indexed content, active source management, and context mode.
+3. Plans & Tasks dashboard for local plan progress, task state, and execution handoff readiness.
+
 The dashboard should feel closer to:
 
 - ChatGPT app familiarity

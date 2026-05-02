@@ -24,6 +24,39 @@ Use this direction:
 
 > ChatGPT app familiarity + Codex app shell + Linear density + Vercel precision + Apple restraint
 
+## Dashboard target visual
+
+The current target dashboard is the generated three-panel BuildFlow mockup with:
+
+1. **Overview dashboard**
+   - compact greeting/summary header
+   - four small metric cards for sources, indexed files, plans, and tasks
+   - activity overview and model/usage style confidence blocks
+   - recent activity, top sources, recent plans, workflow, and system status panels
+
+2. **Context & Sources**
+   - source list as the primary object
+   - source health summary
+   - indexed content summary
+   - most active sources
+   - context mode controls at the bottom
+
+3. **Plans & Tasks**
+   - active plans with progress bars
+   - task overview filters
+   - task rows with status and priority-like state markers
+   - progress/productivity cards
+
+Implementation rules for this target:
+
+- keep the existing BuildFlow Local routes, actions, and data contracts intact
+- keep the Codex/ChatGPT-style app shell with left rail, main workspace, and right inspector
+- make dashboard pages visually richer through real local data, not decorative filler
+- use compact cards and rows, not oversized panels
+- use color only for state and progress
+- avoid page scroll; use contained panel scrolling only
+- design the dashboard around useful product surfaces: overview, sources, plans, activity, handoff, settings
+
 Meaning:
 
 - ChatGPT app familiarity: clear sections, calm hierarchy, obvious interaction patterns
