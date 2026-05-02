@@ -862,6 +862,7 @@ export default function Dashboard() {
                         sources={sources}
                         writeMode={writeMode}
                         localPlan={localPlan}
+                        activityEntries={activityFeedEntries}
                         onManageSources={() => setActiveDashboardSection('sources')}
                         onOpenHandoff={() => setActiveDashboardSection('handoff')}
                         onOpenPlan={() => setActiveDashboardSection('plan')}

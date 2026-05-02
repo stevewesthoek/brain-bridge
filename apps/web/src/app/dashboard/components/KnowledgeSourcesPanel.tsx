@@ -198,7 +198,7 @@ export function KnowledgeSourcesPanel({
                       ]
 
                       return (
-                        <DashboardListRow
+                  <DashboardListRow
                           key={source.id}
                           className="grid min-h-[4.25rem] grid-cols-[minmax(0,1.7fr)_minmax(8.5rem,0.9fr)_2.5rem] gap-2 rounded-none px-4 py-2.5"
                           selected={selectedSourceId === source.id}
@@ -208,15 +208,15 @@ export function KnowledgeSourcesPanel({
                             <div className="flex items-center gap-2">
                               <DashboardStatusDot tone={source.enabled && source.indexStatus === 'ready' ? 'good' : source.indexStatus === 'failed' ? 'bad' : 'neutral'} />
                               <Folder className="h-3.5 w-3.5 shrink-0 text-bf-muted dark:text-slate-400" strokeWidth={1.8} />
-                              <h4 className="truncate text-[13px] font-medium text-bf-text dark:text-slate-50">{source.label}</h4>
+                              <h4 className="text-[13px] font-medium text-bf-text dark:text-slate-50">{source.label}</h4>
                             </div>
-                            <div className="mt-1 truncate font-mono-ui text-[11px] text-bf-muted dark:text-slate-400">{source.path}</div>
+                            <div className="mt-1 line-clamp-2 font-mono-ui text-[11px] leading-4 text-bf-muted dark:text-slate-400">{source.path}</div>
                           </div>
                           <div className="min-w-0 text-[11px] text-bf-muted dark:text-slate-300">
-                            <div className="truncate">
+                            <div>
                               <span className="font-medium text-bf-text dark:text-slate-100">{getStatusSummary(source)}</span>
                             </div>
-                            <div className="mt-1 truncate text-bf-muted dark:text-slate-400">
+                            <div className="mt-1 text-bf-muted dark:text-slate-400">
                               {source.enabled ? 'Enabled' : 'Disabled'} · {isActive ? 'Active context' : 'Idle'}
                             </div>
                           </div>

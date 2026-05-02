@@ -140,7 +140,52 @@ export function SetupChecklistPanel({
   ]
 
   const doneCount = items.filter(item => item.done).length
-  const shownItems = variant === 'compact' ? items.slice(0, 5) : items
+  const mostlyComplete = doneCount >= Math.max(items.length - 2, 5)
+  if (variant === 'compact') {
+    return (
+      <DashboardPanel variant="flat" className="overflow-hidden p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <DashboardSectionHeader
+            eyebrow="Setup"
+            title={mostlyComplete ? 'Setup almost complete' : 'First-run checklist'}
+            detail={`${doneCount}/${items.length} steps complete · Open Settings to review the full checklist.`}
+          />
+          <DashboardButton type="button" variant="secondary" onClick={onOpenSettings}>Review setup</DashboardButton>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-bf-subtle/70 px-2.5 py-1 text-[11px] text-bf-muted dark:bg-slate-900/50 dark:text-slate-300">
+            <DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />
+            {agentConnected ? 'Agent ready' : 'Agent offline'}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-bf-subtle/70 px-2.5 py-1 text-[11px] text-bf-muted dark:bg-slate-900/50 dark:text-slate-300">
+            <DashboardStatusDot tone={readySources.length > 0 ? 'good' : indexingSources.length > 0 ? 'warn' : 'neutral'} />
+            {readySources.length > 0 ? `${readySources.length} sources ready` : indexingSources.length > 0 ? `${indexingSources.length} indexing` : 'No ready sources'}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-bf-subtle/70 px-2.5 py-1 text-[11px] text-bf-muted dark:bg-slate-900/50 dark:text-slate-300">
+            <DashboardStatusDot tone={localPlan ? 'good' : 'neutral'} />
+            {localPlan ? `${localPlan.tasks.length} plan tasks` : 'No local plan'}
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {items.slice(0, 3).map(item => (
+            <div key={item.id} className="rounded-[14px] bg-bf-surface/55 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/20 dark:ring-slate-800/50">
+              <div className="flex items-center gap-2">
+                <DashboardStatusDot tone={item.done ? 'good' : item.warn ? 'warn' : 'neutral'} />
+                <div className="min-w-0">
+                  <div className="truncate text-[12px] font-medium text-bf-text dark:text-slate-100">{item.title}</div>
+                  <div className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-bf-muted dark:text-slate-400">{item.detail}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DashboardPanel>
+    )
+  }
+
+  const shownItems = items
 
   return (
     <DashboardPanel variant="flat" className="overflow-hidden">
@@ -149,17 +194,10 @@ export function SetupChecklistPanel({
           eyebrow="Setup"
           title="First-run checklist"
           detail={`${doneCount}/${items.length} local setup steps complete.`}
-          action={
-            variant === 'compact' ? (
-              <DashboardButton type="button" variant="secondary" onClick={onOpenSettings}>Open setup</DashboardButton>
-            ) : null
-          }
         />
-        {variant === 'full' ? (
-          <div className="mt-3">
-            <DashboardMetaRow label="OpenAPI" value={<DashboardCodeText>{openApiUrl}</DashboardCodeText>} />
-          </div>
-        ) : null}
+        <div className="mt-3">
+          <DashboardMetaRow label="OpenAPI" value={<DashboardCodeText>{openApiUrl}</DashboardCodeText>} />
+        </div>
       </div>
       <div className="divide-y divide-bf-border/55 dark:divide-slate-800/60">
         {shownItems.map(item => (
@@ -167,7 +205,7 @@ export function SetupChecklistPanel({
             <DashboardStatusDot tone={item.done ? 'good' : item.warn ? 'warn' : 'neutral'} className="mt-1.5" />
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="truncate text-[12px] font-medium text-bf-text dark:text-slate-100">{item.title}</span>
+                <span className="text-[12px] font-medium text-bf-text dark:text-slate-100">{item.title}</span>
                 <span className="shrink-0 text-[10px] text-bf-muted dark:text-slate-500">{statusLabel(item.done, item.warn)}</span>
               </div>
               <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-bf-muted dark:text-slate-300">{item.detail}</p>
@@ -180,11 +218,9 @@ export function SetupChecklistPanel({
           </DashboardListRow>
         ))}
       </div>
-      {variant === 'compact' && items.length > shownItems.length ? (
-        <div className="border-t border-bf-border/55 p-3 text-[12px] text-bf-muted dark:border-slate-800/60 dark:text-slate-400">
-          Open Settings to review the full local setup checklist.
-        </div>
-      ) : null}
+      <div className="border-t border-bf-border/55 p-3 text-[12px] text-bf-muted dark:border-slate-800/60 dark:text-slate-400">
+        Open Settings to review the full local setup checklist.
+      </div>
     </DashboardPanel>
   )
 }

@@ -88,6 +88,8 @@ export function InsightPanel({
   const selectedSourceIndex = selectedSource ? sources.findIndex(source => source.id === selectedSource.id) : -1
   const doneTaskCount = localPlan?.tasks.filter(task => task.status === 'done').length ?? 0
   const nextPlanTask = localPlan?.tasks.find(task => task.status === 'active') || localPlan?.tasks.find(task => task.status === 'pending') || localPlan?.tasks[0] || null
+  const readySourceCount = sources.filter(source => source.enabled && source.indexStatus === 'ready').length
+  const topSource = [...sources].sort((a, b) => (b.indexedFileCount ?? 0) - (a.indexedFileCount ?? 0))[0] || null
 
   const selectedSourceBody = selectedSource ? (
     <div className="space-y-3">
@@ -159,14 +161,32 @@ export function InsightPanel({
       case 'overview':
         return (
           <div className="space-y-3">
-            <DashboardMetaRow label="Next" value="Use Sources or Handoff" className="text-[12px]" />
-            <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Latest</div>
-              <div className="mt-1 truncate text-[12px] font-medium text-bf-text dark:text-slate-50">
-                {primaryActivity?.title || 'Workspace is ready'}
+            <div className="rounded-[14px] bg-bf-subtle/40 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/30 dark:ring-slate-800/60">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Health</div>
+              <div className="mt-1 text-[12px] text-bf-text dark:text-slate-100">
+                {readySourceCount > 0 ? `${readySourceCount} ready sources` : 'No ready sources yet'}
               </div>
-              <div className="mt-0.5 truncate text-[12px] text-bf-muted dark:text-slate-400">
+              <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
+                {agentConnected ? 'Agent connected and ready to work.' : 'Agent disconnected; start the local stack to continue.'}
+              </div>
+            </div>
+            <div className="rounded-[14px] bg-bf-subtle/40 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/30 dark:ring-slate-800/60">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Next action</div>
+              <div className="mt-1 text-[12px] font-medium text-bf-text dark:text-slate-50">
+                {primaryActivity?.title || 'Use Sources or Handoff'}
+              </div>
+              <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
                 {primaryActivity?.detail || 'Keep the workspace calm and move straight to the next useful step.'}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Active plan</div>
+                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-bf-text dark:text-slate-100">{localPlan ? localPlan.title : 'No active plan'}</div>
+              </div>
+              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Largest source</div>
+                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-bf-text dark:text-slate-100">{topSource ? topSource.label : 'No source selected'}</div>
               </div>
             </div>
           </div>
@@ -205,8 +225,8 @@ export function InsightPanel({
                 <div key={entry.id || `${entry.title}-${index}`} className="flex w-full items-start gap-2 rounded-md px-3 py-2 hover:bg-bf-subtle/50 dark:hover:bg-slate-900/40">
                   <DashboardStatusDot tone={entry.tone || 'neutral'} className="mt-1" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
-                    <div className={`mt-0.5 truncate text-[12px] ${toneClasses[entry.tone || 'neutral']}`}>{entry.detail}</div>
+                    <div className="text-[12px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
+                    <div className={`mt-0.5 line-clamp-2 text-[12px] leading-5 ${toneClasses[entry.tone || 'neutral']}`}>{entry.detail}</div>
                   </div>
                 </div>
               ))
