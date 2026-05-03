@@ -10,6 +10,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'sources error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : { error }, { status })
   }
 }

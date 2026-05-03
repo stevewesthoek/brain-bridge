@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export async function POST(request: NextRequest) {
   const auth = checkActionAuth(request)
@@ -10,7 +11,18 @@ export async function POST(request: NextRequest) {
     const data = await executeAction('/api/read-files', body, auth.bearerToken)
     return NextResponse.json(data)
   } catch (err) {
-    if (err instanceof ActionTransportError) return NextResponse.json({ error: err.message }, { status: err.statusCode })
-    return NextResponse.json({ error: `Read files error: ${String(err)}` }, { status: 500 })
+    if (err instanceof ActionTransportError) {
+      return NextResponse.json(err.payload && typeof err.payload === 'object' ? err.payload : buildActionErrorEnvelope({
+        code: 'ACTION_TRANSPORT_ERROR',
+        message: err.message,
+        details: `Status ${err.statusCode}`,
+        status: err.statusCode === 504 ? 'unavailable' : 'error'
+      }), { status: err.statusCode })
+    }
+    return NextResponse.json(buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: 'Read files error',
+      details: err instanceof Error ? err.message : String(err)
+    }), { status: 500 })
   }
 }

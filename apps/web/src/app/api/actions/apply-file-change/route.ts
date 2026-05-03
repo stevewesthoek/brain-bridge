@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { dispatchBuildFlowFileChange, unwrapActionError } from '@/lib/actions/gpt'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 function getSafeActionHttpStatus(error: unknown): number {
   if (error && typeof error === 'object') {
@@ -28,13 +29,19 @@ export async function POST(request: NextRequest) {
       if (payload.error && typeof payload.error === 'object') {
         return NextResponse.json(payload.error, { status })
       }
-      return NextResponse.json({ error: payload.error }, { status })
+      return NextResponse.json(buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: String(payload.error)
+      }), { status })
     }
     if ((body.dryRun === true || body.preflight === true) && (data as { verified?: unknown }).verified === false) {
       return NextResponse.json(data)
     }
     if ((data as { verified?: unknown }).verified !== true) {
-      return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
+      return NextResponse.json(buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: 'Write was not verified'
+      }), { status: 502 })
     }
     return NextResponse.json(data)
   } catch (err) {
@@ -42,6 +49,9 @@ export async function POST(request: NextRequest) {
     if (error && typeof error === 'object') {
       return NextResponse.json(error, { status })
     }
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: String(error)
+    }), { status })
   }
 }

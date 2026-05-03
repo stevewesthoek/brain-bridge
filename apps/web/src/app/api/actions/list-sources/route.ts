@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { executeActionGET, ActionTransportError } from '@/lib/actions/transport'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -20,7 +21,12 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     if (err instanceof ActionTransportError) {
       return NextResponse.json(
-        { error: err.message },
+        err.payload && typeof err.payload === 'object' ? err.payload : buildActionErrorEnvelope({
+          code: 'ACTION_TRANSPORT_ERROR',
+          message: err.message,
+          details: `Status ${err.statusCode}`,
+          status: err.statusCode === 504 ? 'unavailable' : 'error'
+        }),
         {
           status: err.statusCode,
           headers: {
@@ -29,14 +35,16 @@ export async function GET(request: NextRequest) {
         }
       )
     }
-    return NextResponse.json(
-      { error: 'Backend service unavailable' },
-      {
-        status: 503,
-        headers: {
-          'Cache-Control': 'no-store'
-        }
+    return NextResponse.json(buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: 'Backend service unavailable',
+      details: err instanceof Error ? err.message : String(err),
+      status: 'error'
+    }), {
+      status: 503,
+      headers: {
+        'Cache-Control': 'no-store'
       }
-    )
+    })
   }
 }

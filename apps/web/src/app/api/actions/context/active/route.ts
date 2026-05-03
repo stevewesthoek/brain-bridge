@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'context active error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : { error }, { status })
   }
 }
 
@@ -23,6 +23,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'context active error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : { error }, { status })
   }
 }

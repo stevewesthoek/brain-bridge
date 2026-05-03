@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export async function POST(request: NextRequest) {
   const auth = checkActionAuth(request)
@@ -12,7 +13,10 @@ export async function POST(request: NextRequest) {
 
     if (!path) {
       return NextResponse.json(
-        { error: 'Missing path parameter' },
+        buildActionErrorEnvelope({
+          code: 'BUILDFLOW_STATUS_ERROR',
+          message: 'Missing path parameter'
+        }),
         { status: 400 }
       )
     }
@@ -33,12 +37,21 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     if (err instanceof ActionTransportError) {
       return NextResponse.json(
-        { error: err.message },
+        err.payload && typeof err.payload === 'object' ? err.payload : buildActionErrorEnvelope({
+          code: 'ACTION_TRANSPORT_ERROR',
+          message: err.message,
+          details: `Status ${err.statusCode}`,
+          status: err.statusCode === 504 ? 'unavailable' : 'error'
+        }),
         { status: err.statusCode }
       )
     }
     return NextResponse.json(
-      { error: `Read error: ${String(err)}` },
+      buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: 'Read error',
+        details: err instanceof Error ? err.message : String(err)
+      }),
       { status: 500 }
     )
   }

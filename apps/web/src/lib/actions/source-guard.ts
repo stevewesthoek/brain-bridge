@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { executeAction, ActionTransportError } from './transport'
+import { buildActionErrorEnvelope } from './action-response'
 
 export async function requireExplicitSourceId(body: Record<string, unknown>) {
   if (typeof body.sourceId === 'string' && body.sourceId.length > 0) {
@@ -23,7 +24,19 @@ export async function requireExplicitSourceId(body: Record<string, unknown>) {
 
 export function unwrapActionError(err: unknown, fallback: string) {
   if (err instanceof ActionTransportError) {
-    return NextResponse.json({ error: err.message }, { status: err.statusCode })
+    return NextResponse.json(
+      err.payload && typeof err.payload === 'object' ? err.payload : buildActionErrorEnvelope({
+        code: 'ACTION_TRANSPORT_ERROR',
+        message: err.message,
+        details: `Status ${err.statusCode}`,
+        status: err.statusCode === 504 ? 'unavailable' : 'error'
+      }),
+      { status: err.statusCode }
+    )
   }
-  return NextResponse.json({ error: `${fallback}: ${String(err)}` }, { status: 500 })
+  return NextResponse.json(buildActionErrorEnvelope({
+    code: 'BUILDFLOW_STATUS_ERROR',
+    message: fallback,
+    details: err instanceof Error ? err.message : String(err)
+  }), { status: 500 })
 }

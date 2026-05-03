@@ -1,5 +1,6 @@
 import { executeAction, ActionTransportError, executeActionGET } from './transport'
 import { getBackendUrl, getBackendMode } from './config'
+import { buildActionErrorEnvelope } from './action-response'
 
 type NormalizedSource = {
   id: string
@@ -391,9 +392,24 @@ async function fetchJson(endpoint: string, init?: RequestInit): Promise<unknown>
 
 export function unwrapActionError(err: unknown, fallback: string) {
   if (err instanceof ActionTransportError) {
-    return { error: err.payload || err.message, status: err.statusCode }
+    return {
+      error: err.payload || buildActionErrorEnvelope({
+        code: 'ACTION_TRANSPORT_ERROR',
+        message: err.message,
+        details: `Status ${err.statusCode}`,
+        status: err.statusCode === 504 ? 'unavailable' : 'error'
+      }),
+      status: err.statusCode
+    }
   }
-  return { error: `${fallback}: ${String(err)}`, status: 500 }
+  return {
+    error: buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: fallback,
+      details: err instanceof Error ? err.message : String(err)
+    }),
+    status: 500
+  }
 }
 
 function validateContextSelection(body: Record<string, unknown>) {

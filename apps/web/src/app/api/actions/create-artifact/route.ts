@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { executeAction, ActionTransportError } from '@/lib/actions/transport'
 import { requireExplicitSourceId, unwrapActionError } from '@/lib/actions/source-guard'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export async function POST(request: NextRequest) {
   const auth = checkActionAuth(request)
@@ -12,7 +13,10 @@ export async function POST(request: NextRequest) {
     if (sourceError) return sourceError
     const data = await executeAction('/api/create-artifact', body, auth.bearerToken)
     if ((data as { verified?: unknown }).verified !== true) {
-      return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
+      return NextResponse.json(buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: 'Write was not verified'
+      }), { status: 502 })
     }
     return NextResponse.json(data)
   } catch (err) {
@@ -20,6 +24,9 @@ export async function POST(request: NextRequest) {
     if (actionError.error && typeof actionError.error === 'object') {
       return NextResponse.json(actionError.error, { status: actionError.status })
     }
-    return NextResponse.json({ error: actionError.error }, { status: actionError.status })
+    return NextResponse.json(buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: String(actionError.error)
+    }), { status: actionError.status })
   }
 }

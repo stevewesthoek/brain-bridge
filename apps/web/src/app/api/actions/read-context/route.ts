@@ -12,6 +12,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'read-context error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : { error }, { status })
   }
 }

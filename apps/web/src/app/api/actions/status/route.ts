@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { executeActionGET, ActionTransportError } from '@/lib/actions/transport'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -23,14 +24,29 @@ export async function GET(request: NextRequest) {
   const auth = checkActionAuth(request)
   if (!auth.valid) return auth.error
 
+  console.log('[BuildFlow status] action entry')
   try {
+    console.log('[BuildFlow status] connection check')
     const result = await executeActionGET('/api/status', auth.bearerToken)
     const sourceCount = typeof result.data === 'object' && result.data !== null && typeof (result.data as { sourceCount?: unknown }).sourceCount === 'number'
       ? (result.data as { sourceCount: number }).sourceCount
       : 0
-    const payload = result.data && typeof result.data === 'object'
-      ? { ...(result.data as Record<string, unknown>), activity: buildStatusActivity(sourceCount) }
-      : { activity: buildStatusActivity(sourceCount) }
+    const payload = {
+      ok: true,
+      connected: true,
+      status: 'available',
+      version: typeof result.data === 'object' && result.data !== null && typeof (result.data as { version?: unknown }).version === 'string'
+        ? (result.data as { version: string }).version
+        : 'unknown',
+      serverTime: new Date().toISOString(),
+      sourcesReady: sourceCount > 0,
+      message: 'BuildFlow is available',
+      sourceCount,
+      ...(result.data && typeof result.data === 'object' ? result.data as Record<string, unknown> : {}),
+      activity: buildStatusActivity(sourceCount)
+    }
+    console.log('[BuildFlow status] response construction')
+    console.log(`[BuildFlow status] response serialization bytes=${Buffer.byteLength(JSON.stringify(payload), 'utf8')}`)
     return NextResponse.json(payload, {
       status: result.status,
       headers: {
@@ -38,25 +54,50 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (err) {
+    console.log('[BuildFlow status] caught error', err instanceof Error ? err.message : String(err))
     if (err instanceof ActionTransportError) {
-      return NextResponse.json(
-        { error: err.message },
-        {
-          status: err.statusCode,
-          headers: {
-            'Cache-Control': 'no-store'
-          }
-        }
-      )
-    }
-    return NextResponse.json(
-      { error: 'Backend service unavailable' },
-      {
-        status: 503,
+      const payload = err.payload && typeof err.payload === 'object'
+        ? (() => {
+            const raw = err.payload as { error?: { code?: string } }
+            if (raw.error?.code === 'ACTION_TRANSPORT_ERROR') {
+              return buildActionErrorEnvelope({
+                code: 'BUILDFLOW_STATUS_ERROR',
+                message: 'BuildFlow status check failed.',
+                details: err.message,
+                recovery: ['Open OrbStack', 'Run pnpm local:restart', 'Run scripts/buildflow-local-stack.sh status'],
+                status: 'error'
+              })
+            }
+            return err.payload
+          })()
+        : buildActionErrorEnvelope({
+          code: err.statusCode === 504 ? 'LOCAL_STACK_TIMEOUT' : 'LOCAL_STACK_UNAVAILABLE',
+          message: err.message,
+          details: 'The local BuildFlow stack was not reachable.',
+          recovery: ['Open OrbStack', 'Run pnpm local:restart', 'Run scripts/buildflow-local-stack.sh status'],
+          status: 'unavailable'
+        })
+      console.log(`[BuildFlow status] response serialization bytes=${Buffer.byteLength(JSON.stringify(payload), 'utf8')}`)
+      return NextResponse.json(payload, {
+        status: err.statusCode,
         headers: {
           'Cache-Control': 'no-store'
         }
+      })
+    }
+    const payload = buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: 'BuildFlow status check failed.',
+      details: err instanceof Error ? err.message : String(err),
+      recovery: ['Open OrbStack', 'Run pnpm local:restart', 'Run scripts/buildflow-local-stack.sh status'],
+      status: 'error'
+    })
+    console.log(`[BuildFlow status] response serialization bytes=${Buffer.byteLength(JSON.stringify(payload), 'utf8')}`)
+    return NextResponse.json(payload, {
+      status: 503,
+      headers: {
+        'Cache-Control': 'no-store'
       }
-    )
+    })
   }
 }

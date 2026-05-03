@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { dispatchBuildFlowArtifact, unwrapActionError } from '@/lib/actions/gpt'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 function getSafeActionHttpStatus(error: unknown): number {
   if (error && typeof error === 'object') {
@@ -25,7 +26,10 @@ export async function POST(request: NextRequest) {
         if (payload.error && typeof payload.error === 'object') {
           return NextResponse.json(payload.error, { status })
         }
-        return NextResponse.json({ error: payload.error }, { status })
+        return NextResponse.json(buildActionErrorEnvelope({
+          code: 'BUILDFLOW_STATUS_ERROR',
+          message: String(payload.error)
+        }), { status })
       }
       if ((preflight as { requiresConfirmation?: unknown }).requiresConfirmation === true) {
         return NextResponse.json(preflight)
@@ -44,14 +48,23 @@ export async function POST(request: NextRequest) {
       if (payload.error && typeof payload.error === 'object') {
         return NextResponse.json(payload.error, { status })
       }
-      return NextResponse.json({ error: payload.error }, { status })
+      return NextResponse.json(buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: String(payload.error)
+      }), { status })
     }
     if ((data as { verified?: unknown }).verified !== true) {
-      return NextResponse.json({ error: 'Write was not verified' }, { status: 502 })
+      return NextResponse.json(buildActionErrorEnvelope({
+        code: 'BUILDFLOW_STATUS_ERROR',
+        message: 'Write was not verified'
+      }), { status: 502 })
     }
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'write-artifact error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: String(error)
+    }), { status })
   }
 }

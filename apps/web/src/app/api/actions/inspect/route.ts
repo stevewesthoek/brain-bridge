@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkActionAuth } from '@/lib/actionAuth'
 import { dispatchBuildFlowInspect, unwrapActionError } from '@/lib/actions/gpt'
+import { buildActionErrorEnvelope } from '@/lib/actions/action-response'
 
 export async function POST(request: NextRequest) {
   const auth = checkActionAuth(request)
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data)
   } catch (err) {
     const { error, status } = unwrapActionError(err, 'inspect error')
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json(error && typeof error === 'object' ? error : buildActionErrorEnvelope({
+      code: 'BUILDFLOW_STATUS_ERROR',
+      message: String(error)
+    }), { status })
   }
 }
