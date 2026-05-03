@@ -161,32 +161,23 @@ export function InsightPanel({
       case 'overview':
         return (
           <div className="space-y-3">
-            <div className="rounded-[14px] bg-bf-subtle/40 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/30 dark:ring-slate-800/60">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Health</div>
-              <div className="mt-1 text-[12px] text-bf-text dark:text-slate-100">
+            <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Current state</div>
+              <div className="mt-1 flex items-center gap-2 text-[12px] text-bf-text dark:text-slate-100">
+                <DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />
+                <span>{agentConnected ? 'Agent connected' : 'Agent offline'}</span>
+              </div>
+              <div className="mt-1 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
                 {readySourceCount > 0 ? `${readySourceCount} ready sources` : 'No ready sources yet'}
               </div>
-              <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
-                {agentConnected ? 'Agent connected and ready to work.' : 'Agent disconnected; start the local stack to continue.'}
-              </div>
             </div>
-            <div className="rounded-[14px] bg-bf-subtle/40 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/30 dark:ring-slate-800/60">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Next action</div>
-              <div className="mt-1 text-[12px] font-medium text-bf-text dark:text-slate-50">
-                {primaryActivity?.title || 'Use Sources or Handoff'}
-              </div>
-              <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
+
+            <div className="space-y-2 rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
+              <DashboardMetaRow label="Next action" value={primaryActivity?.title || 'Use Sources or Handoff'} />
+              <DashboardMetaRow label="Plan" value={localPlan ? localPlan.title : 'No active plan'} />
+              <DashboardMetaRow label="Source" value={topSource ? topSource.label : 'No source selected'} />
+              <div className="pt-1 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
                 {primaryActivity?.detail || 'Keep the workspace calm and move straight to the next useful step.'}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Active plan</div>
-                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-bf-text dark:text-slate-100">{localPlan ? localPlan.title : 'No active plan'}</div>
-              </div>
-              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Largest source</div>
-                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-bf-text dark:text-slate-100">{topSource ? topSource.label : 'No source selected'}</div>
               </div>
             </div>
           </div>
@@ -197,16 +188,17 @@ export function InsightPanel({
             <DashboardMetaRow label="Mode" value={summarizeMode(activeMode)} className="text-[12px]" />
             <DashboardMetaRow label="Write" value={summarizeWriteMode(writeMode)} className="text-[12px]" />
             {selectedSource ? (
-              <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Selection</div>
-                <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
-                  {selectedSource.label} is selected in the workspace rail.
+                <div className="mt-1 text-[12px] text-bf-text dark:text-slate-100">{selectedSource.label}</div>
+                <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
+                  {selectedSource.indexStatus || 'unknown'} · {typeof selectedSource.indexedFileCount === 'number' ? `${selectedSource.indexedFileCount.toLocaleString()} files` : 'files unknown'}
                 </div>
               </div>
             ) : (
-              <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+              <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Source note</div>
-                <div className="mt-1 text-[12px] text-bf-muted dark:text-slate-300">
+                <div className="mt-1 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
                   {loading ? 'Refreshing source state...' : 'Select a source to inspect it here.'}
                 </div>
               </div>
@@ -217,12 +209,12 @@ export function InsightPanel({
         return (
           <div className="space-y-2">
             {shownActivity.length === 0 ? (
-              <div className="rounded-md border border-dashed border-bf-border/70 bg-bf-subtle/40 px-3 py-3 text-[12px] text-bf-muted dark:border-slate-800/70 dark:bg-slate-950/35 dark:text-slate-300">
+              <div className="rounded-[14px] border border-dashed border-bf-border/60 bg-bf-subtle/35 px-3 py-3 text-[12px] leading-5 text-bf-muted dark:border-slate-800/60 dark:bg-slate-950/24 dark:text-slate-300">
                 BuildFlow activity will appear here.
               </div>
             ) : (
               shownActivity.map((entry, index) => (
-                <div key={entry.id || `${entry.title}-${index}`} className="flex w-full items-start gap-2 rounded-md px-3 py-2 hover:bg-bf-subtle/50 dark:hover:bg-slate-900/40">
+                <div key={entry.id || `${entry.title}-${index}`} className="flex w-full items-start gap-2 rounded-[12px] px-3 py-2 hover:bg-bf-subtle/45 dark:hover:bg-slate-900/35">
                   <DashboardStatusDot tone={entry.tone || 'neutral'} className="mt-1" />
                   <div className="min-w-0 flex-1">
                     <div className="text-[12px] font-medium text-bf-text dark:text-slate-50">{entry.title}</div>
@@ -238,7 +230,7 @@ export function InsightPanel({
           <div className="space-y-3">
             <DashboardMetaRow label="Plan" value={localPlan ? localPlan.title : 'Not loaded yet'} className="text-[12px]" />
             <DashboardMetaRow label="Progress" value={localPlan ? `${doneTaskCount}/${localPlan.tasks.length} done` : 'No tasks'} className="text-[12px]" />
-            <div className="rounded-md border border-bf-border/60 bg-bf-subtle/40 px-3 py-2 dark:border-slate-800/70 dark:bg-slate-950/35">
+            <div className="rounded-[14px] bg-bf-subtle/35 px-3 py-2.5 ring-1 ring-inset ring-bf-border/35 dark:bg-slate-950/24 dark:ring-slate-800/50">
               <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Next task</div>
               <div className="mt-1 truncate text-[12px] font-medium text-bf-text dark:text-slate-100">{nextPlanTask?.title || 'Create a local plan'}</div>
               <div className="mt-0.5 line-clamp-2 text-[12px] text-bf-muted dark:text-slate-300">{nextPlanTask?.detail || 'Review sources, then create a local execution plan.'}</div>

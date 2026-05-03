@@ -71,7 +71,7 @@ export function DashboardOverview({
               title="Good morning, Steve"
               detail="BuildFlow Local is your compact AI workbench for sources, plans, and safe execution."
             />
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-bf-muted dark:text-slate-300">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-bf-muted dark:text-slate-300">
               <span className="inline-flex items-center gap-1.5"><DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />{agentConnected ? 'Agent connected' : 'Agent offline'}</span>
               <span>·</span>
               <span>{enabledCount} enabled sources</span>
@@ -101,8 +101,8 @@ export function DashboardOverview({
         </div>
       </DashboardPanel>
 
-      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.8fr)]">
-        <div className="grid min-h-0 gap-3 lg:grid-cols-2">
+      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.75fr)]">
+        <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           <DashboardPanel variant="flat" className="min-h-0 overflow-hidden p-4">
             <DashboardSectionHeader eyebrow="Activity overview" title="Recent activity" detail="Real dashboard events, surfaced without a decorative chart." />
             {recentActivity.length > 0 ? (
@@ -135,30 +135,63 @@ export function DashboardOverview({
             </div>
           </DashboardPanel>
 
-          <DashboardPanel variant="flat" className="p-4">
-            <DashboardSectionHeader eyebrow="Source health" title={`${sourceHealth}% healthy`} detail="Ready sources divided by connected sources." />
-            <div className="mt-4 grid gap-3 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
-              <div className="flex items-center justify-center">
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/12 to-slate-500/10 ring-1 ring-inset ring-emerald-500/25 dark:from-emerald-500/10 dark:to-slate-500/10 dark:ring-emerald-500/20">
-                  <div className="text-center">
-                    <div className="text-2xl font-semibold text-bf-text dark:text-slate-50">{sourceHealth}%</div>
-                    <div className="text-[10px] uppercase tracking-[0.08em] text-bf-muted dark:text-slate-400">Ready</div>
+          <div className="grid min-h-0 gap-3">
+            <DashboardPanel variant="flat" className="p-4">
+              <DashboardSectionHeader eyebrow="Source health" title={`${sourceHealth}% healthy`} detail="Ready sources divided by connected sources." />
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/12 to-slate-500/10 ring-1 ring-inset ring-emerald-500/25 dark:from-emerald-500/10 dark:to-slate-500/10 dark:ring-emerald-500/20">
+                    <div className="text-center">
+                      <div className="text-xl font-semibold leading-none text-bf-text dark:text-slate-50">{sourceHealth}%</div>
+                      <div className="mt-0.5 text-[10px] uppercase tracking-[0.08em] text-bf-muted dark:text-slate-400">Ready</div>
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[12px] font-medium text-bf-text dark:text-slate-100">
+                      {readyCount > 0 ? `${readyCount} sources ready` : 'No ready sources yet'}
+                    </div>
+                    <div className="mt-0.5 text-[12px] leading-5 text-bf-muted dark:text-slate-300">
+                      {indexingCount > 0 ? `${indexingCount} still indexing` : 'Indexing is idle'}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-2 text-[12px] text-bf-muted dark:text-slate-300 sm:grid-cols-3 sm:gap-3">
+                  <div className="rounded-[12px] bg-bf-subtle/45 px-3 py-2 dark:bg-slate-950/28">
+                    <div className="text-bf-muted dark:text-slate-400">Connected</div>
+                    <div className="mt-0.5 text-bf-text dark:text-slate-100">{sources.length}</div>
+                  </div>
+                  <div className="rounded-[12px] bg-bf-subtle/45 px-3 py-2 dark:bg-slate-950/28">
+                    <div className="text-bf-muted dark:text-slate-400">Indexed files</div>
+                    <div className="mt-0.5 text-bf-text dark:text-slate-100">{formatCount(indexedFiles)}</div>
+                  </div>
+                  <div className="rounded-[12px] bg-bf-subtle/45 px-3 py-2 dark:bg-slate-950/28">
+                    <div className="text-bf-muted dark:text-slate-400">Failures</div>
+                    <div className="mt-0.5 text-bf-text dark:text-slate-100">{failedCount}</div>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2 text-[12px] text-bf-muted dark:text-slate-300">
-                <div className="flex justify-between gap-3"><span>All sources connected</span><span>{sources.length > 0 ? 'yes' : 'no'}</span></div>
-                <div className="flex justify-between gap-3"><span>Index up to date</span><span>{indexingCount === 0 ? 'yes' : 'running'}</span></div>
-                <div className="flex justify-between gap-3"><span>Failures</span><span>{failedCount}</span></div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-bf-subtle dark:bg-slate-900">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${sourceHealth}%` }} />
-                </div>
-              </div>
-            </div>
-          </DashboardPanel>
+            </DashboardPanel>
 
-          <DashboardPanel variant="flat" className="min-h-0 overflow-hidden p-4">
-            <DashboardSectionHeader eyebrow="Top sources" title="Most indexed sources" detail="Largest connected local contexts." />
+            <DashboardPanel variant="flat" className="p-4">
+              <DashboardSectionHeader eyebrow="Next action" title={nextTask ? nextTask.title : readyCount > 0 ? 'Create a local plan' : 'Add a source'} detail={nextTask ? nextTask.detail : readyCount > 0 ? 'Turn ready source context into a scoped plan.' : 'Connect a local source before planning.'} />
+              <div className="mt-4 flex flex-wrap gap-2">
+                <DashboardButton type="button" variant="primary" onClick={nextTask ? onOpenHandoff : onOpenPlan}>
+                  {nextTask ? 'Open handoff' : 'Create plan'}
+                </DashboardButton>
+                <DashboardButton type="button" variant="secondary" onClick={onManageSources}>
+                  Sources
+                </DashboardButton>
+              </div>
+              <div className="mt-4 rounded-[14px] bg-bf-subtle/45 px-3 py-2.5 text-[12px] leading-5 text-bf-muted dark:bg-slate-950/28 dark:text-slate-300">
+                Setup completion is {setupProgress}%. {setupProgress >= 75 ? 'The checklist now stays compact in Overview.' : 'Complete setup to keep the workspace ready.'}
+              </div>
+            </DashboardPanel>
+          </div>
+        </div>
+
+        <div className="grid min-h-0 gap-3">
+          <DashboardPanel variant="flat" className="p-4">
+            <DashboardSectionHeader eyebrow="Top sources" title="Largest contexts" detail="Most indexed local sources." />
             <div className="mt-3 space-y-2">
               {topSources.length === 0 ? (
                 <p className="text-[12px] text-bf-muted dark:text-slate-400">No sources connected yet.</p>
@@ -166,10 +199,13 @@ export function DashboardOverview({
                 const count = source.indexedFileCount ?? 0
                 const percent = indexedFiles > 0 ? Math.max(8, Math.round((count / indexedFiles) * 100)) : 8
                 return (
-                  <div key={source.id} className="space-y-1">
-                    <div className="flex items-center justify-between gap-3 text-[12px]">
-                      <span className="min-w-0 flex-1 text-bf-text dark:text-slate-100">{source.label}</span>
-                      <span className="font-mono-ui text-[11px] text-bf-muted dark:text-slate-400">{formatCount(count)}</span>
+                  <div key={source.id} className="space-y-1.5">
+                    <div className="flex items-start justify-between gap-3 text-[12px]">
+                      <div className="min-w-0 flex-1">
+                        <div className="break-words font-medium text-bf-text dark:text-slate-100">{source.label}</div>
+                        <div className="mt-0.5 text-[11px] text-bf-muted dark:text-slate-400">{formatCount(count)} files</div>
+                      </div>
+                      <div className="shrink-0 text-[11px] text-bf-muted dark:text-slate-400">{percent}%</div>
                     </div>
                     <div className="h-1 overflow-hidden rounded-full bg-bf-subtle dark:bg-slate-900">
                       <div className="h-full rounded-full bg-blue-500/80" style={{ width: `${percent}%` }} />
@@ -194,34 +230,6 @@ export function DashboardOverview({
                   <span>{label}</span>
                 </div>
               ))}
-            </div>
-          </DashboardPanel>
-        </div>
-
-        <div className="grid min-h-0 gap-3">
-          <DashboardPanel variant="flat" className="p-4">
-            <DashboardSectionHeader eyebrow="Recent plan" title={localPlan ? localPlan.title : 'No active plan'} detail={nextTask ? nextTask.title : 'Create a plan to track scoped work.'} />
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-bf-subtle dark:bg-slate-900">
-              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${planProgress}%` }} />
-            </div>
-            <div className="mt-3 flex items-center justify-between text-[12px] text-bf-muted dark:text-slate-400">
-              <span>{doneCount}/{totalTasks || 0} tasks done</span>
-              <span>{planProgress}%</span>
-            </div>
-          </DashboardPanel>
-
-          <DashboardPanel variant="flat" className="p-4">
-            <DashboardSectionHeader eyebrow="Next action" title={nextTask ? nextTask.title : readyCount > 0 ? 'Create a local plan' : 'Add a source'} detail={nextTask ? nextTask.detail : readyCount > 0 ? 'Turn ready source context into a scoped plan.' : 'Connect a local source before planning.'} />
-            <div className="mt-4 flex flex-wrap gap-2">
-              <DashboardButton type="button" variant="primary" onClick={nextTask ? onOpenHandoff : onOpenPlan}>
-                {nextTask ? 'Open handoff' : 'Create plan'}
-              </DashboardButton>
-              <DashboardButton type="button" variant="secondary" onClick={onManageSources}>
-                Sources
-              </DashboardButton>
-            </div>
-            <div className="mt-4 rounded-[14px] bg-bf-subtle/50 px-3 py-2.5 text-[12px] leading-5 text-bf-muted dark:bg-slate-950/30 dark:text-slate-300">
-              Setup completion is {setupProgress}%. {setupProgress >= 75 ? 'The checklist is mostly complete and now stays compact.' : 'Complete setup to keep the workspace ready.'}
             </div>
           </DashboardPanel>
         </div>

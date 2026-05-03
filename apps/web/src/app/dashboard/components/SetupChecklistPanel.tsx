@@ -143,8 +143,8 @@ export function SetupChecklistPanel({
   const mostlyComplete = doneCount >= Math.max(items.length - 2, 5)
   if (variant === 'compact') {
     return (
-      <DashboardPanel variant="flat" className="overflow-hidden p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <DashboardPanel variant="flat" className="overflow-hidden px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <DashboardSectionHeader
             eyebrow="Setup"
             title={mostlyComplete ? 'Setup almost complete' : 'First-run checklist'}
@@ -153,7 +153,7 @@ export function SetupChecklistPanel({
           <DashboardButton type="button" variant="secondary" onClick={onOpenSettings}>Review setup</DashboardButton>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-bf-subtle/70 px-2.5 py-1 text-[11px] text-bf-muted dark:bg-slate-900/50 dark:text-slate-300">
             <DashboardStatusDot tone={agentConnected ? 'good' : 'neutral'} />
             {agentConnected ? 'Agent ready' : 'Agent offline'}
@@ -166,20 +166,6 @@ export function SetupChecklistPanel({
             <DashboardStatusDot tone={localPlan ? 'good' : 'neutral'} />
             {localPlan ? `${localPlan.tasks.length} plan tasks` : 'No local plan'}
           </span>
-        </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {items.slice(0, 3).map(item => (
-            <div key={item.id} className="rounded-[14px] bg-bf-surface/55 px-3 py-2.5 ring-1 ring-inset ring-bf-border/40 dark:bg-slate-950/20 dark:ring-slate-800/50">
-              <div className="flex items-center gap-2">
-                <DashboardStatusDot tone={item.done ? 'good' : item.warn ? 'warn' : 'neutral'} />
-                <div className="min-w-0">
-                  <div className="truncate text-[12px] font-medium text-bf-text dark:text-slate-100">{item.title}</div>
-                  <div className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-bf-muted dark:text-slate-400">{item.detail}</div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </DashboardPanel>
     )
