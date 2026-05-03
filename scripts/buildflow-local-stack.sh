@@ -90,6 +90,11 @@ wait_for_docker() {
     fi
     sleep 5
   done
+  if command -v orbctl >/dev/null 2>&1; then
+    log "OrbStack status:"
+    orbctl status || true
+  fi
+  log "Docker/OrbStack is still unavailable. Open OrbStack and retry 'pnpm local:restart'."
   die "Docker/OrbStack did not become ready"
 }
 
