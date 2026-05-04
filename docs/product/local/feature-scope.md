@@ -9,6 +9,10 @@ Current and planned BuildFlow Local features:
 - local dashboard
 - local activity
 - dynamic handoff prompts
+- ChatGPT-first structured action responses
+- local activity/event history
+- local handoff objects and links
+- optional confirmed local runner
 - local plans and tasks
 - Custom GPT and OpenAPI setup with a user-owned endpoint
 - verification and test scripts

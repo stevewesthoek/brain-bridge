@@ -14,6 +14,8 @@ This roadmap covers BuildFlow Local only. It tracks the free, open-source, self-
 - onboarding and first-run improvements
 - context, search, and read improvements
 - execution packet UX
+- ChatGPT-first action responses and handoff flow
+- local activity/event history for tool work
 - open-source contribution flow
 
 ## Near-term priorities
@@ -22,6 +24,9 @@ This roadmap covers BuildFlow Local only. It tracks the free, open-source, self-
 - improve source activation and reindex flows
 - keep activity feedback concise and user-facing
 - make safe writes and preflight checks easier to understand
+- make BuildFlow action results more useful inside ChatGPT
+- add persistent local activity events for tool work
+- add handoff objects for prompts and validation commands
 - reduce first-run setup friction for new GitHub visitors
 
 ## Safety and scope
