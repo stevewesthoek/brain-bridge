@@ -8,7 +8,7 @@
   "servers": [
     {
       "url": "http://127.0.0.1:3054",
-      "description": "Local BuildFlow endpoint"
+      "description": "BuildFlow public endpoint"
     }
   ],
   "components": {
@@ -119,6 +119,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -509,6 +539,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -911,6 +971,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -1366,6 +1456,36 @@
                         "verified": {
                           "type": "boolean"
                         },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
                         "nextStep": {
                           "type": "string"
                         }
@@ -1674,6 +1794,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -2027,6 +2177,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -2393,6 +2573,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"
@@ -2815,6 +3025,36 @@
                         },
                         "verified": {
                           "type": "boolean"
+                        },
+                        "safeInputSummary": {
+                          "type": "string"
+                        },
+                        "safeOutputSummary": {
+                          "type": "string"
+                        },
+                        "whatHappened": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "whatRemains": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "provenFacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nextActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "nextStep": {
                           "type": "string"

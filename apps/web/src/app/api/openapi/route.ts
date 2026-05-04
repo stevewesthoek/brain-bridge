@@ -86,6 +86,12 @@ const activitySchema = {
     riskLevel: { type: 'string', enum: ['low', 'medium', 'high'] },
     requiresConfirmation: { type: 'boolean' },
     verified: { type: 'boolean' },
+    safeInputSummary: { type: 'string' },
+    safeOutputSummary: { type: 'string' },
+    whatHappened: { type: 'array', items: { type: 'string' } },
+    whatRemains: { type: 'array', items: { type: 'string' } },
+    provenFacts: { type: 'array', items: { type: 'string' } },
+    nextActions: { type: 'array', items: { type: 'string' } },
     nextStep: { type: 'string' }
   },
   required: ['version', 'operationId', 'phase', 'actionLabel', 'userMessage', 'riskLevel', 'requiresConfirmation', 'verified']

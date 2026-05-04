@@ -88,17 +88,19 @@ If those surfaces are pursued, document and build them in the separate private r
 
 Make every BuildFlow action easy for the Custom GPT to summarize.
 
-Add or standardize fields such as:
+Every action activity payload should expose safe, UI-ready fields:
 
 ```json
 {
   "activity": {
     "actionLabel": "Read repo files",
     "userMessage": "Read 3 files from buildflow.",
-    "whatHappened": ["Active source checked", "Files read"],
-    "whatRemains": ["Run type-check", "Commit changes"],
-    "safeInputSummary": "sourceId=buildflow, 3 paths",
-    "safeOutputSummary": "3 files returned, none truncated"
+    "safeInputSummary": "sourceId=buildflow; reads=README.md",
+    "safeOutputSummary": "Read 1 file.; verified=true",
+    "whatHappened": ["Read 1 file."],
+    "whatRemains": ["Review the returned file contents."],
+    "provenFacts": ["BuildFlow verified this result."],
+    "nextActions": ["Review the returned file contents."]
   }
 }
 ```
@@ -110,6 +112,8 @@ The GPT should render this as:
 - what was proven
 - what remains
 - available next actions
+
+The response must stay safe: summaries should mention paths, counts, statuses, and verification results, not raw secrets or hidden model reasoning.
 
 ### Phase 2: Persistent activity history
 

@@ -49,6 +49,12 @@ type ActionActivity = {
   riskLevel: ActivityRiskLevel
   requiresConfirmation: boolean
   verified: boolean
+  safeInputSummary?: string
+  safeOutputSummary?: string
+  whatHappened?: string[]
+  whatRemains?: string[]
+  provenFacts?: string[]
+  nextActions?: string[]
   nextStep?: string
 }
 
@@ -141,9 +147,50 @@ export function composeArtifactRelativePath(params: {
   return `${safeFolder.replace(/\/$/, '')}/${filename}.md`
 }
 
+function compactList(values: Array<string | undefined | null>, limit = 6): string[] {
+  return values
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .map(value => value.trim())
+    .slice(0, limit)
+}
+
+function summarizeActivityInput(input: ActivityInput): string | undefined {
+  const parts = compactList([
+    input.sourceId ? `sourceId=${input.sourceId}` : undefined,
+    input.targetPaths && input.targetPaths.length > 0 ? `targets=${summaryList(input.targetPaths)}` : undefined,
+    input.readPaths && input.readPaths.length > 0 ? `reads=${summaryList(input.readPaths)}` : undefined
+  ])
+  return parts.length > 0 ? parts.join('; ') : undefined
+}
+
+function summarizeActivityOutput(input: ActivityInput): string {
+  const parts = compactList([
+    input.userMessage,
+    input.changedPaths && input.changedPaths.length > 0 ? `changed=${summaryList(input.changedPaths)}` : undefined,
+    input.requiresConfirmation ? 'requires confirmation' : undefined,
+    input.verified ? 'verified=true' : 'verified=false'
+  ], 4)
+  return parts.join('; ')
+}
+
 function makeActivity(input: ActivityInput): ActionActivity {
+  const nextActions = input.nextActions || compactList([
+    input.nextStep,
+    input.requiresConfirmation ? 'Ask the user for explicit confirmation before retrying.' : undefined,
+    input.verified ? 'Continue with the next scoped step.' : undefined
+  ], 3)
   return {
     version: '1.2.13-beta',
+    safeInputSummary: input.safeInputSummary || summarizeActivityInput(input),
+    safeOutputSummary: input.safeOutputSummary || summarizeActivityOutput(input),
+    whatHappened: input.whatHappened || compactList([input.userMessage]),
+    whatRemains: input.whatRemains || (input.phase === 'completed' ? compactList([input.nextStep]) : nextActions),
+    provenFacts: input.provenFacts || compactList([
+      input.verified ? 'BuildFlow verified this result.' : 'BuildFlow did not verify a write result.',
+      input.readPaths && input.readPaths.length > 0 ? `Read paths: ${summaryList(input.readPaths)}` : undefined,
+      input.changedPaths && input.changedPaths.length > 0 ? `Changed paths: ${summaryList(input.changedPaths)}` : undefined
+    ]),
+    nextActions,
     ...input
   }
 }
