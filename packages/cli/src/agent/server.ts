@@ -7,7 +7,7 @@ import { VaultSearcher } from './search'
 import { readFile, createFile, appendFile, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode, getSourceIndexState, setSourceIndexStatus } from './config'
+import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, setSourceAutoIndex, markSourceAutoIndexed, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode, getSourceIndexState, setSourceIndexStatus } from './config'
 import { reconcileIndexStateFromDocs } from './index-state'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import { getResolvedActiveSources, isAllowedArtifactRoot, isAllowedSafeWriteRoot, isBlockedWritePath, redactSecrets, resolveTargetSourceId, resolveWithinSource, shouldIncludeEntry, truncateContent, getDefaultWritePolicy, validateWriteTarget, normalizeRepoRelativePath } from './safe-access'
@@ -133,8 +133,8 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
     searcher = new VaultSearcher(indexer.getDocs())
   }
 
-  const reindexSourceInBackground = (sourceId: string, sourcePath: string): void => {
-    if (indexingSources.has(sourceId)) return
+  const reindexSourceInBackground = (sourceId: string, sourcePath: string, reason: 'manual' | 'auto' | 'add' = 'manual'): boolean => {
+    if (indexingSources.has(sourceId)) return false
 
     setSourceIndexStatus(sourceId, {
       indexed: false,
@@ -147,13 +147,17 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       try {
         const indexedFileCount = await indexer.buildIndexForSource(sourceId, sourcePath)
         refreshSearcherFromDocs()
+        const completedAt = new Date().toISOString()
         setSourceIndexStatus(sourceId, {
           indexed: true,
           indexStatus: 'ready',
           indexedFileCount,
-          lastIndexedAt: new Date().toISOString(),
+          lastIndexedAt: completedAt,
           indexError: undefined
         })
+        if (reason === 'auto') {
+          markSourceAutoIndexed(sourceId, completedAt)
+        }
       } catch (err) {
         setSourceIndexStatus(sourceId, {
           indexed: false,
@@ -166,7 +170,37 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
     })().catch(err => {
       console.error(`Background reindex failed for ${sourceId}:`, err)
     })
+    return true
   }
+
+  const shouldAutoIndexSource = (source: ReturnType<typeof getSourcesSafe>[number], now: number): boolean => {
+    if (!source.enabled || source.autoIndexEnabled === false) return false
+    if (source.indexStatus === 'indexing' || indexingSources.has(source.id)) return false
+    try {
+      if (!fs.existsSync(source.path) || !fs.statSync(source.path).isDirectory()) return false
+    } catch {
+      return false
+    }
+    const intervalMs = Math.max(1, source.autoIndexIntervalMinutes || 5) * 60_000
+    const lastRun = source.lastAutoIndexedAt || source.lastIndexedAt
+    if (!lastRun) return true
+    const lastRunMs = Date.parse(lastRun)
+    if (!Number.isFinite(lastRunMs)) return true
+    return now - lastRunMs >= intervalMs
+  }
+
+  const runAutoIndexSweep = (): void => {
+    const now = Date.now()
+    for (const source of getSourcesSafe()) {
+      if (indexingSources.size > 0) break
+      if (!shouldAutoIndexSource(source, now)) continue
+      reindexSourceInBackground(source.id, source.path, 'auto')
+    }
+  }
+
+  const autoIndexTimer = setInterval(runAutoIndexSweep, 30_000)
+  autoIndexTimer.unref?.()
+  fastify.addHook('onClose', async () => clearInterval(autoIndexTimer))
 
   const rejectUnindexedSources = (sourceIds: string[], reply: any) => {
     const blocked = sourceIds
@@ -906,6 +940,29 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       }
 
       const sources = setSourceEnabled(sourceId, enabled)
+      return { sources }
+    } catch (err) {
+      return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.post<{ Body: { sourceId?: string; autoIndexEnabled?: boolean; autoIndexIntervalMinutes?: number } }>('/api/sources/auto-index', async (request, reply) => {
+    try {
+      const { sourceId, autoIndexEnabled, autoIndexIntervalMinutes } = request.body || {}
+      if (typeof sourceId !== 'string' || !sourceId.trim()) {
+        return reply.code(400).send({ error: 'Missing or invalid sourceId' })
+      }
+      if (autoIndexEnabled !== undefined && typeof autoIndexEnabled !== 'boolean') {
+        return reply.code(400).send({ error: 'Invalid autoIndexEnabled value' })
+      }
+      if (autoIndexIntervalMinutes !== undefined && typeof autoIndexIntervalMinutes !== 'number') {
+        return reply.code(400).send({ error: 'Invalid autoIndexIntervalMinutes value' })
+      }
+
+      const sources = setSourceAutoIndex(sourceId, {
+        enabled: autoIndexEnabled,
+        intervalMinutes: autoIndexIntervalMinutes
+      })
       return { sources }
     } catch (err) {
       return reply.code(400).send({ error: String(err) })

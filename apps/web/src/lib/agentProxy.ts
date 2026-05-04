@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const DEFAULT_AGENT_URL = 'http://127.0.0.1:3052'
-const DEFAULT_TIMEOUT_MS = 5000
+const DEFAULT_TIMEOUT_MS = 15000
 
 type AgentProxyOptions = RequestInit & {
   timeoutMs?: number

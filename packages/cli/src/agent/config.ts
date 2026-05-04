@@ -4,6 +4,25 @@ import { getConfigPath, expandTilde } from '../utils/paths'
 import type { Workspace, KnowledgeSource, ActiveSourcesMode, WriteMode } from '@buildflow/shared'
 import { getIndexRecord, upsertIndexState, type SourceIndexStatus } from './index-state'
 
+export const DEFAULT_AUTO_INDEX_ENABLED = true
+export const DEFAULT_AUTO_INDEX_INTERVAL_MINUTES = 5
+export const MIN_AUTO_INDEX_INTERVAL_MINUTES = 1
+export const MAX_AUTO_INDEX_INTERVAL_MINUTES = 60
+
+export function normalizeAutoIndexIntervalMinutes(value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) return DEFAULT_AUTO_INDEX_INTERVAL_MINUTES
+  return Math.min(MAX_AUTO_INDEX_INTERVAL_MINUTES, Math.max(MIN_AUTO_INDEX_INTERVAL_MINUTES, Math.round(numeric)))
+}
+
+export function withSourceDefaults(source: KnowledgeSource): KnowledgeSource {
+  return {
+    ...source,
+    autoIndexEnabled: typeof source.autoIndexEnabled === 'boolean' ? source.autoIndexEnabled : DEFAULT_AUTO_INDEX_ENABLED,
+    autoIndexIntervalMinutes: normalizeAutoIndexIntervalMinutes(source.autoIndexIntervalMinutes)
+  }
+}
+
 export interface AgentConfig {
   userId: string
   deviceId: string
@@ -49,17 +68,17 @@ export function saveConfig(config: AgentConfig): void {
 
 function ensureSources(config: AgentConfig): KnowledgeSource[] {
   if (config.sources !== undefined) {
-    return config.sources
+    return config.sources.map(withSourceDefaults)
   }
 
   if (config.vaultPath) {
     return [
-      {
+      withSourceDefaults({
         id: 'vault',
         label: 'Vault',
         path: config.vaultPath,
         enabled: true
-      }
+      })
     ]
   }
 
@@ -67,7 +86,7 @@ function ensureSources(config: AgentConfig): KnowledgeSource[] {
 }
 
 function persistSources(config: AgentConfig, sources: KnowledgeSource[]): void {
-  config.sources = sources
+  config.sources = sources.map(withSourceDefaults)
   saveConfig(config)
 }
 
@@ -259,13 +278,13 @@ export function addSource(pathInput: string, label?: string, id?: string): Knowl
     throw new Error(`Knowledge source with ID "${sourceId}" already exists`)
   }
 
-  sources.push({
+  sources.push(withSourceDefaults({
     id: sourceId,
     label: label || path.basename(expanded),
     path: expanded,
     enabled: true,
     type: 'unknown'
-  })
+  }))
 
   persistSources(config, sources)
   if (!config.vaultPath) {
@@ -304,7 +323,7 @@ export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeS
       return source
     }
 
-    return { ...source, enabled }
+    return withSourceDefaults({ ...source, enabled })
   })
 
   if (!sources.some(source => source.id === sourceId)) {
@@ -327,6 +346,53 @@ export function setSourceEnabled(sourceId: string, enabled: boolean): KnowledgeS
     })
   }
   return reconcileActiveSources(config).sources
+}
+
+export function setSourceAutoIndex(sourceId: string, settings: { enabled?: boolean; intervalMinutes?: number }): KnowledgeSource[] {
+  const config = loadConfig()
+  if (!config) {
+    throw new Error('Please run: buildflow init')
+  }
+
+  const sources = ensureSources(config)
+  let found = false
+  const nextSources = sources.map(source => {
+    if (source.id !== sourceId) return source
+    found = true
+    return withSourceDefaults({
+      ...source,
+      autoIndexEnabled: typeof settings.enabled === 'boolean' ? settings.enabled : source.autoIndexEnabled,
+      autoIndexIntervalMinutes: settings.intervalMinutes === undefined ? source.autoIndexIntervalMinutes : normalizeAutoIndexIntervalMinutes(settings.intervalMinutes)
+    })
+  })
+
+  if (!found) {
+    throw new Error(`Knowledge source not found: ${sourceId}`)
+  }
+
+  persistSources(config, nextSources)
+  return reconcileActiveSources(config).sources
+}
+
+export function markSourceAutoIndexed(sourceId: string, timestamp = new Date().toISOString()): KnowledgeSource[] {
+  const config = loadConfig()
+  if (!config) {
+    throw new Error('Please run: buildflow init')
+  }
+
+  const sources = ensureSources(config)
+  let changed = false
+  const nextSources = sources.map(source => {
+    if (source.id !== sourceId) return source
+    changed = true
+    return withSourceDefaults({ ...source, lastAutoIndexedAt: timestamp })
+  })
+
+  if (changed) {
+    persistSources(config, nextSources)
+  }
+
+  return getSourcesSafe()
 }
 
 export function setSourceIndexStatus(

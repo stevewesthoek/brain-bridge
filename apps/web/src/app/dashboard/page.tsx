@@ -666,7 +666,7 @@ export default function Dashboard() {
       return true
     } catch (err) {
       setMutationError(getMutationErrorMessage(null, err, 'Source action failed'))
-      if (url === '/api/agent/sources/toggle' || url === '/api/agent/sources/reindex' || url === '/api/agent/sources/add' || url === '/api/agent/sources/remove' || url === '/api/agent/active-sources' || url === '/api/agent/write-mode') {
+      if (url === '/api/agent/sources/toggle' || url === '/api/agent/sources/reindex' || url === '/api/agent/sources/auto-index' || url === '/api/agent/sources/add' || url === '/api/agent/sources/remove' || url === '/api/agent/active-sources' || url === '/api/agent/write-mode') {
         void fetchSources({ blocking: false }).catch(() => {})
       }
       return false
@@ -754,6 +754,20 @@ export default function Dashboard() {
         `${source.label} · ${source.path}`,
         nextEnabled ? 'good' : 'warn'
       )
+    }
+  }
+
+  const handleSetAutoIndex = async (source: KnowledgeSource, settings: { enabled?: boolean; intervalMinutes?: number }) => {
+    const success = await mutateSources('/api/agent/sources/auto-index', {
+      sourceId: source.id,
+      autoIndexEnabled: settings.enabled,
+      autoIndexIntervalMinutes: settings.intervalMinutes
+    })
+    if (success) {
+      const detail = settings.intervalMinutes
+        ? `${source.label} will auto-index every ${settings.intervalMinutes} minutes.`
+        : `${source.label} auto-index ${settings.enabled === false ? 'disabled' : 'enabled'}.`
+      recordActivity('source-auto-index-updated', 'Auto-index updated', detail, settings.enabled === false ? 'warn' : 'good')
     }
   }
 
@@ -908,6 +922,7 @@ export default function Dashboard() {
                       onSelectSource={handleSelectSource}
                       onToggleActiveSource={handleToggleActiveSource}
                       onToggleEnabled={handleToggleEnabled}
+                      onSetAutoIndex={handleSetAutoIndex}
                       onReindexSource={handleReindexSource}
                       onRemoveSource={handleRemoveSource}
                       onToggleAddSourceForm={() => setShowAddSourceForm(prev => !prev)}

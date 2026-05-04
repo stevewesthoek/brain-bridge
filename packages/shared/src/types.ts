@@ -65,6 +65,9 @@ export type KnowledgeSource = {
   indexedFileCount?: number
   lastIndexedAt?: string
   indexError?: string
+  autoIndexEnabled?: boolean
+  autoIndexIntervalMinutes?: number
+  lastAutoIndexedAt?: string
 }
 
 export type ActiveSourcesMode = 'single' | 'multi' | 'all'

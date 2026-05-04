@@ -29,6 +29,7 @@ type KnowledgeSourcesPanelProps = {
   onSelectSource: (sourceId: string) => void
   onToggleActiveSource: (sourceId: string) => void
   onToggleEnabled: (source: KnowledgeSource, nextEnabled: boolean) => void
+  onSetAutoIndex: (source: KnowledgeSource, settings: { enabled?: boolean; intervalMinutes?: number }) => void
   onReindexSource: (source: KnowledgeSource) => void
   onRemoveSource: (source: KnowledgeSource) => void
   onToggleAddSourceForm: () => void
@@ -59,6 +60,7 @@ export function KnowledgeSourcesPanel({
   onSelectSource,
   onToggleActiveSource,
   onToggleEnabled,
+  onSetAutoIndex,
   onReindexSource,
   onRemoveSource,
   onToggleAddSourceForm,
@@ -191,6 +193,16 @@ export function KnowledgeSourcesPanel({
                           onClick: () => onReindexSource(source)
                         },
                         {
+                          label: source.autoIndexEnabled === false ? 'Auto-index on' : 'Auto-index off',
+                          disabled: mutationLoading || !source.enabled,
+                          onClick: () => onSetAutoIndex(source, { enabled: source.autoIndexEnabled === false })
+                        },
+                        ...[1, 5, 15, 60].map(minutes => ({
+                          label: `Every ${minutes} min`,
+                          disabled: mutationLoading || !source.enabled || (source.autoIndexIntervalMinutes || 5) === minutes,
+                          onClick: () => onSetAutoIndex(source, { intervalMinutes: minutes, enabled: true })
+                        })),
+                        {
                           label: 'Remove',
                           disabled: mutationLoading,
                           onClick: () => onRemoveSource(source)
@@ -217,7 +229,7 @@ export function KnowledgeSourcesPanel({
                               <span className="font-medium text-bf-text dark:text-slate-100">{getStatusSummary(source)}</span>
                             </div>
                             <div className="mt-1 text-bf-muted dark:text-slate-400">
-                              {source.enabled ? 'Enabled' : 'Disabled'} · {isActive ? 'Active context' : 'Idle'}
+                              {source.enabled ? 'Enabled' : 'Disabled'} · {isActive ? 'Active context' : 'Idle'} · Auto {source.autoIndexEnabled === false ? 'off' : `${source.autoIndexIntervalMinutes || 5}m`}
                             </div>
                           </div>
                           <details className="relative justify-self-end">
