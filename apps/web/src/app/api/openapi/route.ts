@@ -177,7 +177,7 @@ const openapi = {
   },
   servers: [
     {
-      url: process.env.PUBLIC_BASE_URL || process.env.LOCAL_DASHBOARD_BASE_URL || 'http://127.0.0.1:3054',
+      url: process.env.PUBLIC_BASE_URL || process.env.LOCAL_DASHBOARD_BASE_URL || 'https://buildflow.prochat.tools',
       description: 'BuildFlow public endpoint'
     }
   ],

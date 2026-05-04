@@ -10,7 +10,9 @@ const ALLOWED_FILES = new Set([
   path.normalize('docs/product/public-scope.md'),
   path.normalize('docs/product/local/feature-scope.md'),
   path.normalize('docs/product/beta-release-gate.md'),
-  path.normalize('docs/product/roadmap.md')
+  path.normalize('docs/product/roadmap.md'),
+  path.normalize('docs/openapi.chatgpt.json'),
+  path.normalize('apps/web/src/app/api/openapi/route.ts')
 ])
 const SELF_FILE = path.normalize('scripts/audit-public-scope.mjs')
 
