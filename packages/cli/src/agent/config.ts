@@ -1,13 +1,16 @@
 import fs from 'fs'
 import path from 'path'
 import { getConfigPath, expandTilde } from '../utils/paths'
-import type { Workspace, KnowledgeSource, ActiveSourcesMode, WriteMode } from '@buildflow/shared'
+import type { Workspace, KnowledgeSource, ActiveSourcesMode, WriteMode, DiscoveredRepository, SourceDiscoverySettings } from '@buildflow/shared'
 import { getIndexRecord, upsertIndexState, type SourceIndexStatus } from './index-state'
 
 export const DEFAULT_AUTO_INDEX_ENABLED = true
 export const DEFAULT_AUTO_INDEX_INTERVAL_MINUTES = 5
 export const MIN_AUTO_INDEX_INTERVAL_MINUTES = 1
 export const MAX_AUTO_INDEX_INTERVAL_MINUTES = 60
+export const DEFAULT_REPO_DISCOVERY_INTERVAL_MINUTES = 30
+export const MIN_REPO_DISCOVERY_INTERVAL_MINUTES = 10
+export const MAX_REPO_DISCOVERY_INTERVAL_MINUTES = 60
 
 export function normalizeAutoIndexIntervalMinutes(value: unknown): number {
   const numeric = typeof value === 'number' ? value : Number(value)
@@ -35,6 +38,7 @@ export interface AgentConfig {
   activeSourcesMode?: ActiveSourcesMode
   writeMode?: WriteMode
   localPort?: number
+  sourceDiscovery?: SourceDiscoverySettings
   mode: 'read_create_append'
   allowedExtensions: string[]
   ignorePatterns: string[]
@@ -184,6 +188,97 @@ export function reconcileActiveSources(config: AgentConfig): { mode: ActiveSourc
 
 export function generateSourceIdFromPath(sourcePath: string): string {
   return path.basename(sourcePath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
+}
+
+function normalizeDiscoveryIntervalMinutes(value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) return DEFAULT_REPO_DISCOVERY_INTERVAL_MINUTES
+  return Math.min(MAX_REPO_DISCOVERY_INTERVAL_MINUTES, Math.max(MIN_REPO_DISCOVERY_INTERVAL_MINUTES, Math.round(numeric)))
+}
+
+function prettifyRepoLabel(name: string): string {
+  return name
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, char => char.toUpperCase()) || name
+}
+
+export function getSourceDiscoverySettings(): SourceDiscoverySettings {
+  const config = loadConfig()
+  return {
+    rootPath: config?.sourceDiscovery?.rootPath ? expandTilde(config.sourceDiscovery.rootPath) : undefined,
+    intervalMinutes: normalizeDiscoveryIntervalMinutes(config?.sourceDiscovery?.intervalMinutes),
+    lastScannedAt: config?.sourceDiscovery?.lastScannedAt
+  }
+}
+
+export function setSourceDiscoverySettings(settings: { rootPath?: string; intervalMinutes?: number; lastScannedAt?: string }): SourceDiscoverySettings {
+  const config = loadConfig()
+  if (!config) throw new Error('Please run: buildflow init')
+  const current = getSourceDiscoverySettings()
+  const rootPath = settings.rootPath !== undefined ? expandTilde(settings.rootPath.trim()) : current.rootPath
+  if (rootPath) {
+    if (!fs.existsSync(rootPath)) throw new Error(`Repository root folder not found: ${rootPath}`)
+    if (!fs.statSync(rootPath).isDirectory()) throw new Error(`Repository root is not a directory: ${rootPath}`)
+    fs.accessSync(rootPath, fs.constants.R_OK)
+  }
+  config.sourceDiscovery = {
+    ...(rootPath ? { rootPath } : {}),
+    intervalMinutes: normalizeDiscoveryIntervalMinutes(settings.intervalMinutes ?? current.intervalMinutes),
+    ...(settings.lastScannedAt || current.lastScannedAt ? { lastScannedAt: settings.lastScannedAt ?? current.lastScannedAt } : {})
+  }
+  saveConfig(config)
+  return getSourceDiscoverySettings()
+}
+
+export function discoverRepositories(rootPathInput?: string): { settings: SourceDiscoverySettings; repositories: DiscoveredRepository[] } {
+  const settings = rootPathInput ? setSourceDiscoverySettings({ rootPath: rootPathInput }) : getSourceDiscoverySettings()
+  if (!settings.rootPath) return { settings, repositories: [] }
+  const rootPath = expandTilde(settings.rootPath)
+  const configured = getSourcesSafe()
+  const configuredByPath = new Map(configured.map(source => [path.resolve(source.path), source]))
+  const repositories: DiscoveredRepository[] = []
+  const seen = new Set<string>()
+  const maxDepth = 5
+
+  const walk = (current: string, depth: number) => {
+    if (depth > maxDepth) return
+    let entries: fs.Dirent[] = []
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true })
+    } catch {
+      return
+    }
+    if (entries.some(entry => entry.isDirectory() && entry.name === '.git')) {
+      const resolved = path.resolve(current)
+      if (!seen.has(resolved)) {
+        seen.add(resolved)
+        const relativePath = path.relative(rootPath, resolved) || path.basename(resolved)
+        const [account = 'Root'] = relativePath.split(path.sep)
+        const existing = configuredByPath.get(resolved)
+        repositories.push({
+          path: resolved,
+          label: prettifyRepoLabel(path.basename(resolved)),
+          id: `${generateSourceIdFromPath(account)}-${generateSourceIdFromPath(resolved)}`,
+          account,
+          relativePath,
+          alreadyAdded: !!existing,
+          sourceId: existing?.id
+        })
+      }
+      return
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      if (['.git', 'node_modules', '.next', 'dist', 'build', 'coverage', '.cache', '.turbo'].includes(entry.name)) continue
+      walk(path.join(current, entry.name), depth + 1)
+    }
+  }
+
+  walk(rootPath, 0)
+  const nextSettings = setSourceDiscoverySettings({ rootPath, intervalMinutes: settings.intervalMinutes, lastScannedAt: new Date().toISOString() })
+  return { settings: nextSettings, repositories: repositories.sort((a, b) => `${a.account}/${a.label}`.localeCompare(`${b.account}/${b.label}`)) }
 }
 
 export function getSources(): KnowledgeSource[] {

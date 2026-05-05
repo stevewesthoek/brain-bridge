@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
-import type { KnowledgeSource, WriteMode, ActiveSourcesMode } from '@buildflow/shared'
+import type { KnowledgeSource, WriteMode, ActiveSourcesMode, DiscoveredRepository } from '@buildflow/shared'
 import { DashboardTopBar } from './components/DashboardTopBar'
 import { DashboardShell } from './components/DashboardShell'
 import { DashboardOverview } from './components/DashboardOverview'
@@ -314,6 +314,12 @@ export default function Dashboard() {
   const [sourcePath, setSourcePath] = useState('')
   const [sourceLabel, setSourceLabel] = useState('')
   const [sourceId, setSourceId] = useState('')
+  const [discoveryRootPath, setDiscoveryRootPath] = useState('')
+  const [discoveryIntervalMinutes, setDiscoveryIntervalMinutes] = useState(30)
+  const [discoveredRepos, setDiscoveredRepos] = useState<DiscoveredRepository[]>([])
+  const [selectedDiscoveredRepoPath, setSelectedDiscoveredRepoPath] = useState('')
+  const [discoveryLoading, setDiscoveryLoading] = useState(false)
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null)
   const [mutationLoading, setMutationLoading] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const [mutationNotice, setMutationNotice] = useState<string | null>(null)
@@ -566,6 +572,36 @@ export default function Dashboard() {
     }
   }
 
+  const fetchRepositoryDiscovery = async (settings?: { rootPath?: string; intervalMinutes?: number }) => {
+    setDiscoveryLoading(true)
+    setDiscoveryError(null)
+    try {
+      const response = await fetch('/api/agent/sources/discovery', {
+        cache: 'no-store',
+        method: settings ? 'POST' : 'GET',
+        headers: settings ? { 'Content-Type': 'application/json' } : undefined,
+        body: settings ? JSON.stringify(settings) : undefined
+      })
+      const data = await response.json().catch(() => ({})) as Record<string, unknown>
+      if (!response.ok) throw new Error(getMutationErrorMessage(data, null, `Repository discovery failed: ${response.status}`))
+      const discoverySettings = data.settings as { rootPath?: string; intervalMinutes?: number; lastScannedAt?: string } | undefined
+      const repositories = Array.isArray(data.repositories) ? data.repositories as DiscoveredRepository[] : []
+      setDiscoveryRootPath(discoverySettings?.rootPath || settings?.rootPath || '')
+      setDiscoveryIntervalMinutes(discoverySettings?.intervalMinutes || settings?.intervalMinutes || 30)
+      setDiscoveredRepos(repositories)
+      setSelectedDiscoveredRepoPath(current => current && repositories.some(repo => repo.path === current && !repo.alreadyAdded) ? current : repositories.find(repo => !repo.alreadyAdded)?.path || '')
+      recordActivity('repository-discovery-scanned', 'Repository discovery updated', `${repositories.length} repositories found.`, 'good')
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setDiscoveryError(message)
+      recordActivity('repository-discovery-failed', 'Repository discovery failed', message, 'warn')
+      return false
+    } finally {
+      setDiscoveryLoading(false)
+    }
+  }
+
   const handleSelectSource = (sourceId: string) => {
     if (selectedSourceId === sourceId) return
     setSelectedSourceId(sourceId)
@@ -619,6 +655,17 @@ export default function Dashboard() {
   useEffect(() => {
     setLocalPlan(readLocalPlan())
   }, [])
+
+  useEffect(() => {
+    void fetchRepositoryDiscovery()
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void fetchRepositoryDiscovery()
+    }, Math.max(10, Math.min(60, discoveryIntervalMinutes)) * 60_000)
+    return () => window.clearInterval(timer)
+  }, [discoveryIntervalMinutes])
 
   useEffect(() => {
     saveLocalPlan(localPlan)
@@ -785,16 +832,36 @@ export default function Dashboard() {
     recordActivity('source-removed', 'Source removed', `${source.label} · ${source.path}`, 'warn')
   }
 
+  const handleDiscoverySettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!discoveryRootPath.trim()) {
+      setDiscoveryError('Repository root folder is required')
+      return
+    }
+    await fetchRepositoryDiscovery({ rootPath: discoveryRootPath.trim(), intervalMinutes: discoveryIntervalMinutes })
+  }
+
+  const handleDiscoveredRepoChange = (repoPath: string) => {
+    setSelectedDiscoveredRepoPath(repoPath)
+    const repo = discoveredRepos.find(item => item.path === repoPath)
+    if (!repo) return
+    setSourcePath(repo.path)
+    setSourceLabel(repo.label)
+    setSourceId(repo.id)
+  }
+
   const handleAddSource = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!sourcePath.trim()) {
-      setMutationError('Knowledge source path is required')
+    const selectedRepo = discoveredRepos.find(repo => repo.path === selectedDiscoveredRepoPath)
+    const resolvedPath = selectedRepo?.path || sourcePath.trim()
+    if (!resolvedPath) {
+      setMutationError('Select a discovered repo or enter a knowledge source path')
       return
     }
 
-    const nextPath = sourcePath.trim()
-    const nextLabel = sourceLabel.trim()
-    const nextId = sourceId.trim()
+    const nextPath = resolvedPath
+    const nextLabel = (selectedRepo?.label || sourceLabel).trim()
+    const nextId = (selectedRepo?.id || sourceId).trim()
     const success = await mutateSources('/api/agent/sources/add', {
       path: nextPath,
       label: nextLabel || undefined,
@@ -806,6 +873,8 @@ export default function Dashboard() {
       setSourcePath('')
       setSourceLabel('')
       setSourceId('')
+      setSelectedDiscoveredRepoPath('')
+      void fetchRepositoryDiscovery()
       setShowAddSourceForm(false)
     }
   }
@@ -911,13 +980,19 @@ export default function Dashboard() {
                       mutationNotice={mutationNotice}
                       showAddSourceForm={showAddSourceForm}
                       sourcePath={sourcePath}
-                      sourceLabel={sourceLabel}
-                      sourceId={sourceId}
+                      discoveryRootPath={discoveryRootPath}
+                      discoveryIntervalMinutes={discoveryIntervalMinutes}
+                      discoveredRepos={discoveredRepos}
+                      selectedDiscoveredRepoPath={selectedDiscoveredRepoPath}
+                      discoveryLoading={discoveryLoading}
+                      discoveryError={discoveryError}
                       activeSourceIds={activeSourceIds}
                       onAddSourceSubmit={handleAddSource}
-                      onSourcePathChange={setSourcePath}
-                      onSourceLabelChange={setSourceLabel}
-                      onSourceIdChange={setSourceId}
+                      onDiscoveryRootPathChange={setDiscoveryRootPath}
+                      onDiscoveryIntervalChange={setDiscoveryIntervalMinutes}
+                      onDiscoverySettingsSubmit={handleDiscoverySettingsSubmit}
+                      onRefreshDiscovery={() => fetchRepositoryDiscovery()}
+                      onDiscoveredRepoChange={handleDiscoveredRepoChange}
                       selectedSourceId={selectedSourceId}
                       onSelectSource={handleSelectSource}
                       onToggleActiveSource={handleToggleActiveSource}

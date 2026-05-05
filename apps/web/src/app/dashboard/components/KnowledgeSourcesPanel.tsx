@@ -1,5 +1,5 @@
 import type { FormEvent, RefObject } from 'react'
-import type { KnowledgeSource } from '@buildflow/shared'
+import type { KnowledgeSource, DiscoveredRepository } from '@buildflow/shared'
 import { Folder, MoreHorizontal } from 'lucide-react'
 
 import { DashboardButton } from './ui/DashboardButton'
@@ -18,14 +18,20 @@ type KnowledgeSourcesPanelProps = {
   mutationNotice: string | null
   showAddSourceForm: boolean
   sourcePath: string
-  sourceLabel: string
-  sourceId: string
+  discoveryRootPath: string
+  discoveryIntervalMinutes: number
+  discoveredRepos: DiscoveredRepository[]
+  selectedDiscoveredRepoPath: string
+  discoveryLoading: boolean
+  discoveryError: string | null
   activeSourceIds: string[]
   selectedSourceId: string | null
   onAddSourceSubmit: (event: FormEvent<HTMLFormElement>) => void
-  onSourcePathChange: (value: string) => void
-  onSourceLabelChange: (value: string) => void
-  onSourceIdChange: (value: string) => void
+  onDiscoveryRootPathChange: (value: string) => void
+  onDiscoveryIntervalChange: (value: number) => void
+  onDiscoverySettingsSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onRefreshDiscovery: () => void
+  onDiscoveredRepoChange: (repoPath: string) => void
   onSelectSource: (sourceId: string) => void
   onToggleActiveSource: (sourceId: string) => void
   onToggleEnabled: (source: KnowledgeSource, nextEnabled: boolean) => void
@@ -49,14 +55,20 @@ export function KnowledgeSourcesPanel({
   mutationNotice,
   showAddSourceForm,
   sourcePath,
-  sourceLabel,
-  sourceId,
+  discoveryRootPath,
+  discoveryIntervalMinutes,
+  discoveredRepos,
+  selectedDiscoveredRepoPath,
+  discoveryLoading,
+  discoveryError,
   activeSourceIds,
   selectedSourceId,
   onAddSourceSubmit,
-  onSourcePathChange,
-  onSourceLabelChange,
-  onSourceIdChange,
+  onDiscoveryRootPathChange,
+  onDiscoveryIntervalChange,
+  onDiscoverySettingsSubmit,
+  onRefreshDiscovery,
+  onDiscoveredRepoChange,
   onSelectSource,
   onToggleActiveSource,
   onToggleEnabled,
@@ -103,43 +115,65 @@ export function KnowledgeSourcesPanel({
         <div className="flex min-h-0 flex-col gap-3">
           {shouldShowAddForm ? (
             <DashboardPanel variant="flat" className="shrink-0 p-3">
-              <form ref={addSourceFormRef} onSubmit={onAddSourceSubmit} className="grid gap-3 md:grid-cols-[1.15fr_0.95fr_0.95fr_auto]">
+              <form onSubmit={onDiscoverySettingsSubmit} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_9rem_auto]">
                 <label className="block">
-                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Path *</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Repo root folder</span>
                   <input
-                    value={sourcePath}
-                    onChange={e => onSourcePathChange(e.target.value)}
+                    value={discoveryRootPath}
+                    onChange={e => onDiscoveryRootPathChange(e.target.value)}
                     className="w-full rounded-md border border-bf-border bg-bf-surface px-3 py-2 text-[13px] text-bf-text outline-none transition-colors placeholder:text-bf-muted focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-                    placeholder="~/notes"
-                    disabled={mutationLoading}
+                    placeholder="~/Office/Repos"
+                    disabled={discoveryLoading || mutationLoading}
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Label</span>
-                  <input
-                    value={sourceLabel}
-                    onChange={e => onSourceLabelChange(e.target.value)}
-                    className="w-full rounded-md border border-bf-border bg-bf-surface px-3 py-2 text-[13px] text-bf-text outline-none transition-colors placeholder:text-bf-muted focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-                    placeholder="My Notes"
-                    disabled={mutationLoading}
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">ID</span>
-                  <input
-                    value={sourceId}
-                    onChange={e => onSourceIdChange(e.target.value)}
-                    className="w-full rounded-md border border-bf-border bg-bf-surface px-3 py-2 text-[13px] text-bf-text outline-none transition-colors placeholder:text-bf-muted focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
-                    placeholder="my-notes"
-                    disabled={mutationLoading}
-                  />
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Scan every</span>
+                  <select
+                    value={discoveryIntervalMinutes}
+                    onChange={e => onDiscoveryIntervalChange(Number(e.target.value))}
+                    className="w-full rounded-md border border-bf-border bg-bf-surface px-3 py-2 text-[13px] text-bf-text outline-none transition-colors focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500"
+                    disabled={discoveryLoading || mutationLoading}
+                  >
+                    <option value={10}>10 min</option>
+                    <option value={30}>30 min</option>
+                    <option value={60}>1 hour</option>
+                  </select>
                 </label>
                 <div className="flex items-end">
-                  <DashboardButton type="submit" disabled={mutationLoading} variant="primary" className="w-full">
+                  <DashboardButton type="submit" disabled={discoveryLoading || mutationLoading} variant="secondary" className="w-full">
+                    {discoveryLoading ? 'Scanning...' : 'Scan repos'}
+                  </DashboardButton>
+                </div>
+              </form>
+              <form ref={addSourceFormRef} onSubmit={onAddSourceSubmit} className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-bf-muted dark:text-slate-400">Discovered repo</span>
+                  <select
+                    value={selectedDiscoveredRepoPath}
+                    onChange={e => onDiscoveredRepoChange(e.target.value)}
+                    className="w-full rounded-md border border-bf-border bg-bf-surface px-3 py-2 text-[13px] text-bf-text outline-none transition-colors focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500"
+                    disabled={mutationLoading || discoveredRepos.length === 0}
+                  >
+                    <option value="">{discoveredRepos.length === 0 ? 'Scan a root folder first' : 'Select a repository'}</option>
+                    {discoveredRepos.map(repo => (
+                      <option key={repo.path} value={repo.path} disabled={repo.alreadyAdded}>
+                        {repo.account} / {repo.label}{repo.alreadyAdded ? ' · added' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block truncate font-mono-ui text-[11px] text-bf-muted dark:text-slate-400">{sourcePath || 'Repository path will auto-fill from the picker.'}</span>
+                </label>
+                <div className="flex items-end gap-2">
+                  <DashboardButton type="button" disabled={discoveryLoading} variant="secondary" onClick={onRefreshDiscovery}>
+                    Refresh
+                  </DashboardButton>
+                  <DashboardButton type="submit" disabled={mutationLoading || !sourcePath} variant="primary">
                     {mutationLoading ? 'Working...' : 'Add source'}
                   </DashboardButton>
                 </div>
               </form>
+              {discoveryError ? <p className="mt-2 text-[12px] text-red-600 dark:text-red-300">{discoveryError}</p> : null}
+              <p className="mt-2 text-[12px] text-bf-muted dark:text-slate-400">BuildFlow scans recursively for Git repos, groups them by account folder, and auto-generates label and source ID.</p>
             </DashboardPanel>
           ) : null}
 

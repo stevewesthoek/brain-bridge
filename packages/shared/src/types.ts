@@ -70,6 +70,22 @@ export type KnowledgeSource = {
   lastAutoIndexedAt?: string
 }
 
+export type DiscoveredRepository = {
+  path: string
+  label: string
+  id: string
+  account: string
+  relativePath: string
+  alreadyAdded?: boolean
+  sourceId?: string
+}
+
+export type SourceDiscoverySettings = {
+  rootPath?: string
+  intervalMinutes: number
+  lastScannedAt?: string
+}
+
 export type ActiveSourcesMode = 'single' | 'multi' | 'all'
 export type WriteMode = 'readOnly' | 'artifactsOnly' | 'safeWrites'
 

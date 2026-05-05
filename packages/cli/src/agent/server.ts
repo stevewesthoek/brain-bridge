@@ -7,7 +7,7 @@ import { VaultSearcher } from './search'
 import { readFile, createFile, appendFile, listFolder } from './vault'
 import { logToFile } from '../utils/logger'
 import { createExportPlan } from './export'
-import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, setSourceAutoIndex, markSourceAutoIndexed, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode, getSourceIndexState, setSourceIndexStatus } from './config'
+import { loadConfig, getWorkspaces, getSources, getSourcesSafe, addSource, removeSource, setSourceEnabled, setSourceAutoIndex, markSourceAutoIndexed, getSourceDiscoverySettings, setSourceDiscoverySettings, discoverRepositories, getActiveSourceContext, setActiveSourceContext, getWriteMode, setWriteMode, getSourceIndexState, setSourceIndexStatus } from './config'
 import { reconcileIndexStateFromDocs } from './index-state'
 import { listWorkspaceTree, grepWorkspace, getWorkspaceInfo, resolveWorkspacePath, validateWorkspacePath } from './workspace'
 import { getResolvedActiveSources, isAllowedArtifactRoot, isAllowedSafeWriteRoot, isBlockedWritePath, redactSecrets, resolveTargetSourceId, resolveWithinSource, shouldIncludeEntry, truncateContent, getDefaultWritePolicy, validateWriteTarget, normalizeRepoRelativePath } from './safe-access'
@@ -859,6 +859,28 @@ export async function startLocalServer(port: number = 3052): Promise<void> {
       return { sources }
     } catch (err) {
       return reply.code(400).send({ error: String(err) })
+    }
+  })
+
+  fastify.get('/api/sources/discovery', async (request, reply) => {
+    try {
+      const result = discoverRepositories()
+      return reply.header('Cache-Control', 'no-store').send(result)
+    } catch (err) {
+      return reply.code(400).header('Cache-Control', 'no-store').send({ error: String(err), settings: getSourceDiscoverySettings(), repositories: [] })
+    }
+  })
+
+  fastify.post<{ Body: { rootPath?: string; intervalMinutes?: number } }>('/api/sources/discovery', async (request, reply) => {
+    try {
+      const { rootPath, intervalMinutes } = request.body || {}
+      if (rootPath !== undefined && typeof rootPath !== 'string') return reply.code(400).send({ error: 'Invalid rootPath' })
+      if (intervalMinutes !== undefined && typeof intervalMinutes !== 'number') return reply.code(400).send({ error: 'Invalid intervalMinutes' })
+      setSourceDiscoverySettings({ rootPath, intervalMinutes })
+      const result = discoverRepositories()
+      return reply.header('Cache-Control', 'no-store').send(result)
+    } catch (err) {
+      return reply.code(400).header('Cache-Control', 'no-store').send({ error: String(err), settings: getSourceDiscoverySettings(), repositories: [] })
     }
   })
 
